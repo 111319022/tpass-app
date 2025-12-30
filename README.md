@@ -2,16 +2,17 @@
 
 # 🚌 基北北桃 TPASS 回本計算機
 
-**專為通勤族設計的智慧帳房 · 精準套用 2.0 優惠規則 · 雲端同步**
+**專為基北北桃通勤族打造 · 你的通勤精算師**
 
-[ **啟動 Web App** ](https://111319022.github.io/tpass-app/)
+[ **🚀 立即啟動 Web App** ](https://111319022.github.io/tpass-app/)
 ·
-[ 回報問題 ](https://github.com/111319022/tpass-app/issues)
+[ 🐛 回報問題 ](https://github.com/111319022/tpass-app/issues)
 
 <br>
 
-//圖片待補
+<img src="icon.png" width="300" alt="App Screenshot with PWA Guide" style="border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
 
+<br>
 <br>
 
 </div>
@@ -81,7 +82,9 @@
 3.啟動 直接開啟 index.html 即可運行。
 
 <div align="center">
+
 ---
+
 Made with 🧠 by Raaay
 
 </div>
