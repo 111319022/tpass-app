@@ -14,6 +14,9 @@
             <div id="userInfo" class="hidden">
                 <img id="userPhoto" src="" alt="user">
                 <span id="userName">Loading...</span>
+                <button id="settingsBtn" class="auth-btn" style="background:transparent; color:#555; font-size:18px; padding:5px 10px; margin-right:5px;">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
                 <button id="logoutBtn" class="auth-btn">登出</button>
             </div>
             <div id="loginSection">
@@ -24,28 +27,11 @@
         </div>
 
         <header class="dashboard">
-            <div class="identity-switch-container">
-                <div class="switch-wrapper">
-                    <input type="radio" id="role-adult" name="identity" value="adult" checked onchange="window.updateIdentity('adult')">
-                    <label for="role-adult">全票 (成人)</label>
-                    
-                    <input type="radio" id="role-student" name="identity" value="student" onchange="window.updateIdentity('student')">
-                    <label for="role-student">學生票</label>
-                    <div class="slider"></div>
-                </div>
-            </div>
-
-            <div class="cycle-settings-container">
-                <div class="cycle-settings">
-                    <label for="cycleStartDate">
-                        <i class="fa-solid fa-calendar-days"></i> 本週期：起始日
-                    </label>
-                    <input type="date" id="cycleStartDate" onchange="window.updateCycleStart(this.value)" style="font-family: inherit;">
-                    <small>（迄日自動+30天）</small>
-                </div>
-            </div>
-
             <div class="status-card">
+                <div style="text-align:center; font-size:13px; opacity:0.9; margin-bottom:15px; background:rgba(0,0,0,0.2); display:inline-block; padding:4px 12px; border-radius:20px;">
+                    <i class="fa-regular fa-calendar-check"></i> 本期：<span id="cycleDateRange">請設定啟用日</span>
+                </div>
+
                 <div class="main-stats">
                     <div class="stat-box">
                         <small>實際總支出</small>
@@ -53,35 +39,30 @@
                     </div>
                     <div class="vs-badge">VS</div>
                     <div class="stat-box">
-                        <small>基北北桃月票</small>
+                        <small>TPASS 月票</small>
                         <span>$1200</span>
                     </div>
                 </div>
                 
                 <div class="result-bar">
-                    <div id="statusText" class="status-neutral">請先登入</div>
+                    <div id="statusText" class="status-neutral">計算中...</div>
                     <small id="diffText">資料將儲存於雲端</small>
                 </div>
             </div>
 
-            <!-- 月份標籤選擇器 -->
-            <div class="cycle-tabs-container">
-                <div class="cycle-tabs" id="cycleTabs">
-                    <!-- 動態生成月份標籤 -->
-                </div>
-            </div>
-
             <div class="breakdown-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px;">
-                    <h4 style="margin:0; border:none;"><i class="fa-solid fa-calculator"></i> 本週期優惠回饋</h4>
-                    <a href="trans-rule.html" style="color:white; font-size:12px; text-decoration:none; background:rgba(255,255,255,0.2); padding:4px 8px; border-radius:10px;">
-                        <i class="fa-solid fa-circle-info"></i> 查看規則
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">
+                    <h4 style="margin:0; border:none; padding:0;"><i class="fa-solid fa-calculator"></i> 優惠回饋明細</h4>
+                    <a href="trans-rule.html" style="color:white; font-size:12px; text-decoration:none; background:rgba(255,255,255,0.2); padding:6px 12px; border-radius:15px; display:flex; align-items:center; gap:5px; transition:0.2s;">
+                        <i class="fa-solid fa-circle-info"></i> <span>查看規則</span>
                     </a>
                 </div>
+
                 <div class="breakdown-item">
                     <span>原始搭乘總額</span>
                     <span id="rawTotal">$0</span>
                 </div>
+                
                 <div class="breakdown-item discount">
                     <span><i class="fa-solid fa-gem"></i> 常客優惠 (規則一)</span>
                     <span id="rule1Discount">-$0</span>
@@ -94,13 +75,12 @@
                 </div>
                 <div class="rule-detail" id="rule2Detail"></div>
             </div>
-
         </header>
 
         <section class="history-section">
             <div class="section-header">
-                <h3>本週期行程 (<span id="tripCount">0</span>)</h3>
-                </div>
+                <h3>行程紀錄 (<span id="tripCount">0</span>)</h3>
+            </div>
             <ul id="historyList" class="history-list">
                 <li style="text-align:center; padding:20px; color:#aaa;">載入中...</li>
             </ul>
@@ -112,6 +92,48 @@
             </button>
         </div>
 
+        <div id="settingsModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fa-solid fa-sliders"></i> 偏好設定</h3>
+                    <button class="close-btn" onclick="toggleSettingsModal()">&times;</button>
+                </div>
+                
+                <form id="settingsForm">
+                    <div class="form-group">
+                        <label>乘客身分 (影響轉乘優惠金額)</label>
+                        <div class="identity-selector" style="display:flex; gap:10px;">
+                            <input type="radio" name="settingsIdentity" id="setId_adult" value="adult" checked onchange="window.updateIdentity('adult')">
+                            <label for="setId_adult" class="radio-box">
+                                全票 (成人)<br>
+                                <small style="font-size:11px; color:#888;">轉乘折 $8</small>
+                            </label>
+                            
+                            <input type="radio" name="settingsIdentity" id="setId_student" value="student" onchange="window.updateIdentity('student')">
+                            <label for="setId_student" class="radio-box">
+                                學生票<br>
+                                <small style="font-size:11px; color:#888;">轉乘折 $6</small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
+
+                    <div class="form-group">
+                        <label>本期啟用日期</label>
+                        <input type="date" id="activationDate" required style="font-family: inherit; font-size:16px; width:100%;">
+                    </div>
+
+                    <div style="background:#f8f9fa; padding:15px; border-radius:10px; margin-bottom:20px; border:1px solid #eee;">
+                        <label style="font-size:12px; color:#888; margin-bottom:5px; display:block;">有效期間 (30天)</label>
+                        <div id="previewPeriod" style="font-weight:bold; color:#2c3e50; font-size:16px;">請選擇日期...</div>
+                    </div>
+
+                    <button type="submit" class="submit-btn" style="background:#6c5ce7;">儲存設定</button>
+                </form>
+            </div>
+        </div>
+
         <div id="entryModal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
@@ -121,11 +143,8 @@
                 
                 <form id="tripForm">
                     <div class="form-group">
-                        <label>搭乘日期與時間</label>
-                        <div class="datetime-inputs">
-                            <input type="date" id="tripDate" required style="font-family: inherit;">
-                            <input type="time" id="tripTime" required style="font-family: inherit;">
-                        </div>
+                        <label>搭乘日期</label>
+                        <input type="date" id="tripDate" required style="font-family: inherit;">
                     </div>
 
                     <div class="form-group">
@@ -183,7 +202,7 @@
 
                     <div class="form-group checkbox-group">
                         <input type="checkbox" id="transfer">
-                        <label for="transfer" id="transferLabel">我是轉乘 (自動 -8元)</label>
+                        <label for="transfer" id="transferLabel">我是轉乘 (自動扣除優惠)</label>
                     </div>
 
                     <button type="submit" class="submit-btn">加入計算</button>
