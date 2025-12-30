@@ -517,7 +517,7 @@ function renderUI() {
         els.statusText.className = "status-win";
         els.diffText.innerText = `倒賺 $${Math.abs(diff)} 元`;
     } else {
-        els.statusText.innerText = "虧本中";
+        els.statusText.innerText = "目前虧本";
         els.statusText.className = "status-loss";
         els.diffText.innerText = `還差 $${diff} 元回本`;
     }
