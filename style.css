@@ -727,3 +727,24 @@ body { background: var(--bg); color: var(--text); padding-bottom: 90px; }
 .history-list > .date-separator:first-child {
     margin-top: 0;
 }
+
+/* 設定頁面的身分選擇器 */
+.identity-selector input[type="radio"] {
+    display: none;
+}
+.radio-box {
+    flex: 1;
+    padding: 15px;
+    border: 2px solid #eee;
+    border-radius: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.2s;
+    font-weight: bold;
+    color: #555;
+}
+.identity-selector input:checked + .radio-box {
+    border-color: var(--primary);
+    background: #eaf2fa;
+    color: var(--primary);
+}
