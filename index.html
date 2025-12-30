@@ -235,21 +235,31 @@
                 </form>
             </div>
         </div>
-        <div id="ios-guide" class="modal hidden" style="z-index: 999;">
-    <div class="modal-content" style="text-align: center; padding: 30px; border-radius: 20px;">
-        <div style="font-size: 40px; margin-bottom: 15px;">📲</div>
-        <h3 style="margin-bottom: 10px;">將 App 加入主畫面</h3>
-        <p style="font-size: 14px; color: #666; line-height: 1.6; margin-bottom: 20px;">
-            安裝後即可享受全螢幕體驗，<br>且紀錄會自動同步於雲端。
-        </p>
-        
-        <div style="text-align: left; background: #f8f9fa; padding: 15px; border-radius: 12px; font-size: 14px;">
-            <p style="margin-bottom: 8px;">1. 點擊瀏覽器下方的 <b>「分享」</b> 按鈕 <i class="fa-solid fa-square-up-right" style="color:#007AFF;"></i></p>
-            <p style="margin-bottom: 8px;">2. 往下滑動找到 <b>「加入主畫面」</b> <i class="fa-solid fa-plus-square" style="color:#333;"></i></p>
-            <p>3. 點擊右上角的 <b>「新增」</b> 即可完成！</p>
-        </div>
+       <div id="ios-guide" class="modal hidden">
+        <div class="modal-content">
+            <div style="font-size: 48px; margin-bottom: 10px;">📲</div>
+            <h3 style="margin: 0 0 10px 0; font-size: 22px; font-weight: 700;">加入主畫面</h3>
+            <p style="font-size: 15px; opacity: 0.8; line-height: 1.5; margin-bottom: 0;">
+                獲得更佳的全螢幕體驗，<br>資料將自動同步。
+            </p>
+            
+            <div class="guide-steps-box">
+                <p style="margin-bottom: 12px; display: flex; align-items: center;">
+                    <span style="background:#fff; width:24px; height:24px; border-radius:50%; display:inline-flex; justify-content:center; align-items:center; margin-right:10px; font-weight:bold; font-size:14px;">1</span>
+                    <span>點擊下方工具列的 <b>「分享」</b> <i class="fa-solid fa-arrow-up-from-bracket" style="color:#007AFF; margin-left:5px;"></i></span>
+                </p>
+                <p style="margin-bottom: 12px; display: flex; align-items: center;">
+                    <span style="background:#fff; width:24px; height:24px; border-radius:50%; display:inline-flex; justify-content:center; align-items:center; margin-right:10px; font-weight:bold; font-size:14px;">2</span>
+                    <span>滑動選單找到 <b>「加入主畫面」</b> <i class="fa-regular fa-square-plus" style="margin-left:5px;"></i></span>
+                </p>
+                <p style="display: flex; align-items: center;">
+                    <span style="background:#fff; width:24px; height:24px; border-radius:50%; display:inline-flex; justify-content:center; align-items:center; margin-right:10px; font-weight:bold; font-size:14px;">3</span>
+                    <span>點擊右上角的 <b>「新增」</b> 即可。</span>
+                </p>
+            </div>
 
-        <button onclick="closeGuide()" class="submit-btn" style="background: #007AFF; margin-top: 20px;">我知道了</button>
+            <button onclick="closeGuide()" class="submit-btn guide-btn">我知道了</button>
+        </div>
     </div>
 </div>
     </div>

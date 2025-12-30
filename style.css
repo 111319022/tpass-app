@@ -845,3 +845,65 @@ textarea:focus {
     border-color: var(--primary);
     background: #f8faff;
 }
+
+/* =========================================
+   iOS 安裝引導視窗 - 毛玻璃風格專用樣式
+========================================= */
+
+/* 1. 外層容器：負責置中與背景變暗 */
+#ios-guide.modal {
+    /* 確保使用 Flexbox 進行絕對置中 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+    /* 背景遮罩顏色，稍微調淡一點，讓背後的模糊感透出來 */
+    background: rgba(0, 0, 0, 0.4) !important;
+    
+    /* 確保層級最高 */
+    z-index: 9999;
+}
+
+/* 2. 內容視窗：核心毛玻璃效果 */
+#ios-guide .modal-content {
+    /* 關鍵：半透明的白色背景 */
+    background: rgba(255, 255, 255, 0.8) !important;
+    
+    /* 關鍵：背景模糊濾鏡 (數值越大越糊) */
+    backdrop-filter: blur(20px) saturate(180%);
+    /* 針對 Safari (iOS) 的必要兼容寫法 */
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+
+    /* 增加質感細節：細邊框與柔和陰影 */
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    
+    /* 確保文字顏色夠深 */
+    color: #1d1d1f;
+    
+    /* 強制圓角與內距 (覆蓋原本可能寫在 HTML 上的 style) */
+    border-radius: 24px !important;
+    padding: 35px 30px !important;
+    max-width: 90%; /* 避免在小手機太寬 */
+    width: 400px;   /* 設定一個合適的最大寬度 */
+}
+
+/* 微調內部步驟區塊的背景，讓它融入毛玻璃 */
+#ios-guide .guide-steps-box {
+    text-align: left;
+    background: rgba(0, 0, 0, 0.06) !important; /* 淡淡的深色半透明 */
+    padding: 20px;
+    border-radius: 16px;
+    font-size: 15px;
+    margin: 25px 0;
+}
+
+/* 微調按鈕樣式，讓它看起來更像 iOS 原生按鈕 */
+#ios-guide .guide-btn {
+    background: #007AFF !important; /* iOS 標準藍 */
+    font-size: 17px;
+    font-weight: 600;
+    padding: 12px 0;
+    width: 100%;
+    border-radius: 14px;
+}
