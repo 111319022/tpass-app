@@ -2,7 +2,7 @@ import { db } from "./firebase-config.js";
 import { initAuthListener } from "./auth.js";
 import { 
     collection, addDoc, deleteDoc, query, orderBy, onSnapshot, 
-    doc, setDoc, getDoc
+    doc, setDoc, getDoc, updateDoc 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // === 狀態變數 ===
@@ -10,10 +10,9 @@ let currentUser = null;
 let trips = [];
 let unsubscribeTrips = null;
 
-// [修改] 改為陣列管理多個週期
-// 結構: [{ id: timestamp, start: timestamp, end: timestamp }, ...]
+// 週期管理
 let cycles = []; 
-let currentSelectedCycle = null; // 目前下拉選單選中的週期
+let currentSelectedCycle = null; 
 
 let currentIdentity = 'adult'; 
 
@@ -35,6 +34,7 @@ const TRANSPORT_TYPES = {
 
 // === DOM ===
 const els = {
+    // 儀表板與統計
     finalCost: document.getElementById('finalCost'),
     rawTotal: document.getElementById('rawTotal'),
     rule1Discount: document.getElementById('rule1Discount'),
@@ -46,18 +46,18 @@ const els = {
     historyList: document.getElementById('historyList'),
     tripCount: document.getElementById('tripCount'),
     
-    // [修改] 下拉選單
+    // 週期選擇
     cycleSelector: document.getElementById('cycleSelector'),
 
+    // 設定 Modal
     settingsBtn: document.getElementById('settingsBtn'),
     settingsModal: document.getElementById('settingsModal'),
     settingsForm: document.getElementById('settingsForm'),
-    
-    // [新增] 週期管理相關
     newCycleDate: document.getElementById('newCycleDate'),
     btnAddCycle: document.getElementById('btnAddCycle'),
     cycleList: document.getElementById('cycleList'),
 
+    // 新增行程 Modal
     modal: document.getElementById('entryModal'),
     form: document.getElementById('tripForm'),
     tripDate: document.getElementById('tripDate'),
@@ -68,7 +68,25 @@ const els = {
     inputRoute: document.getElementById('routeId'),
     inputStart: document.getElementById('startStation'),
     inputEnd: document.getElementById('endStation'),
-    transferLabel: document.getElementById('transferLabel')
+    transferLabel: document.getElementById('transferLabel'),
+
+    // [新增] 編輯 Modal 相關元素
+    editModal: document.getElementById('editModal'),
+    editForm: document.getElementById('editForm'),
+    editTripId: document.getElementById('editTripId'),
+    editDate: document.getElementById('editDate'),
+    editTime: document.getElementById('editTime'),
+    editPrice: document.getElementById('editPrice'),
+    editTransfer: document.getElementById('editTransfer'),
+    editNote: document.getElementById('editNote'), // 備註
+    editRouteId: document.getElementById('editRouteId'),
+    editStart: document.getElementById('editStart'),
+    editEnd: document.getElementById('editEnd'),
+    editGroupRoute: document.getElementById('edit-group-route'),
+    editGroupStations: document.getElementById('edit-group-stations'),
+    editTransferLabel: document.getElementById('editTransferLabel'),
+    btnDeleteTrip: document.getElementById('btnDeleteTrip'),
+    editTransportRadios: document.querySelectorAll('input[name="editType"]')
 };
 
 // === 程式入口 ===
@@ -98,10 +116,8 @@ async function loadUserSettings(uid) {
             
             // 讀取週期列表
             if (data.cycles && Array.isArray(data.cycles)) {
-                // 依照開始時間倒序排列 (新的在前)
                 cycles = data.cycles.sort((a, b) => b.start - a.start);
             } else if (data.period) {
-                // 相容舊資料：如果只有單一 period，把它轉成陣列的第一筆
                 cycles = [data.period];
             }
 
@@ -112,8 +128,8 @@ async function loadUserSettings(uid) {
         }
         
         // 更新 UI
-        renderCycleSelector(); // 渲染下拉選單
-        updateSettingsUI();    // 更新設定視窗狀態
+        renderCycleSelector(); 
+        updateSettingsUI();    
         updateTransferLabel(); 
         
     } catch (e) {
@@ -123,7 +139,6 @@ async function loadUserSettings(uid) {
 
 // === 週期管理邏輯 ===
 
-// 1. 渲染首頁下拉選單
 function renderCycleSelector() {
     els.cycleSelector.innerHTML = '';
     
@@ -135,33 +150,29 @@ function renderCycleSelector() {
         return;
     }
 
-    // 產生選項
     cycles.forEach((cycle, index) => {
         const opt = document.createElement('option');
         const start = new Date(cycle.start);
         const end = new Date(cycle.end);
         const fmt = d => `${d.getMonth()+1}/${d.getDate()}`;
         
-        opt.value = index; // 用 index 當 key
+        opt.value = index; 
         opt.text = `${fmt(start)} ~ ${fmt(end)} ${index === 0 ? '(最新)' : ''}`;
         els.cycleSelector.appendChild(opt);
     });
 
-    // 預設選中第一個 (最新的)
     els.cycleSelector.selectedIndex = 0;
     currentSelectedCycle = cycles[0];
 }
 
-// 2. 下拉選單切換事件
 els.cycleSelector.addEventListener('change', (e) => {
     const index = e.target.value;
     if (cycles[index]) {
         currentSelectedCycle = cycles[index];
-        renderUI(); // 切換後重算
+        renderUI(); 
     }
 });
 
-// 3. 新增週期
 els.btnAddCycle.addEventListener('click', async () => {
     const dateVal = els.newCycleDate.value;
     if (!dateVal) return alert("請選擇日期");
@@ -173,38 +184,31 @@ els.btnAddCycle.addEventListener('click', async () => {
     endDate.setHours(23, 59, 59, 999);
 
     const newCycle = {
-        id: Date.now(), // 唯一碼
+        id: Date.now(), 
         start: startDate.getTime(),
         end: endDate.getTime()
     };
 
-    // 加入陣列並排序
     cycles.push(newCycle);
     cycles.sort((a, b) => b.start - a.start);
 
-    // 存入 Firebase
     await saveAllSettings();
     
-    // 清空輸入並更新列表
     els.newCycleDate.value = '';
-    renderCycleList();     // 更新設定頁裡的列表
-    renderCycleSelector(); // 更新首頁下拉選單
-    renderUI();            // 重算畫面
+    renderCycleList();     
+    renderCycleSelector(); 
+    renderUI();            
 });
 
-// 4. 刪除週期
 window.deleteCycle = async function(id) {
     if (!confirm("確定要刪除這個週期嗎？")) return;
-    
     cycles = cycles.filter(c => c.id !== id);
     await saveAllSettings();
-    
     renderCycleList();
     renderCycleSelector();
     renderUI();
 }
 
-// 5. 渲染設定頁裡的「管理列表」
 function renderCycleList() {
     els.cycleList.innerHTML = '';
     if (cycles.length === 0) {
@@ -215,15 +219,12 @@ function renderCycleList() {
     cycles.forEach(cycle => {
         const li = document.createElement('li');
         li.className = 'cycle-manage-item';
-        
         const start = new Date(cycle.start);
         const end = new Date(cycle.end);
         const fmt = d => `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
         
         li.innerHTML = `
-            <div>
-                ${fmt(start)} ~ ${fmt(end)}
-            </div>
+            <div>${fmt(start)} ~ ${fmt(end)}</div>
             <button class="btn-delete-cycle" onclick="deleteCycle(${cycle.id})">
                 <i class="fa-solid fa-trash"></i>
             </button>
@@ -232,12 +233,10 @@ function renderCycleList() {
     });
 }
 
-// === 統一儲存設定 (身分 + 週期陣列) ===
 async function saveAllSettings() {
     if (!currentUser) return;
     try {
         const userDocRef = doc(db, "users", currentUser.uid);
-        // 取得目前選的身分
         const selectedIdentity = document.querySelector('input[name="settingsIdentity"]:checked').value;
         
         await setDoc(userDocRef, { 
@@ -254,13 +253,9 @@ async function saveAllSettings() {
     }
 }
 
-// === UI 輔助 ===
 function updateSettingsUI() {
-    // 1. Radio
     const radio = document.querySelector(`input[name="settingsIdentity"][value="${currentIdentity}"]`);
     if (radio) radio.checked = true;
-    
-    // 2. Cycle List
     renderCycleList();
 }
 
@@ -269,7 +264,6 @@ function updateTransferLabel() {
     els.transferLabel.innerText = `我是轉乘 (自動扣除 ${discount} 元)`;
 }
 
-// === 設定 Modal 互動 ===
 els.settingsBtn.addEventListener('click', () => {
     updateSettingsUI();
     els.settingsModal.classList.remove('hidden');
@@ -279,16 +273,14 @@ window.toggleSettingsModal = function() {
     els.settingsModal.classList.toggle('hidden');
 }
 
-// 表單提交改為單純關閉並確認身分 (週期是按新增就存了)
 els.settingsForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    await saveAllSettings(); // 儲存身分變更
-    renderUI(); // 重算
+    await saveAllSettings(); 
+    renderUI(); 
     toggleSettingsModal();
 });
 
-
-// === Firestore 監聽 (不變) ===
+// === Firestore 監聽 ===
 function setupRealtimeListener(uid) {
     const q = query(collection(db, "users", uid, "trips"), orderBy("createdAt", "desc"));
     unsubscribeTrips = onSnapshot(q, (snapshot) => {
@@ -297,7 +289,7 @@ function setupRealtimeListener(uid) {
     });
 }
 
-// === 新增行程表單邏輯 (不變) ===
+// === 新增行程表單邏輯 ===
 window.toggleModal = function() {
     const isHidden = els.modal.classList.contains('hidden');
     if (isHidden) {
@@ -309,9 +301,7 @@ window.toggleModal = function() {
         const hh = String(today.getHours()).padStart(2, '0');
         const mi = String(today.getMinutes()).padStart(2, '0');
         const ss = String(today.getSeconds()).padStart(2, '0');
-        if (els.tripTime) {
-            els.tripTime.value = `${hh}:${mi}:${ss}`;
-        }
+        els.tripTime.value = `${hh}:${mi}:${ss}`;
         
         updateFormFields(document.querySelector('input[name="type"]:checked').value);
         updateTransferLabel();
@@ -353,14 +343,13 @@ els.form.addEventListener('submit', async (e) => {
     const price = parseFloat(document.getElementById('price').value);
     const isTransfer = document.getElementById('transfer').checked;
     const dateInputVal = els.tripDate.value;
-    const timeInputVal = els.tripTime ? els.tripTime.value : '';
+    const timeInputVal = els.tripTime.value;
 
-    if (!dateInputVal) return alert("請選擇日期");
-    if (els.tripTime && !timeInputVal) return alert("請選擇時間");
+    if (!dateInputVal || !timeInputVal) return alert("請選擇日期時間");
 
-    const selectedDate = new Date(`${dateInputVal}T${timeInputVal || '00:00:00'}`);
+    const selectedDate = new Date(`${dateInputVal}T${timeInputVal}`);
     const dateStr = dateInputVal.replace(/-/g, '/');
-    const timeStr = timeInputVal || '00:00:00';
+    const timeStr = timeInputVal;
 
     const routeId = !els.groupRoute.classList.contains('hidden') ? els.inputRoute.value.trim() : '';
     const startStation = !els.groupStations.classList.contains('hidden') ? els.inputStart.value.trim() : '';
@@ -400,14 +389,121 @@ els.form.addEventListener('submit', async (e) => {
     }
 });
 
-window.deleteTrip = async function(tripId) {
-    if (!currentUser) return;
-    if (confirm('刪除此紀錄？')) {
-        try {
-            await deleteDoc(doc(db, "users", currentUser.uid, "trips", tripId));
-        } catch (e) { console.error(e); }
+// === 編輯與詳情功能 ===
+
+// 1. 打開編輯 Modal
+window.openEditModal = function(tripId) {
+    const trip = trips.find(t => t.id === tripId);
+    if (!trip) return;
+
+    // 填入基本資料
+    els.editTripId.value = trip.id;
+    els.editDate.value = trip.dateStr.replace(/\//g, '-'); // 格式 YYYY-MM-DD
+    els.editTime.value = trip.timeStr || '00:00:00';
+    els.editPrice.value = trip.originalPrice;
+    els.editTransfer.checked = trip.isTransfer;
+    els.editNote.value = trip.note || ''; // 填入備註
+    
+    els.editRouteId.value = trip.routeId || '';
+    els.editStart.value = trip.startStation || '';
+    els.editEnd.value = trip.endStation || '';
+
+    // 設定運具 Radio
+    const radio = document.querySelector(`input[name="editType"][value="${trip.type}"]`);
+    if (radio) radio.checked = true;
+
+    // 更新 UI 顯示 (隱藏/顯示路線欄位)
+    updateEditFormFields(trip.type);
+    
+    // 更新轉乘標籤文字
+    const discount = FARE_CONFIG[currentIdentity].transferDiscount;
+    els.editTransferLabel.innerText = `我是轉乘 (自動扣除 ${discount} 元)`;
+
+    // 顯示 Modal
+    els.editModal.classList.remove('hidden');
+}
+
+// 2. 關閉編輯 Modal
+window.closeEditModal = function() {
+    els.editModal.classList.add('hidden');
+}
+
+// 3. 監聽編輯表單的運具切換
+els.editTransportRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => updateEditFormFields(e.target.value));
+});
+
+function updateEditFormFields(type) {
+    els.editGroupRoute.classList.add('hidden');
+    els.editGroupStations.classList.add('hidden');
+    
+    if (type === 'bus') {
+        els.editGroupRoute.classList.remove('hidden');
+    } else if (type === 'coach') {
+        els.editGroupRoute.classList.remove('hidden');
+        els.editGroupStations.classList.remove('hidden');
+    } else {
+        els.editGroupStations.classList.remove('hidden');
     }
 }
+
+// 4. 提交編輯
+els.editForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!currentUser) return;
+
+    const tripId = els.editTripId.value;
+    const type = document.querySelector('input[name="editType"]:checked').value;
+    const price = parseFloat(els.editPrice.value);
+    const isTransfer = els.editTransfer.checked;
+    const dateInputVal = els.editDate.value;
+    const timeInputVal = els.editTime.value;
+    const note = els.editNote.value.trim();
+
+    if (!dateInputVal || !timeInputVal) return alert("日期時間錯誤");
+
+    const selectedDate = new Date(`${dateInputVal}T${timeInputVal}`);
+    const dateStr = dateInputVal.replace(/-/g, '/');
+    const discount = FARE_CONFIG[currentIdentity].transferDiscount;
+
+    try {
+        const tripRef = doc(db, "users", currentUser.uid, "trips", tripId);
+        await updateDoc(tripRef, {
+            createdAt: selectedDate.getTime(),
+            dateStr: dateStr,
+            timeStr: timeInputVal,
+            type: type,
+            originalPrice: price,
+            paidPrice: isTransfer ? Math.max(0, price - discount) : price,
+            isTransfer: isTransfer,
+            routeId: els.editRouteId.value.trim(),
+            startStation: els.editStart.value.trim(),
+            endStation: els.editEnd.value.trim(),
+            note: note // 儲存備註
+        });
+
+        closeEditModal();
+    } catch (e) {
+        console.error(e);
+        alert("更新失敗");
+    }
+});
+
+// 5. 刪除按鈕邏輯
+els.btnDeleteTrip.addEventListener('click', async () => {
+    const tripId = els.editTripId.value;
+    if (!tripId) return;
+
+    if (confirm('確定要刪除這筆紀錄嗎？\n刪除後無法復原。')) {
+        try {
+            await deleteDoc(doc(db, "users", currentUser.uid, "trips", tripId));
+            closeEditModal();
+        } catch (e) {
+            console.error(e);
+            alert("刪除失敗");
+        }
+    }
+});
 
 // === 核心計算邏輯 ===
 function calculate() {
@@ -417,7 +513,7 @@ function calculate() {
     const discount = FARE_CONFIG[currentIdentity].transferDiscount;
 
     trips.forEach(t => {
-        // [關鍵] 根據「下拉選單目前選到的週期」來過濾
+        // 過濾週期
         if (!currentSelectedCycle || t.createdAt < currentSelectedCycle.start || t.createdAt > currentSelectedCycle.end) {
             return;
         }
@@ -432,8 +528,7 @@ function calculate() {
         stats.sums[t.type] += t.originalPrice;
     });
 
-    // ... (Rule 1, Rule 2 邏輯完全保持不變) ...
-    // 北捷回饋...
+    // 北捷回饋
     let r1_cashback = 0;
     let r1_details = [];
     const mrtCount = stats.counts.mrt;
@@ -448,7 +543,7 @@ function calculate() {
         r1_details.push({ text: `北捷 ${mrtCount} 趟，回饋 ${(mrtRate*100)}%`, amount: `-$${Math.floor(mrtCashback)}` });
     }
 
-    // 台鐵回饋...
+    // 台鐵回饋
     const traCount = stats.counts.tra;
     const traSum = stats.sums.tra;
     let traRate = 0;
@@ -461,7 +556,7 @@ function calculate() {
         r1_details.push({ text: `台鐵 ${traCount} 趟，回饋 ${(traRate*100)}%`, amount: `-$${Math.floor(traCashback)}` });
     }
 
-    // TPass 2.0...
+    // TPass 2.0 回饋
     let r2_cashback = 0;
     let r2_details = [];
     const railCount = stats.counts.mrt + stats.counts.tra + stats.counts.tymrt + stats.counts.lrt;
@@ -497,7 +592,7 @@ function renderUI() {
     const data = calculate();
     const finalVal = Math.floor(data.finalCost);
 
-    // 1. 更新儀表板數據
+    // 更新儀表板
     els.finalCost.innerText = `$${finalVal}`;
     els.rawTotal.innerText = `$${Math.floor(data.totalPaid)}`;
     els.rule1Discount.innerText = `-$${Math.floor(data.r1.amount)}`;
@@ -505,12 +600,7 @@ function renderUI() {
     els.rule2Discount.innerText = `-$${Math.floor(data.r2.amount)}`;
     els.rule2Detail.innerHTML = data.r2.details.length ? data.r2.details.map(d => `<div class="rule-detail-row"><span>${d.text}</span><span>${d.amount}</span></div>`).join('') : '';
     
-    // [修改] 這裡的 tripCount 建議改為顯示「本期筆數」，比較符合直覺
-    // 我們稍後在迴圈內計算本期筆數，或者直接用 data.counts 加總
-    // 這裡先暫時顯示總筆數，或者你可以改成顯示 filteredTrips.length
-    els.tripCount.innerText = trips.length; 
-
-    // 2. 更新狀態文字 (回本/虧本)
+    // 更新狀態
     const diff = TPASS_PRICE - finalVal;
     if (diff < 0) {
         els.statusText.innerText = "已回本！";
@@ -522,10 +612,9 @@ function renderUI() {
         els.diffText.innerText = `還差 $${diff} 元回本`;
     }
 
-    // 3. 清空列表準備重新渲染
+    // 重新渲染列表
     els.historyList.innerHTML = '';
 
-    // 如果完全沒有設定週期
     if (!currentSelectedCycle) {
         const li = document.createElement('li');
         li.style.background = '#fff3cd';
@@ -537,7 +626,6 @@ function renderUI() {
         return;
     }
     
-    // 如果資料庫完全沒資料
     if (trips.length === 0) {
         els.historyList.innerHTML = '<li style="text-align:center; padding:20px; color:#aaa;">尚無行程紀錄</li>';
         return;
@@ -545,20 +633,15 @@ function renderUI() {
 
     let lastDateStr = null;
     const discount = FARE_CONFIG[currentIdentity].transferDiscount;
-    let currentCycleTripCount = 0; // [新增] 用來統計本期有幾筆
+    let currentCycleTripCount = 0; 
 
     trips.forEach(trip => {
-        // [關鍵修改] 過濾非本期資料
-        // 如果行程時間 < 週期開始 OR 行程時間 > 週期結束，直接跳過不顯示
+        // 過濾非本期
         const isOutOfCycle = currentSelectedCycle && (trip.createdAt < currentSelectedCycle.start || trip.createdAt > currentSelectedCycle.end);
         
-        if (isOutOfCycle) {
-            return; // 直接結束這一輪迴圈，不產生 HTML
-        }
+        if (isOutOfCycle) return;
 
-        currentCycleTripCount++; // 本期筆數 +1
-
-        // --- 以下渲染邏輯與原本相同 ---
+        currentCycleTripCount++;
 
         // 日期分隔線
         if (trip.dateStr !== lastDateStr) {
@@ -590,7 +673,6 @@ function renderUI() {
             }
         }
 
-        // 金額顯示
         const displayPaid = trip.isTransfer ? Math.max(0, trip.originalPrice - discount) : trip.originalPrice;
         let priceHtml = '';
         if (trip.isTransfer) {
@@ -599,30 +681,35 @@ function renderUI() {
             priceHtml = `<div class="item-right"><div class="price-display">$${displayPaid}</div></div>`;
         }
 
+        // [修改] 讓整行可點擊
+        li.setAttribute('onclick', `openEditModal('${trip.id}')`);
+        
+        // 備註小圖示
+        const noteIcon = trip.note ? `<i class="fa-solid fa-note-sticky" style="color:#f1c40f; margin-left:5px;"></i>` : '';
+
         li.innerHTML = `
             <div class="item-left">
                 <div class="t-icon ${tDef.class}">
                     <i class="fa-solid ${getIconClass(trip.type)}"></i>
                 </div>
                 <div class="item-info">
-                    <h4>${titleDesc} ${trip.isTransfer ? '<i class="fa-solid fa-link" style="color:#27ae60; font-size:12px;"></i>' : ''}</h4>
+                    <h4>${titleDesc} ${trip.isTransfer ? '<i class="fa-solid fa-link" style="color:#27ae60; font-size:12px;"></i>' : ''} ${noteIcon}</h4>
                     <small>${tDef.name}</small>
                 </div>
             </div>
             ${priceHtml}
-            <button onclick="window.deleteTrip('${trip.id}')" style="border:none; background:none; color:#ddd; margin-left:15px; padding:10px;"><i class="fa-solid fa-xmark"></i></button>
+            <div style="color:#ccc; font-size:12px; margin-left:10px;"><i class="fa-solid fa-chevron-right"></i></div>
         `;
         els.historyList.appendChild(li);
     });
 
-    // [新增] 更新標題的筆數統計為「本期筆數」
     els.tripCount.innerText = currentCycleTripCount;
 
-    // [新增] 如果過濾完後發現本期沒有資料
     if (currentCycleTripCount === 0) {
         els.historyList.innerHTML = '<li style="text-align:center; padding:30px; color:#aaa;">本週期尚無行程紀錄<br><small>點擊右下角 + 新增第一筆</small></li>';
     }
 }
+
 function getIconClass(type) {
     if(type==='mrt') return 'fa-train-subway';
     if(type==='bus') return 'fa-bus';

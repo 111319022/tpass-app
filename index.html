@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>TPASS 回本計算器</title>
     <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" type="image/png" href="icon.png">
@@ -166,7 +167,6 @@
                             <input type="time" id="tripTime" step="1" required style="font-family: inherit; width:100%;">
                         </div>
                     </div>
-
                     <div class="form-group">
                         <label>選擇運具</label>
                         <div class="transport-grid" id="transportSelector">
@@ -228,6 +228,98 @@
                     <button type="submit" class="submit-btn">加入計算</button>
                 </form>
             </div>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-pen-to-square"></i> 行程詳情與編輯</h3>
+                <button class="close-btn" onclick="closeEditModal()">&times;</button>
+            </div>
+            
+            <form id="editForm">
+                <input type="hidden" id="editTripId">
+
+                <div class="form-group" style="display:flex; gap:10px; align-items:flex-end;">
+                    <div style="flex:1;">
+                        <label>日期</label>
+                        <input type="date" id="editDate" required style="font-family: inherit; width:100%;">
+                    </div>
+                    <div style="flex:1;">
+                        <label>時間</label>
+                        <input type="time" id="editTime" step="1" required style="font-family: inherit; width:100%;">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>運具類型</label>
+                    <div class="transport-grid">
+                        <label class="t-option">
+                            <input type="radio" name="editType" value="mrt">
+                            <div class="t-box c-mrt"><i class="fa-solid fa-train-subway"></i><small>北捷</small></div>
+                        </label>
+                        <label class="t-option">
+                            <input type="radio" name="editType" value="bus">
+                            <div class="t-box c-bus"><i class="fa-solid fa-bus"></i><small>公車</small></div>
+                        </label>
+                        <label class="t-option">
+                            <input type="radio" name="editType" value="coach">
+                            <div class="t-box c-coach"><i class="fa-solid fa-bus-simple"></i><small>客運</small></div>
+                        </label>
+                        <label class="t-option">
+                            <input type="radio" name="editType" value="tra">
+                            <div class="t-box c-tra"><i class="fa-solid fa-train"></i><small>台鐵</small></div>
+                        </label>
+                        <label class="t-option">
+                            <input type="radio" name="editType" value="tymrt">
+                            <div class="t-box c-tymrt"><i class="fa-solid fa-plane-departure"></i><small>機捷</small></div>
+                        </label>
+                        <label class="t-option">
+                            <input type="radio" name="editType" value="lrt">
+                            <div class="t-box c-lrt"><i class="fa-solid fa-train-tram"></i><small>輕軌</small></div>
+                        </label>
+                        <label class="t-option">
+                            <input type="radio" name="editType" value="bike">
+                            <div class="t-box c-bike"><i class="fa-solid fa-bicycle"></i><small>Ubike</small></div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group hidden" id="edit-group-route">
+                    <label>路線編號</label>
+                    <input type="text" id="editRouteId">
+                </div>
+
+                <div class="form-group hidden" id="edit-group-stations">
+                    <label>起訖站點</label>
+                    <div class="station-inputs">
+                        <input type="text" id="editStart" placeholder="起點">
+                        <i class="fa-solid fa-arrow-right station-arrow"></i>
+                        <input type="text" id="editEnd" placeholder="終點">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>單程原價</label>
+                    <input type="number" id="editPrice" required inputmode="numeric">
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="editTransfer">
+                    <label for="editTransfer" id="editTransferLabel">我是轉乘</label>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fa-regular fa-note-sticky"></i> 備註筆記</label>
+                    <textarea id="editNote" rows="3" placeholder="例如：去面試、跟朋友聚餐..." style="width:100%; padding:10px; border:1px solid #ddd; border-radius:10px; font-family:inherit; resize:none;"></textarea>
+                </div>
+
+                <div style="display:flex; gap:10px; margin-top:20px;">
+                    <button type="button" id="btnDeleteTrip" class="submit-btn" style="background:#ff7675; flex:1;">刪除紀錄</button>
+                    <button type="submit" class="submit-btn" style="flex:2;">儲存修改</button>
+                </div>
+            </form>
         </div>
     </div>
 
