@@ -1,0 +1,97 @@
+/* 維持原有的 CSS 設定，並加入以下新增樣式 */
+
+:root {
+    --bg: #F0F2F5;
+    --card: #FFFFFF;
+    --primary: #4A90E2;
+    --text: #2c3e50;
+    --text-sub: #7f8c8d;
+    --green: #27ae60;
+    --red: #e74c3c;
+    
+    /* 運具顏色 */
+    --c-mrt: #0070BD;
+    --c-bus: #2ECC71;
+    --c-coach: #16A085;
+    --c-tra: #2C3E50;
+    --c-tymrt: #8E44AD;
+    --c-lrt: #F39C12;
+    --c-bike: #D35400;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+body { background: var(--bg); color: var(--text); padding-bottom: 90px; }
+.app-container { max-width: 480px; margin: 0 auto; min-height: 100vh; }
+
+/* 儀表板樣式 (與上版相同) */
+.dashboard { background: linear-gradient(160deg, #1a2a6c, #b21f1f, #fdbb2d); padding: 20px 15px; border-radius: 0 0 30px 30px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+.status-card { text-align: center; margin-bottom: 15px; }
+.main-stats { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 15px; }
+.stat-box { background: rgba(0,0,0,0.3); padding: 10px 20px; border-radius: 12px; min-width: 100px; }
+.stat-box small { display: block; font-size: 11px; opacity: 0.8; margin-bottom: 4px; }
+.stat-box span { font-size: 24px; font-weight: 700; }
+.vs-badge { font-weight: bold; font-style: italic; opacity: 0.6; }
+.result-bar { background: rgba(255,255,255,0.95); color: #333; padding: 10px; border-radius: 50px; display: inline-block; min-width: 200px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+.status-win { color: var(--green); font-weight: bold; }
+.status-loss { color: var(--red); font-weight: bold; }
+.status-neutral { color: var(--text); font-weight: bold; }
+.breakdown-card { background: rgba(255,255,255,0.15); backdrop-filter: blur(5px); border-radius: 16px; padding: 15px; font-size: 13px; border: 1px solid rgba(255,255,255,0.1); }
+.breakdown-card h4 { margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; }
+.breakdown-item { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.breakdown-item.discount { color: #ffeaa7; font-weight: bold; margin-top: 8px; }
+.rule-detail { padding-left: 20px; font-size: 11px; opacity: 0.9; color: #dfe6e9; margin-bottom: 4px; line-height: 1.4; }
+
+/* 列表區樣式 (與上版相同，微調內容排版) */
+.history-section { padding: 20px 15px; }
+.section-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
+.text-btn { background: none; border: none; color: var(--text-sub); font-size: 14px; cursor: pointer; }
+.history-list { list-style: none; }
+.history-item { background: var(--card); padding: 12px 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+.item-left { display: flex; align-items: center; gap: 12px; width: 70%; } /* 限制寬度讓文字省略 */
+.t-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; flex-shrink: 0; }
+.item-info { flex: 1; min-width: 0; } /* Flex child min-width fix */
+.item-info h4 { font-size: 15px; color: var(--text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item-info small { font-size: 12px; color: var(--text-sub); display: block; }
+.item-right { text-align: right; }
+.price-display { font-weight: bold; font-size: 15px; }
+.price-original { font-size: 11px; text-decoration: line-through; color: #aaa; margin-right: 4px; }
+
+/* 運具顏色 */
+.c-mrt { background-color: var(--c-mrt); color: white; }
+.c-bus { background-color: var(--c-bus); color: white; }
+.c-coach { background-color: var(--c-coach); color: white; }
+.c-tra { background-color: var(--c-tra); color: white; }
+.c-tymrt { background-color: var(--c-tymrt); color: white; }
+.c-lrt { background-color: var(--c-lrt); color: white; }
+.c-bike { background-color: var(--c-bike); color: white; }
+
+/* Form 樣式新增 */
+.hidden { display: none !important; }
+.station-inputs { display: flex; align-items: center; gap: 8px; }
+.station-inputs input { flex: 1; padding: 12px !important; text-align: center; min-width: 0; }
+.station-arrow { color: var(--text-sub); font-size: 14px; }
+
+/* 網格選擇器 */
+.transport-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.t-option input { display: none; }
+.t-box { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 5px; border-radius: 10px; border: 2px solid transparent; cursor: pointer; opacity: 0.5; transition: 0.2s; filter: grayscale(0.8); }
+.t-box i { font-size: 20px; margin-bottom: 5px; }
+.t-box small { font-size: 11px; font-weight: bold; }
+.t-option input:checked + .t-box { opacity: 1; filter: grayscale(0); border-color: #333; transform: scale(1.05); }
+
+/* Modal 與按鈕 (與上版相同) */
+.fab-container { position: fixed; bottom: 20px; left: 0; right: 0; display: flex; justify-content: center; pointer-events: none; }
+.fab { pointer-events: auto; background: var(--text); color: white; border: none; padding: 16px 32px; border-radius: 50px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer; display: flex; gap: 8px; align-items: center; }
+.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; display: flex; align-items: flex-end; visibility: hidden; opacity: 0; transition: 0.3s; }
+.modal.hidden { visibility: hidden; opacity: 0; pointer-events: none; }
+.modal:not(.hidden) { visibility: visible; opacity: 1; pointer-events: auto; }
+.modal-content { background: var(--card); width: 100%; max-width: 480px; margin: 0 auto; border-radius: 24px 24px 0 0; padding: 25px; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
+.modal:not(.hidden) .modal-content { transform: translateY(0); }
+.modal-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+.close-btn { background: none; border: none; font-size: 24px; cursor: pointer; }
+.form-group { margin-bottom: 20px; }
+.form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; }
+.form-group input[type="number"], .form-group input[type="text"] { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; }
+.checkbox-group { display: flex; align-items: center; gap: 10px; }
+.checkbox-group input { width: 20px; height: 20px; }
+.submit-btn { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }

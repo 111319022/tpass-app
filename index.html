@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPASS 2.0 精算大師</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <header class="dashboard">
+            <div class="status-card">
+                <div class="main-stats">
+                    <div class="stat-box">
+                        <small>實際總支出 (折抵後)</small>
+                        <span id="finalCost">$0</span>
+                    </div>
+                    <div class="vs-badge">VS</div>
+                    <div class="stat-box">
+                        <small>TPASS 月票</small>
+                        <span>$1200</span>
+                    </div>
+                </div>
+                
+                <div class="result-bar">
+                    <div id="statusText" class="status-neutral">計算中...</div>
+                    <small id="diffText">加油！還差一些</small>
+                </div>
+            </div>
+
+            <div class="breakdown-card">
+                <h4><i class="fa-solid fa-calculator"></i> 優惠回饋明細</h4>
+                <div class="breakdown-item">
+                    <span>原始搭乘總額 (含轉乘折扣)</span>
+                    <span id="rawTotal">$0</span>
+                </div>
+                <div class="breakdown-item discount">
+                    <span><i class="fa-solid fa-gem"></i> 規則一：常客優惠</span>
+                    <span id="rule1Discount">-$0</span>
+                </div>
+                <div class="rule-detail" id="rule1Detail"></div>
+
+                <div class="breakdown-item discount">
+                    <span><i class="fa-solid fa-ticket"></i> 規則二：TPass 2.0</span>
+                    <span id="rule2Discount">-$0</span>
+                </div>
+                <div class="rule-detail" id="rule2Detail"></div>
+            </div>
+        </header>
+
+        <section class="history-section">
+            <div class="section-header">
+                <h3>行程紀錄 (<span id="tripCount">0</span>)</h3>
+                <button onclick="clearData()" class="text-btn">清空</button>
+            </div>
+            <ul id="historyList" class="history-list">
+                </ul>
+        </section>
+
+        <div class="fab-container">
+            <button class="fab" onclick="toggleModal()">
+                <i class="fa-solid fa-plus"></i> 記一筆
+            </button>
+        </div>
+
+        <div id="entryModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>新增行程</h3>
+                    <button class="close-btn" onclick="toggleModal()">&times;</button>
+                </div>
+                
+                <form id="tripForm">
+                    <div class="form-group">
+                        <label>選擇運具</label>
+                        <div class="transport-grid" id="transportSelector">
+                            <label class="t-option">
+                                <input type="radio" name="type" value="mrt" checked>
+                                <div class="t-box c-mrt"><i class="fa-solid fa-train-subway"></i><small>北捷</small></div>
+                            </label>
+                            <label class="t-option">
+                                <input type="radio" name="type" value="bus">
+                                <div class="t-box c-bus"><i class="fa-solid fa-bus"></i><small>公車</small></div>
+                            </label>
+                            <label class="t-option">
+                                <input type="radio" name="type" value="coach">
+                                <div class="t-box c-coach"><i class="fa-solid fa-bus-simple"></i><small>客運</small></div>
+                            </label>
+                            <label class="t-option">
+                                <input type="radio" name="type" value="tra">
+                                <div class="t-box c-tra"><i class="fa-solid fa-train"></i><small>台鐵</small></div>
+                            </label>
+                            <label class="t-option">
+                                <input type="radio" name="type" value="tymrt">
+                                <div class="t-box c-tymrt"><i class="fa-solid fa-plane-departure"></i><small>機捷</small></div>
+                            </label>
+                            <label class="t-option">
+                                <input type="radio" name="type" value="lrt">
+                                <div class="t-box c-lrt"><i class="fa-solid fa-train-tram"></i><small>輕軌</small></div>
+                            </label>
+                            <label class="t-option">
+                                <input type="radio" name="type" value="bike">
+                                <div class="t-box c-bike"><i class="fa-solid fa-bicycle"></i><small>Ubike</small></div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group hidden" id="group-route">
+                        <label>路線編號</label>
+                        <input type="text" id="routeId" placeholder="例如: 307, 統聯1610">
+                    </div>
+
+                    <div class="form-group" id="group-stations">
+                        <label>起訖站點</label>
+                        <div class="station-inputs">
+                            <input type="text" id="startStation" placeholder="起點 (如: 台北車站)">
+                            <i class="fa-solid fa-arrow-right station-arrow"></i>
+                            <input type="text" id="endStation" placeholder="終點 (如: 市政府)">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>單程全票原價 (尚未扣轉乘)</label>
+                        <input type="number" id="price" placeholder="例如: 30" required inputmode="numeric">
+                    </div>
+
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="transfer">
+                        <label for="transfer">我是轉乘 (自動 -6元)</label>
+                    </div>
+
+                    <button type="submit" class="submit-btn">加入計算</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
