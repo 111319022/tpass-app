@@ -16,6 +16,22 @@ let currentUser = null;
 let trips = [];
 let unsubscribeTrips = null;
 
+// === 票價設定檔 ===
+// 這邊讓你方便調整金額，不用改一堆 code
+const FARE_CONFIG = {
+    adult: {
+        busBase: 15,    // 公車全票一段
+        transferDiscount: 8 // 全票轉乘優惠
+    },
+    student: {
+        busBase: 12,    // 公車學生票
+        transferDiscount: 6 // 學生票轉乘優惠
+    }
+};
+
+// 預設身分
+let currentIdentity = 'adult';
+
 const TPASS_PRICE = 1200;
 const TRANSPORT_TYPES = {
     mrt: { name: '台北捷運', class: 'c-mrt' },
@@ -72,6 +88,23 @@ initAuthListener((user) => {
 // 初始化表單狀態
 updateFormFields('mrt');
 
+// === 身分切換功能 ===
+// 掛載到 window 讓 HTML onclick 呼叫
+window.updateIdentity = function(type) {
+    currentIdentity = type;
+    
+    // 重新渲染介面 (因為計算邏輯會改變)
+    renderUI();
+    
+    // 同時更新表單的建議票價 (如果正在選公車)
+    const selectedType = document.querySelector('input[name="type"]:checked')?.value;
+    if (selectedType) {
+        updateFormFields(selectedType);
+    }
+    
+    console.log("切換身分為:", type);
+}
+
 // === Firestore 邏輯 ===
 
 function setupRealtimeListener(uid) {
@@ -122,15 +155,28 @@ els.transportRadios.forEach(radio => {
 });
 
 function updateFormFields(type) {
+    const priceInput = document.getElementById('price');
+    const currentVal = priceInput.value;
+    
     els.groupRoute.classList.add('hidden');
     els.groupStations.classList.add('hidden');
+    
     if (type === 'bus') {
         els.groupRoute.classList.remove('hidden');
+        
+        // 自動填入建議票價
+        const suggestedPrice = FARE_CONFIG[currentIdentity].busBase;
+        // 只有當欄位是空的，或剛好等於另一種票價時才自動改
+        if (!currentVal || currentVal == '15' || currentVal == '12') {
+            priceInput.value = suggestedPrice;
+        }
     } else if (type === 'coach') {
         els.groupRoute.classList.remove('hidden');
         els.groupStations.classList.remove('hidden');
+        priceInput.value = ''; // 客運票價變異大，清空讓使用者填
     } else {
         els.groupStations.classList.remove('hidden');
+        // 捷運/台鐵票價不固定，但不清空，保留使用者的輸入
     }
 }
 
@@ -208,13 +254,24 @@ window.deleteTrip = async function(tripId) {
     }
 }
 
-// === 計算與渲染 (邏輯完全不變) ===
+// === 計算與渲染 ===
 function calculate() {
     let stats = { totalPaid: 0, counts: {}, sums: {} };
     Object.keys(TRANSPORT_TYPES).forEach(k => { stats.counts[k] = 0; stats.sums[k] = 0; });
 
+    // 取得當前身分的轉乘優惠金額
+    const currentTransferDiscount = FARE_CONFIG[currentIdentity].transferDiscount;
+
     trips.forEach(t => {
-        stats.totalPaid += t.paidPrice;
+        // 根據當前身分重新計算實際支付金額
+        let calculatedPaid = t.originalPrice;
+        
+        if (t.isTransfer) {
+            // 使用當前設定的優惠金額
+            calculatedPaid = Math.max(0, t.originalPrice - currentTransferDiscount);
+        }
+
+        stats.totalPaid += calculatedPaid;
         stats.counts[t.type]++;
         stats.sums[t.type] += t.originalPrice;
     });

@@ -87,6 +87,67 @@ body { background: var(--bg); color: var(--text); padding-bottom: 90px; }
 .status-win { color: var(--green); font-weight: bold; }
 .status-loss { color: var(--red); font-weight: bold; }
 .status-neutral { color: var(--text); font-weight: bold; }
+
+/* 身分切換器容器 */
+.identity-switch-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.switch-wrapper {
+    position: relative;
+    display: flex;
+    background: rgba(0, 0, 0, 0.2); /* 深色背景 */
+    border-radius: 25px;
+    padding: 4px;
+    width: 200px;
+    height: 40px;
+}
+
+/* 隱藏原本的 radio button */
+.switch-wrapper input[type="radio"] {
+    display: none;
+}
+
+/* 標籤樣式 */
+.switch-wrapper label {
+    flex: 1;
+    z-index: 2;
+    text-align: center;
+    line-height: 32px; /* 垂直置中 */
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.6);
+    transition: color 0.3s;
+}
+
+/* 選中時的文字顏色 */
+.switch-wrapper input[type="radio"]:checked + label {
+    color: #fff;
+}
+
+/* 滑動區塊 (白色背景) */
+.slider {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 96px; /* (200px - 8px) / 2 */
+    height: 32px;
+    background: var(--primary); /* 或用 #4A90E2 */
+    border-radius: 20px;
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    z-index: 1;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* 當學生票被選中時，滑塊移動 */
+#role-student:checked ~ .slider {
+    transform: translateX(96px);
+    background: var(--c-bus); /* 學生票變綠色，視覺提示 */
+}
+
 .breakdown-card { background: rgba(255,255,255,0.15); backdrop-filter: blur(5px); border-radius: 16px; padding: 15px; font-size: 13px; border: 1px solid rgba(255,255,255,0.1); }
 .breakdown-card h4 { margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; }
 .breakdown-item { display: flex; justify-content: space-between; margin-bottom: 6px; }

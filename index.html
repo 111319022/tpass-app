@@ -24,6 +24,17 @@
         </div>
 
         <header class="dashboard">
+            <div class="identity-switch-container">
+                <div class="switch-wrapper">
+                    <input type="radio" id="role-adult" name="identity" value="adult" checked onchange="window.updateIdentity('adult')">
+                    <label for="role-adult">全票 (成人)</label>
+                    
+                    <input type="radio" id="role-student" name="identity" value="student" onchange="window.updateIdentity('student')">
+                    <label for="role-student">學生票</label>
+                    <div class="slider"></div>
+                </div>
+            </div>
+
             <div class="status-card">
                 <div class="main-stats">
                     <div class="stat-box">
