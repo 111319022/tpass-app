@@ -3,18 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TPASS 2.0 精算大師</title>
+    <title>TPASS 2.0 雲端精算師</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div class="app-container">
+        <div class="user-bar">
+            <div id="userInfo" class="hidden">
+                <img id="userPhoto" src="" alt="user">
+                <span id="userName">Loading...</span>
+                <button id="logoutBtn" class="auth-btn">登出</button>
+            </div>
+            <div id="loginSection">
+                <button id="loginBtn" class="auth-btn google-btn">
+                    <i class="fa-brands fa-google"></i> 登入同步資料
+                </button>
+            </div>
+        </div>
+
         <header class="dashboard">
             <div class="status-card">
                 <div class="main-stats">
                     <div class="stat-box">
-                        <small>實際總支出 (折抵後)</small>
+                        <small>實際總支出</small>
                         <span id="finalCost">$0</span>
                     </div>
                     <div class="vs-badge">VS</div>
@@ -25,25 +38,25 @@
                 </div>
                 
                 <div class="result-bar">
-                    <div id="statusText" class="status-neutral">計算中...</div>
-                    <small id="diffText">加油！還差一些</small>
+                    <div id="statusText" class="status-neutral">請先登入</div>
+                    <small id="diffText">資料將儲存於雲端</small>
                 </div>
             </div>
 
             <div class="breakdown-card">
                 <h4><i class="fa-solid fa-calculator"></i> 優惠回饋明細</h4>
                 <div class="breakdown-item">
-                    <span>原始搭乘總額 (含轉乘折扣)</span>
+                    <span>原始搭乘總額</span>
                     <span id="rawTotal">$0</span>
                 </div>
                 <div class="breakdown-item discount">
-                    <span><i class="fa-solid fa-gem"></i> 規則一：常客優惠</span>
+                    <span><i class="fa-solid fa-gem"></i> 常客優惠 (規則一)</span>
                     <span id="rule1Discount">-$0</span>
                 </div>
                 <div class="rule-detail" id="rule1Detail"></div>
 
                 <div class="breakdown-item discount">
-                    <span><i class="fa-solid fa-ticket"></i> 規則二：TPass 2.0</span>
+                    <span><i class="fa-solid fa-ticket"></i> TPass 2.0 (規則二)</span>
                     <span id="rule2Discount">-$0</span>
                 </div>
                 <div class="rule-detail" id="rule2Detail"></div>
@@ -53,14 +66,14 @@
         <section class="history-section">
             <div class="section-header">
                 <h3>行程紀錄 (<span id="tripCount">0</span>)</h3>
-                <button onclick="clearData()" class="text-btn">清空</button>
-            </div>
+                </div>
             <ul id="historyList" class="history-list">
-                </ul>
+                <li style="text-align:center; padding:20px; color:#aaa;">載入中...</li>
+            </ul>
         </section>
 
         <div class="fab-container">
-            <button class="fab" onclick="toggleModal()">
+            <button class="fab" onclick="window.toggleModal()">
                 <i class="fa-solid fa-plus"></i> 記一筆
             </button>
         </div>
@@ -69,7 +82,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h3>新增行程</h3>
-                    <button class="close-btn" onclick="toggleModal()">&times;</button>
+                    <button class="close-btn" onclick="window.toggleModal()">&times;</button>
                 </div>
                 
                 <form id="tripForm">
@@ -115,9 +128,9 @@
                     <div class="form-group" id="group-stations">
                         <label>起訖站點</label>
                         <div class="station-inputs">
-                            <input type="text" id="startStation" placeholder="起點 (如: 台北車站)">
+                            <input type="text" id="startStation" placeholder="起點">
                             <i class="fa-solid fa-arrow-right station-arrow"></i>
-                            <input type="text" id="endStation" placeholder="終點 (如: 市政府)">
+                            <input type="text" id="endStation" placeholder="終點">
                         </div>
                     </div>
 
@@ -137,6 +150,6 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>

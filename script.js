@@ -1,7 +1,22 @@
-// 初始化
-let trips = JSON.parse(localStorage.getItem('tpass2_trips')) || [];
-const TPASS_PRICE = 1200;
+// script.js
+import { db } from "./firebase-config.js";
+import { initAuthListener } from "./auth.js"; // 引入剛寫好的 Auth 模組
+import { 
+    collection, 
+    addDoc, 
+    deleteDoc, 
+    query, 
+    orderBy, 
+    onSnapshot, 
+    doc 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// === 狀態變數 ===
+let currentUser = null;
+let trips = [];
+let unsubscribeTrips = null;
+
+const TPASS_PRICE = 1200;
 const TRANSPORT_TYPES = {
     mrt: { name: '台北捷運', class: 'c-mrt' },
     bus: { name: '公車', class: 'c-bus' },
@@ -12,8 +27,9 @@ const TRANSPORT_TYPES = {
     bike: { name: 'Ubike', class: 'c-bike' }
 };
 
-// DOM 元素
+// === DOM ===
 const els = {
+    // 這裡只需要計算與 CRUD 相關的 DOM，Auth 相關的已移走
     finalCost: document.getElementById('finalCost'),
     rawTotal: document.getElementById('rawTotal'),
     rule1Discount: document.getElementById('rule1Discount'),
@@ -26,8 +42,6 @@ const els = {
     tripCount: document.getElementById('tripCount'),
     modal: document.getElementById('entryModal'),
     form: document.getElementById('tripForm'),
-    
-    // 表單動態區塊
     transportRadios: document.querySelectorAll('input[name="type"]'),
     groupRoute: document.getElementById('group-route'),
     groupStations: document.getElementById('group-stations'),
@@ -36,84 +50,129 @@ const els = {
     inputEnd: document.getElementById('endStation')
 };
 
-// 初始渲染
-renderUI();
-updateFormFields('mrt'); // 預設顯示捷運的輸入框狀態
+// === 程式入口 ===
+// 這裡是最關鍵的連接點！
+initAuthListener((user) => {
+    currentUser = user; // 更新本地的使用者狀態
 
-// Toggle Modal
-function toggleModal() {
+    if (user) {
+        // 使用者登入了 -> 開始監聽資料庫
+        setupRealtimeListener(user.uid);
+    } else {
+        // 使用者登出了 -> 清空資料、停止監聽
+        if (unsubscribeTrips) unsubscribeTrips();
+        trips = [];
+        renderUI();
+        els.historyList.innerHTML = '<li style="text-align:center; padding:20px; color:#aaa;">請登入以查看或記錄行程</li>';
+    }
+});
+
+// 初始化表單狀態
+updateFormFields('mrt');
+
+// === Firestore 邏輯 ===
+
+function setupRealtimeListener(uid) {
+    const q = query(
+        collection(db, "users", uid, "trips"), 
+        orderBy("createdAt", "desc")
+    );
+
+    unsubscribeTrips = onSnapshot(q, (snapshot) => {
+        trips = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        renderUI();
+    }, (error) => {
+        console.error("Data fetch error:", error);
+    });
+}
+
+// === 表單與互動邏輯 ===
+
+window.toggleModal = function() {
     els.modal.classList.toggle('hidden');
 }
 
-// 監聽運具選擇改變，調整輸入框
 els.transportRadios.forEach(radio => {
-    radio.addEventListener('change', (e) => {
-        updateFormFields(e.target.value);
-    });
+    radio.addEventListener('change', (e) => updateFormFields(e.target.value));
 });
 
 function updateFormFields(type) {
-    // 重置隱藏
     els.groupRoute.classList.add('hidden');
     els.groupStations.classList.add('hidden');
-
-    // 邏輯判斷
     if (type === 'bus') {
-        // 公車：只要編號
         els.groupRoute.classList.remove('hidden');
     } else if (type === 'coach') {
-        // 客運：編號 + 起訖
         els.groupRoute.classList.remove('hidden');
         els.groupStations.classList.remove('hidden');
     } else {
-        // 軌道(北捷/台鐵/機捷/輕軌) + Ubike：只要起訖
         els.groupStations.classList.remove('hidden');
     }
 }
 
-// 表單提交
-els.form.addEventListener('submit', (e) => {
+// 新增行程
+els.form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (!currentUser) return alert("請先登入！");
+
     const type = document.querySelector('input[name="type"]:checked').value;
     const price = parseFloat(document.getElementById('price').value);
     const isTransfer = document.getElementById('transfer').checked;
     
-    // 取得新欄位資料
-    const routeId = els.inputRoute.value.trim();
-    const startStation = els.inputStart.value.trim();
-    const endStation = els.inputEnd.value.trim();
+    // 欄位防呆：若隱藏則為空字串
+    const routeId = !els.groupRoute.classList.contains('hidden') ? els.inputRoute.value.trim() : '';
+    const startStation = !els.groupStations.classList.contains('hidden') ? els.inputStart.value.trim() : '';
+    const endStation = !els.groupStations.classList.contains('hidden') ? els.inputEnd.value.trim() : '';
 
     if (!price || price <= 0) return;
 
-    trips.unshift({
-        id: Date.now(),
-        date: new Date().toLocaleDateString(),
-        type,
-        originalPrice: price,
-        paidPrice: isTransfer ? Math.max(0, price - 6) : price,
-        isTransfer,
-        // 儲存詳細資訊
-        routeId: routeId,
-        startStation: startStation,
-        endStation: endStation
-    });
+    const submitBtn = els.form.querySelector('.submit-btn');
+    submitBtn.disabled = true;
+    submitBtn.innerText = "儲存中...";
 
-    saveData();
-    renderUI();
-    
-    // 重置表單但保留日期
-    els.form.reset();
-    els.inputRoute.value = '';
-    els.inputStart.value = '';
-    els.inputEnd.value = '';
-    // 恢復預設選項的輸入框狀態
-    document.querySelector('input[value="mrt"]').checked = true;
-    updateFormFields('mrt');
-    
-    toggleModal();
+    try {
+        await addDoc(collection(db, "users", currentUser.uid, "trips"), {
+            createdAt: Date.now(),
+            dateStr: new Date().toLocaleDateString(),
+            type,
+            originalPrice: price,
+            paidPrice: isTransfer ? Math.max(0, price - 6) : price,
+            isTransfer,
+            routeId,
+            startStation,
+            endStation
+        });
+
+        els.form.reset();
+        // 恢復預設 UI
+        document.querySelector('input[value="mrt"]').checked = true;
+        updateFormFields('mrt');
+        window.toggleModal();
+
+    } catch (e) {
+        console.error(e);
+        alert("儲存失敗");
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "加入計算";
+    }
 });
 
-// 計算邏輯 (與上版相同)
+// 刪除行程
+window.deleteTrip = async function(tripId) {
+    if (!currentUser) return;
+    if (confirm('刪除此紀錄？')) {
+        try {
+            await deleteDoc(doc(db, "users", currentUser.uid, "trips", tripId));
+        } catch (e) {
+            console.error(e);
+        }
+    }
+}
+
+// === 計算與渲染 (邏輯完全不變) ===
 function calculate() {
     let stats = { totalPaid: 0, counts: {}, sums: {} };
     Object.keys(TRANSPORT_TYPES).forEach(k => { stats.counts[k] = 0; stats.sums[k] = 0; });
@@ -124,7 +183,7 @@ function calculate() {
         stats.sums[t.type] += t.originalPrice;
     });
 
-    // 規則一：常客優惠
+    // Rule 1: 常客優惠 (北捷/台鐵)
     let r1_cashback = 0;
     let r1_details = [];
     
@@ -152,7 +211,7 @@ function calculate() {
         r1_details.push(`台鐵 ${traCount} 趟，回饋 ${(traRate*100)}%`);
     }
 
-    // 規則二：TPass
+    // Rule 2: TPass 2.0 (公路總局)
     let r2_cashback = 0;
     let r2_details = [];
     const railCount = stats.counts.mrt + stats.counts.tra + stats.counts.tymrt + stats.counts.lrt;
@@ -181,15 +240,27 @@ function calculate() {
 }
 
 function renderUI() {
+    if (!currentUser) {
+        els.historyList.innerHTML = '<li style="text-align:center; padding:20px; color:#aaa;">請先登入</li>';
+        els.finalCost.innerText = '$0';
+        els.rawTotal.innerText = '$0';
+        els.statusText.innerText = "請先登入";
+        els.statusText.className = "status-neutral";
+        return;
+    }
+
     const data = calculate();
     const finalVal = Math.floor(data.finalCost);
 
     els.finalCost.innerText = `$${finalVal}`;
     els.rawTotal.innerText = `$${Math.floor(data.totalPaid)}`;
+    
     els.rule1Discount.innerText = `-$${Math.floor(data.r1.amount)}`;
-    els.rule1Detail.innerHTML = data.r1.details.length ? data.r1.details.map(d => `<div>${d}</div>`).join('') : '<div style="opacity:0.5">尚未達標</div>';
+    els.rule1Detail.innerHTML = data.r1.details.length ? data.r1.details.map(d => `<div>${d}</div>`).join('') : '';
+    
     els.rule2Discount.innerText = `-$${Math.floor(data.r2.amount)}`;
-    els.rule2Detail.innerHTML = data.r2.details.length ? data.r2.details.map(d => `<div>${d}</div>`).join('') : '<div style="opacity:0.5">尚未達標</div>';
+    els.rule2Detail.innerHTML = data.r2.details.length ? data.r2.details.map(d => `<div>${d}</div>`).join('') : '';
+    
     els.tripCount.innerText = trips.length;
 
     const diff = TPASS_PRICE - finalVal;
@@ -203,7 +274,6 @@ function renderUI() {
         els.diffText.innerText = `還差 $${diff} 元回本`;
     }
 
-    // 渲染列表
     els.historyList.innerHTML = '';
     if (trips.length === 0) {
         els.historyList.innerHTML = '<li style="text-align:center; padding:20px; color:#aaa;">尚無行程紀錄</li>';
@@ -211,22 +281,19 @@ function renderUI() {
     }
 
     trips.forEach(trip => {
-        const tDef = TRANSPORT_TYPES[trip.type];
+        const tDef = TRANSPORT_TYPES[trip.type] || TRANSPORT_TYPES.mrt;
         const li = document.createElement('li');
         li.className = 'history-item';
         
-        // 建構標題描述
+        // 標題與描述邏輯
         let titleDesc = tDef.name;
         if (trip.type === 'bus') {
-            // 公車：顯示編號 (若無編號顯示預設文字)
             titleDesc = trip.routeId ? `${trip.routeId}路公車` : '公車';
         } else if (trip.type === 'coach') {
-            // 客運：編號 + 起訖
             const route = trip.routeId || '';
             const path = (trip.startStation && trip.endStation) ? ` (${trip.startStation}→${trip.endStation})` : '';
             titleDesc = `客運 ${route}${path}`;
         } else {
-            // 軌道/Ubike：顯示起訖
             if (trip.startStation && trip.endStation) {
                 titleDesc = `${trip.startStation} <i class="fa-solid fa-arrow-right" style="font-size:10px; opacity:0.5;"></i> ${trip.endStation}`;
             }
@@ -246,11 +313,11 @@ function renderUI() {
                 </div>
                 <div class="item-info">
                     <h4>${titleDesc} ${trip.isTransfer ? '<i class="fa-solid fa-link" style="color:#27ae60; font-size:12px;"></i>' : ''}</h4>
-                    <small>${trip.date} • ${tDef.name}</small>
+                    <small>${trip.dateStr} • ${tDef.name}</small>
                 </div>
             </div>
             ${priceHtml}
-            <button onclick="deleteTrip(${trip.id})" style="border:none; background:none; color:#ddd; margin-left:15px; padding:10px;"><i class="fa-solid fa-xmark"></i></button>
+            <button onclick="window.deleteTrip('${trip.id}')" style="border:none; background:none; color:#ddd; margin-left:15px; padding:10px;"><i class="fa-solid fa-xmark"></i></button>
         `;
         els.historyList.appendChild(li);
     });
@@ -266,7 +333,3 @@ function getIconClass(type) {
     if(type==='bike') return 'fa-bicycle';
     return 'fa-circle';
 }
-
-function saveData() { localStorage.setItem('tpass2_trips', JSON.stringify(trips)); }
-window.deleteTrip = function(id) { if(confirm('刪除此紀錄？')) { trips = trips.filter(t => t.id !== id); saveData(); renderUI(); }}
-window.clearData = function() { if(confirm('確定清空所有紀錄？')) { trips = []; saveData(); renderUI(); }}
