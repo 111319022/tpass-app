@@ -77,6 +77,9 @@ body { background: var(--bg); color: var(--text); padding-bottom: 90px; }
 
 /* 儀表板樣式 (與上版相同) */
 .dashboard { background: linear-gradient(160deg, #1a2a6c, #b21f1f, #fdbb2d); padding: 20px 15px; border-radius: 0 0 30px 30px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+.app-title { color: #fff; margin-bottom: 12px; }
+.app-title h2 { margin: 0; font-size: 20px; letter-spacing: 0.5px; }
+.app-title small { color: rgba(255,255,255,0.85); }
 .status-card { text-align: center; margin-bottom: 15px; }
 .main-stats { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 15px; }
 .stat-box { background: rgba(0,0,0,0.3); padding: 10px 20px; border-radius: 12px; min-width: 100px; }
