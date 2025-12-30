@@ -521,3 +521,28 @@ body { background: var(--bg); color: var(--text); padding-bottom: 90px; }
 .rate-val { font-weight: bold; color: var(--primary); }
 
 .highlight-table .rate-val { color: var(--green); }
+
+/* === 日期分隔線 (補上原本缺漏的) === */
+.date-separator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 25px 0 15px 0;
+    color: var(--text-sub);
+    font-size: 13px;
+    font-weight: bold;
+    opacity: 0.8;
+}
+
+.date-separator::before,
+.date-separator::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #e0e0e0;
+    margin: 0 15px;
+}
+
+.history-list > .date-separator:first-child {
+    margin-top: 0;
+}

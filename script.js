@@ -271,19 +271,27 @@ function calculate() {
 
     // 取得當前身分的轉乘優惠金額
     const currentTransferDiscount = FARE_CONFIG[currentIdentity].transferDiscount;
+    const busSuggestedPrice = FARE_CONFIG[currentIdentity].busBase;
 
     trips.forEach(t => {
+        // [修改] 動態調整公車的原價 (根據當前身分)
+        let adjustedOriginalPrice = t.originalPrice;
+        if (t.type === 'bus' && (t.originalPrice === 12 || t.originalPrice === 15)) {
+            // 如果是標準公車票價，用當前身分的建議價格替代
+            adjustedOriginalPrice = busSuggestedPrice;
+        }
+        
         // 根據當前身分重新計算實際支付金額
-        let calculatedPaid = t.originalPrice;
+        let calculatedPaid = adjustedOriginalPrice;
         
         if (t.isTransfer) {
             // 使用當前設定的優惠金額
-            calculatedPaid = Math.max(0, t.originalPrice - currentTransferDiscount);
+            calculatedPaid = Math.max(0, adjustedOriginalPrice - currentTransferDiscount);
         }
 
         stats.totalPaid += calculatedPaid;
         stats.counts[t.type]++;
-        stats.sums[t.type] += t.originalPrice;
+        stats.sums[t.type] += adjustedOriginalPrice;
     });
 
     // Rule 1: 常客優惠 (北捷/台鐵)
@@ -409,7 +417,7 @@ function renderUI() {
         // 標題與描述邏輯
         let titleDesc = tDef.name;
         if (trip.type === 'bus') {
-            titleDesc = trip.routeId ? `${trip.routeId}路公車` : '公車';
+            titleDesc = trip.routeId ? `${trip.routeId}公車` : '公車';
         } else if (trip.type === 'coach') {
             const route = trip.routeId || '';
             const path = (trip.startStation && trip.endStation) ? ` (${trip.startStation}→${trip.endStation})` : '';
@@ -420,11 +428,24 @@ function renderUI() {
             }
         }
 
+        // [修改] 根據身分動態調整公車原價並計算顯示金額
+        let displayOriginalPrice = trip.originalPrice;
+        const busSuggestedPrice = FARE_CONFIG[currentIdentity].busBase;
+        
+        // 如果是標準公車票價 (12 或 15)，根據當前身分調整
+        if (trip.type === 'bus' && (trip.originalPrice === 12 || trip.originalPrice === 15)) {
+            displayOriginalPrice = busSuggestedPrice;
+        }
+
+        // 計算轉乘後的顯示金額
+        const discount = FARE_CONFIG[currentIdentity].transferDiscount;
+        const displayPaid = trip.isTransfer ? Math.max(0, displayOriginalPrice - discount) : displayOriginalPrice;
+
         let priceHtml = '';
         if (trip.isTransfer) {
-            priceHtml = `<div class="item-right"><span class="price-original">$${trip.originalPrice}</span><span class="price-display">$${trip.paidPrice}</span></div>`;
+            priceHtml = `<div class="item-right"><span class="price-original">$${displayOriginalPrice}</span><span class="price-display">$${displayPaid}</span></div>`;
         } else {
-            priceHtml = `<div class="item-right"><div class="price-display">$${trip.paidPrice}</div></div>`;
+            priceHtml = `<div class="item-right"><div class="price-display">$${displayPaid}</div></div>`;
         }
 
         li.innerHTML = `
