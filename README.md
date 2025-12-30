@@ -1,66 +1,91 @@
-# 🚀 基北北桃 TPASS 回本計算機 (Web App)
-
-![TPASS Banner](https://img.shields.io/badge/TPASS-回本計算機-blue?style=for-the-badge&logo=appveyor)
-![Firebase](https://img.shields.io/badge/Firebase-Auth%20%26%20Firestore-orange?style=for-the-badge&logo=firebase)
-![GitHub Actions](https://img.shields.io/badge/CI/CD-GitHub%20Actions-green?style=for-the-badge&logo=github-actions)
-
-> **「這張月票買了真的有划算嗎？」** > 專為基北北桃通勤族設計，不僅幫你記帳，更精準套用最新 **TPASS 2.0 優惠規則**，讓數據告訴你什麼時候開始「倒賺」！
-
-🔗 **立即體驗：** [https://111319022.github.io/tpass-app/](https://111319022.github.io/tpass-app/)
-
----
-
-## ✨ 核心特色
-
-| 📊 精準計算 | 📅 多週期管理 | 👤 身分切換 | ☁️ 雲端同步 |
-| :--- | :--- | :--- | :--- |
-| 自動套用北捷常客與 TPASS 2.0 規則。 | 支援自定義啟用日，跨月、空窗期完美處理。 | 學生票與全票一鍵切換，轉乘金額精準扣除。 | 使用 Firebase 雲端存檔，多裝置同步紀錄。 |
-
----
-
-## 📸 介面預覽
-
 <div align="center">
-  <img src="https://via.placeholder.com/280x560?text=Dashboard+View" width="30%" alt="Dashboard" />
-  <img src="https://via.placeholder.com/280x560?text=History+List" width="30%" alt="History" />
-  <img src="https://via.placeholder.com/280x560?text=Settings+Modal" width="30%" alt="Settings" />
-  <p><i>(建議上傳真實截圖替換上方占位圖，這會讓 README 更有吸引力！)</i></p>
+
+# 🚌 基北北桃 TPASS 回本計算機
+
+**專為通勤族設計的智慧帳房 · 精準套用 2.0 優惠規則 · 雲端同步**
+
+[ **啟動 Web App** ](https://111319022.github.io/tpass-app/)
+·
+[ 回報問題 ](https://github.com/111319022/tpass-app/issues)
+
+<br>
+
+<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbm90eW14OG15bGZ5eHZ5eHhzMXh5eHhzMXh5eHhzMXh5eHhzMSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/LpSf15JdJqS3S1s47N/giphy.gif" width="100">
+
+*(這裡建議放一張 App 的 Logo 或簡單的示意 GIF，目前先留空或放一個簡單的動態圖)*
+
+<br>
+
 </div>
 
 ---
 
-## 🔥 功能亮點
+## 💡 為什麼做這個？
 
-### 1. 智慧回本分析
-系統會根據你的行程，自動算出：
-- **規則一：** 北捷與台鐵的階梯式常客優惠金額。
-- **規則二：** TPASS 2.0 (軌道 2% / 公車客運最高 30%) 回饋。
-- **結果：** 直接對比 $1200 票價，告訴你還差多少錢回本。
+通勤月票 $1200 買下去，到底有沒有回本？
+市面上的記帳軟體無法處理 **「北捷常客優惠」** 的階梯式回饋，也無法計算 **「TPASS 2.0」** 複雜的運具補貼。
 
-### 2. 多週期帳單系統
-效法信用卡 App，你可以：
-- 查看 **當前週期** 的即時數據。
-- 切換回 **歷史週期** 查看過往的通勤支出紀錄。
-- 每個週期獨立設定起始日，符合 TPASS 啟用制邏輯。
-
-### 3. PWA 近原生體驗
-支援 **「加入主畫面」**，在 iOS/Android 上享受無網址列、全螢幕的 App 級操作感。
+這個 App 就是為了解決這個問題——**它不只是記帳，更是你的通勤精算師。**
 
 ---
 
-## 🛠 技術棧
+## ✨ 核心體驗
 
-- **Frontend:** HTML5, CSS3 (Flexbox/Grid), JavaScript (ES6+)
-- **Backend:** Firebase Authentication, Cloud Firestore
-- **Deployment:** Firebase Hosting, GitHub Actions (CI/CD)
-- **Icons:** FontAwesome 6
+### 🎯 只有重點，沒有廢話
+不同於傳統記帳 App 的繁瑣，我們專注於通勤場景。
+- **智慧帶入**：選擇公車，自動填入 $15；選擇學生票，自動變更為 $12。
+- **轉乘邏輯**：勾選「轉乘」，系統自動扣除 $8 或 $6 優惠，比你自己算還準。
+
+### 💳 像是你的信用卡帳單
+支援 **「多週期管理」**。
+你可以隨時查看「1月」還有幾天到期、「2月」已經回本多少。每個週期的啟用日都能獨立設定，完美符合 TPASS 的啟用制邏輯。
+
+### 📱 PWA 原生質感
+無需下載，加入主畫面即刻使用。
+- **0 秒啟動**：支援離線緩存，打開即用。
+- **全螢幕**：移除瀏覽器網址列，沉浸式體驗。
+- **跨平台**：iOS / Android / Desktop 通用。
 
 ---
 
-## 🚀 快速開始
+## ⚡️ 技術核心
 
-如果你想在本地運行此專案：
+我們堅持使用最輕量、最穩定的技術棧，確保 App 在任何裝置上都飛快流暢。
 
-1. **複製倉庫**
+`HTML5` &nbsp; `CSS3 (Flexbox/Grid)` &nbsp; `JavaScript (ES6+)`
+
+**Backend Services**
+`Firebase Authentication` &nbsp; `Cloud Firestore`
+
+**DevOps**
+`GitHub Actions (CI/CD)` &nbsp; `Firebase Hosting`
+
+---
+
+## 📸 介面導覽
+
+> *建議在此處拖拉上傳 1-2 張您的 App 真實截圖，會比任何文字都有說服力。*
+
+| **儀表板 (Dashboard)** | **行程紀錄 (History)** |
+|:---:|:---:|
+| <img src="" alt="請上傳截圖" width="250" /> | <img src="" alt="請上傳截圖" width="250" /> |
+| *直觀顯示回本進度與金額* | *自動依日期分組，清晰明瞭* |
+
+---
+
+## 🚀 快速部署
+
+如果你也想擁有自己的版本：
+
+1. **Clone 專案**
    ```bash
    git clone [https://github.com/111319022/tpass-app.git](https://github.com/111319022/tpass-app.git)
+   
+2.設定環境 將 firebase-config.js 替換為你自己的 Firebase Project Config。
+3.啟動 直接開啟 index.html 即可運行。
+
+<div align="center">
+
+Made with 🧠 by Raaay
+
+</div>
