@@ -41,6 +41,7 @@ const els = {
     historyList: document.getElementById('historyList'),
     tripCount: document.getElementById('tripCount'),
     tripDate: document.getElementById('tripDate'),
+    tripTime: document.getElementById('tripTime'),
     modal: document.getElementById('entryModal'),
     form: document.getElementById('tripForm'),
     transportRadios: document.querySelectorAll('input[name="type"]'),
@@ -96,13 +97,19 @@ window.toggleModal = function() {
     const isHidden = els.modal.classList.contains('hidden');
     
     if (isHidden) {
-        // 當打開 Modal 時，預設設定為「今天」
-        // 注意：input type="date" 需要 YYYY-MM-DD 格式
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
+        // 當打開 Modal 時，預設設定為「今天」和「現在時間」
+        const now = new Date();
+        
+        // 設定日期 (YYYY-MM-DD)
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
         els.tripDate.value = `${yyyy}-${mm}-${dd}`;
+        
+        // 設定時間 (HH:MM)
+        const hh = String(now.getHours()).padStart(2, '0');
+        const min = String(now.getMinutes()).padStart(2, '0');
+        els.tripTime.value = `${hh}:${min}`;
         
         els.modal.classList.remove('hidden');
     } else {
@@ -136,18 +143,18 @@ els.form.addEventListener('submit', async (e) => {
     const price = parseFloat(document.getElementById('price').value);
     const isTransfer = document.getElementById('transfer').checked;
     
-    // 取得使用者選擇的日期
+    // 取得使用者選擇的日期和時間
     const dateInputVal = els.tripDate.value; // "2023-12-30"
+    const timeInputVal = els.tripTime.value; // "14:30"
     if (!dateInputVal) return alert("請選擇日期");
+    if (!timeInputVal) return alert("請選擇時間");
 
     // 建立 Date 物件 (用於排序與顯示)
-    // 技巧：將時間設為當下時間，這樣如果補登今天的，順序會對；如果是補登以前的，就用該日期的當下時間
-    const selectedDate = new Date(dateInputVal);
-    const now = new Date();
-    selectedDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+    const selectedDate = new Date(`${dateInputVal}T${timeInputVal}:00`);
 
-    // 格式化顯示用字串 (YYYY/MM/DD)
+    // 格式化顯示用字串 (YYYY/MM/DD HH:MM)
     const dateStr = dateInputVal.replace(/-/g, '/');
+    const timeStr = timeInputVal;
     
     // 欄位防呆：若隱藏則為空字串
     const routeId = !els.groupRoute.classList.contains('hidden') ? els.inputRoute.value.trim() : '';
@@ -164,6 +171,7 @@ els.form.addEventListener('submit', async (e) => {
         await addDoc(collection(db, "users", currentUser.uid, "trips"), {
             createdAt: selectedDate.getTime(),
             dateStr: dateStr,
+            timeStr: timeStr,
             type,
             originalPrice: price,
             paidPrice: isTransfer ? Math.max(0, price - 6) : price,

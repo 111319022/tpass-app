@@ -92,8 +92,11 @@
                 
                 <form id="tripForm">
                     <div class="form-group">
-                        <label>搭乘日期</label>
-                        <input type="date" id="tripDate" required style="font-family: inherit;">
+                        <label>搭乘日期與時間</label>
+                        <div class="datetime-inputs">
+                            <input type="date" id="tripDate" required style="font-family: inherit;">
+                            <input type="time" id="tripTime" required style="font-family: inherit;">
+                        </div>
                     </div>
 
                     <div class="form-group">

@@ -151,6 +151,10 @@ body { background: var(--bg); color: var(--text); padding-bottom: 90px; }
 .station-inputs input { flex: 1; padding: 12px !important; text-align: center; min-width: 0; }
 .station-arrow { color: var(--text-sub); font-size: 14px; }
 
+/* 日期時間輸入並排 */
+.datetime-inputs { display: flex; align-items: center; gap: 10px; }
+.datetime-inputs input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; }
+
 /* 網格選擇器 */
 .transport-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .t-option input { display: none; }
