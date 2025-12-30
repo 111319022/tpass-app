@@ -35,6 +35,16 @@
                 </div>
             </div>
 
+            <div class="cycle-settings-container">
+                <div class="cycle-settings">
+                    <label for="cycleStartDate">
+                        <i class="fa-solid fa-calendar-days"></i> 本週期：起始日
+                    </label>
+                    <input type="date" id="cycleStartDate" onchange="window.updateCycleStart(this.value)" style="font-family: inherit;">
+                    <small>（迄日自動+30天）</small>
+                </div>
+            </div>
+
             <div class="status-card">
                 <div class="main-stats">
                     <div class="stat-box">
@@ -54,9 +64,16 @@
                 </div>
             </div>
 
+            <!-- 月份標籤選擇器 -->
+            <div class="cycle-tabs-container">
+                <div class="cycle-tabs" id="cycleTabs">
+                    <!-- 動態生成月份標籤 -->
+                </div>
+            </div>
+
             <div class="breakdown-card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px;">
-                    <h4 style="margin:0; border:none;"><i class="fa-solid fa-calculator"></i> 優惠回饋明細</h4>
+                    <h4 style="margin:0; border:none;"><i class="fa-solid fa-calculator"></i> 本週期優惠回饋</h4>
                     <a href="trans-rule.html" style="color:white; font-size:12px; text-decoration:none; background:rgba(255,255,255,0.2); padding:4px 8px; border-radius:10px;">
                         <i class="fa-solid fa-circle-info"></i> 查看規則
                     </a>
@@ -77,11 +94,12 @@
                 </div>
                 <div class="rule-detail" id="rule2Detail"></div>
             </div>
+
         </header>
 
         <section class="history-section">
             <div class="section-header">
-                <h3>行程紀錄 (<span id="tripCount">0</span>)</h3>
+                <h3>本週期行程 (<span id="tripCount">0</span>)</h3>
                 </div>
             <ul id="historyList" class="history-list">
                 <li style="text-align:center; padding:20px; color:#aaa;">載入中...</li>

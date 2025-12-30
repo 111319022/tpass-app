@@ -8,7 +8,9 @@ import {
     query, 
     orderBy, 
     onSnapshot, 
-    doc 
+    doc,
+    setDoc,
+    getDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // === 狀態變數 ===
@@ -31,6 +33,10 @@ const FARE_CONFIG = {
 
 // 預設身分
 let currentIdentity = 'adult';
+
+// 週期設定（每個週期可獨立設定起始日）
+let cycles = [];
+let selectedCycleId = null; // 當前選中的週期 ID
 
 const TPASS_PRICE = 1200;
 const TRANSPORT_TYPES = {
@@ -115,6 +121,7 @@ window.updateIdentity = function(type) {
 // === Firestore 邏輯 ===
 
 function setupRealtimeListener(uid) {
+    // 監聽行程資料
     const q = query(
         collection(db, "users", uid, "trips"), 
         orderBy("createdAt", "desc")
@@ -128,6 +135,26 @@ function setupRealtimeListener(uid) {
         renderUI();
     }, (error) => {
         console.error("Data fetch error:", error);
+    });
+    
+    // 監聽週期資料
+    const cyclesDoc = doc(db, "users", uid, "settings", "cycles");
+    onSnapshot(cyclesDoc, (docSnap) => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            cycles = data.list || [];
+            // 恢復選中的週期 ID
+            if (data.selectedCycleId) {
+                selectedCycleId = data.selectedCycleId;
+            }
+        } else {
+            // 如果沒有週期資料，初始化第一個週期
+            cycles = [];
+            selectedCycleId = null;
+        }
+        renderUI();
+    }, (error) => {
+        console.error("Cycles fetch error:", error);
     });
 }
 
@@ -205,8 +232,8 @@ els.form.addEventListener('submit', async (e) => {
     // 建立 Date 物件 (用於排序與顯示)
     const selectedDate = new Date(`${dateInputVal}T${timeInputVal}:00`);
 
-    // 格式化顯示用字串 (YYYY/MM/DD HH:MM)
-    const dateStr = dateInputVal.replace(/-/g, '/');
+    // 儲存日期字串 (YYYY-MM-DD 格式，方便比較)
+    const dateStr = dateInputVal; // 保持 YYYY-MM-DD 格式
     const timeStr = timeInputVal;
     
     // 欄位防呆：若隱藏則為空字串
@@ -265,7 +292,10 @@ window.deleteTrip = async function(tripId) {
 }
 
 // === 計算與渲染 ===
-function calculate() {
+function calculate(tripsToCalculate = null) {
+    // 允許傳入特定的行程列表，如果沒有則使用全域的 trips
+    const tripsData = tripsToCalculate || trips;
+    
     let stats = { totalPaid: 0, counts: {}, sums: {} };
     Object.keys(TRANSPORT_TYPES).forEach(k => { stats.counts[k] = 0; stats.sums[k] = 0; });
 
@@ -273,7 +303,7 @@ function calculate() {
     const currentTransferDiscount = FARE_CONFIG[currentIdentity].transferDiscount;
     const busSuggestedPrice = FARE_CONFIG[currentIdentity].busBase;
 
-    trips.forEach(t => {
+    tripsData.forEach(t => {
         // [修改] 動態調整公車的原價 (根據當前身分)
         let adjustedOriginalPrice = t.originalPrice;
         if (t.type === 'bus' && (t.originalPrice === 12 || t.originalPrice === 15)) {
@@ -376,11 +406,46 @@ function renderUI() {
         return;
     }
 
-    const data = calculate();
-    const finalVal = Math.floor(data.finalCost);
+    console.log('=== renderUI 開始 ===');
+    console.log('總行程數:', trips.length);
+    console.log('週期數量:', cycles.length);
+    console.log('選中的週期 ID:', selectedCycleId);
+    
+    // 初始化週期設定
+    initCycleSettings();
+    
+    // 渲染週期標籤
+    renderCycleTabs();
+
+    // 取得選中的週期
+    const selectedCycle = getSelectedCycle();
+    
+    console.log('選中的週期:', selectedCycle);
+    console.log('週期行程數:', selectedCycle?.trips.length);
+    console.log('=== renderUI 結束 ===');
+    
+    if (!selectedCycle) {
+        // 沒有任何週期資料
+        els.finalCost.innerText = '$0';
+        els.rawTotal.innerText = '$0';
+        els.rule1Discount.innerText = '-$0';
+        els.rule1Detail.innerHTML = '';
+        els.rule2Discount.innerText = '-$0';
+        els.rule2Detail.innerHTML = '';
+        els.tripCount.innerText = '0';
+        els.statusText.innerText = "尚無資料";
+        els.statusText.className = "status-neutral";
+        els.diffText.innerText = "新增行程開始記錄";
+        els.historyList.innerHTML = '<li style="text-align:center; padding:20px; color:#aaa;">尚無行程紀錄</li>';
+        return;
+    }
+
+    // 使用選中週期的計算結果
+    const data = selectedCycle.discounts;
+    const finalVal = Math.floor(selectedCycle.totalCost);
 
     els.finalCost.innerText = `$${finalVal}`;
-    els.rawTotal.innerText = `$${Math.floor(data.totalPaid)}`;
+    els.rawTotal.innerText = `$${Math.floor(calculate(selectedCycle.trips).totalPaid)}`;
     
     els.rule1Discount.innerText = `-$${Math.floor(data.r1.amount)}`;
     els.rule1Detail.innerHTML = data.r1.details.length ? data.r1.details.map(d => `<div style="display:flex; justify-content:space-between; padding:2px 0;"><span>${d.text}</span><span>${d.amount}</span></div>`).join('') : '';
@@ -388,7 +453,7 @@ function renderUI() {
     els.rule2Discount.innerText = `-$${Math.floor(data.r2.amount)}`;
     els.rule2Detail.innerHTML = data.r2.details.length ? data.r2.details.map(d => `<div style="display:flex; justify-content:space-between; padding:2px 0;"><span>${d.text}</span><span>${d.amount}</span></div>`).join('') : '';
     
-    els.tripCount.innerText = trips.length;
+    els.tripCount.innerText = selectedCycle.trips.length;
 
     const diff = TPASS_PRICE - finalVal;
     if (diff < 0) {
@@ -401,21 +466,29 @@ function renderUI() {
         els.diffText.innerText = `還差 $${diff} 元回本`;
     }
 
+    // 只渲染選中週期的行程
     els.historyList.innerHTML = '';
-    if (trips.length === 0) {
-        els.historyList.innerHTML = '<li style="text-align:center; padding:20px; color:#aaa;">尚無行程紀錄</li>';
+    if (selectedCycle.trips.length === 0) {
+        els.historyList.innerHTML = '<li style="text-align:center; padding:20px; color:#aaa;">本週期尚無行程</li>';
         return;
     }
 
-    let lastDateStr = null; // 用來記錄上一筆資料的日期
+    let lastDateStr = null;
+    
+    // 按日期和時間排序行程（最新的在前）
+    const sortedTrips = [...selectedCycle.trips].sort((a, b) => {
+        const dateCompare = b.dateStr.localeCompare(a.dateStr);
+        if (dateCompare !== 0) return dateCompare;
+        return (b.timeStr || '').localeCompare(a.timeStr || '');
+    });
 
-    trips.forEach(trip => {
+    sortedTrips.forEach(trip => {
         // 檢查是否需要插入日期分隔線
         if (trip.dateStr !== lastDateStr) {
             const separator = document.createElement('li');
             separator.className = 'date-separator';
             
-            // 判斷是否為今天，顯示得更人性化
+            // 判斷是否為今天
             const tripDate = new Date(trip.dateStr);
             const today = new Date();
             const isToday = tripDate.toDateString() === today.toDateString();
@@ -490,4 +563,243 @@ function getIconClass(type) {
     if(type==='lrt') return 'fa-train-tram';
     if(type==='bike') return 'fa-bicycle';
     return 'fa-circle';
+}
+
+// === 週期管理功能 ===
+// 新增週期
+window.addCycle = async function() {
+    if (!currentUser) return;
+    
+    const today = new Date().toISOString().split('T')[0];
+    const newCycle = {
+        id: Date.now(),
+        startDate: today,
+        name: `週期 ${cycles.length + 1}`
+    };
+    cycles.push(newCycle);
+    await saveCycles();
+    selectedCycleId = newCycle.id; // 選中新增的週期
+    renderUI();
+};
+
+// 更新週期起始日期
+window.updateCycleStart = async function(dateValue) {
+    if (!dateValue || !selectedCycleId || !currentUser) return;
+    
+    const cycle = cycles.find(c => c.id === selectedCycleId);
+    if (cycle) {
+        cycle.startDate = dateValue;
+        await saveCycles();
+        renderUI();
+    }
+};
+
+// 刪除週期
+window.deleteCycle = async function(cycleId) {
+    if (!currentUser) return;
+    if (confirm('確定要刪除此週期？')) {
+        cycles = cycles.filter(c => c.id !== cycleId);
+        await saveCycles();
+        
+        // 如果刪除的是當前選中的週期，選擇第一個週期
+        if (selectedCycleId === cycleId) {
+            selectedCycleId = cycles.length > 0 ? cycles[0].id : null;
+        }
+        renderUI();
+    }
+};
+
+// 儲存週期資料到 Firestore
+async function saveCycles() {
+    if (!currentUser) return;
+    try {
+        const cyclesDoc = doc(db, "users", currentUser.uid, "settings", "cycles");
+        await setDoc(cyclesDoc, { 
+            list: cycles,
+            selectedCycleId: selectedCycleId 
+        });
+    } catch (error) {
+        console.error("Error saving cycles:", error);
+    }
+}
+
+// 切換到指定週期
+window.selectCycle = async function(cycleId) {
+    console.log('切換週期 ID:', cycleId);
+    selectedCycleId = cycleId;
+    await saveCycles(); // 儲存選中的週期
+    renderUI();
+};
+
+// 計算所有週期的行程和統計
+function calculateCycles() {
+    if (cycles.length === 0) {
+        return [];
+    }
+
+    // 排序週期（按起始日期）
+    const sortedCycles = [...cycles].sort((a, b) => 
+        new Date(a.startDate) - new Date(b.startDate)
+    );
+
+    const result = [];
+    const today = new Date();
+
+    sortedCycles.forEach((cycle, idx) => {
+        const cycleStart = new Date(cycle.startDate);
+        const cycleEnd = new Date(cycleStart);
+        cycleEnd.setDate(cycleEnd.getDate() + 29); // 30天週期（包含起始日共30天）
+
+        console.log('週期', idx, '範圍:', cycle.startDate, '到', cycleEnd.toISOString().split('T')[0]);
+
+        // 篩選屬於此週期的行程（在起始日到結束日之間）
+        const cycleTrips = trips.filter(trip => {
+            const tripDate = new Date(trip.dateStr);
+            const isInRange = tripDate >= cycleStart && tripDate <= cycleEnd;
+            console.log('  行程', trip.dateStr, '在範圍內?', isInRange, '(tripDate:', tripDate.toISOString().split('T')[0], ')');
+            return isInRange;
+        });
+        
+        console.log('週期', idx, '找到', cycleTrips.length, '趟行程');
+
+        // 計算費用
+        const calcResult = calculate(cycleTrips);
+        const totalCost = calcResult.finalCost;
+        const isCurrent = today >= cycleStart && today <= cycleEnd;
+        const breakEven = totalCost >= TPASS_PRICE;
+        const difference = totalCost - TPASS_PRICE;
+
+        result.push({
+            id: cycle.id,
+            name: cycle.name,
+            startDate: cycleStart,
+            endDate: cycleEnd,
+            trips: cycleTrips,
+            totalCost,
+            isCurrent,
+            breakEven,
+            difference,
+            discounts: {
+                r1: calcResult.r1,
+                r2: calcResult.r2
+            }
+        });
+    });
+
+    // 按日期倒序（最新的在前）
+    result.reverse();
+
+    return result;
+}
+
+// 渲染週期標籤
+function renderCycleTabs() {
+    const tabsContainer = document.getElementById('cycleTabs');
+    if (!tabsContainer) return;
+
+    const cyclesData = calculateCycles();
+    
+    if (cyclesData.length === 0) {
+        tabsContainer.innerHTML = '<button onclick="window.addCycle()" class="add-cycle-btn"><i class="fa-solid fa-plus"></i> 新增週期</button>';
+        return;
+    }
+
+    tabsContainer.innerHTML = '';
+
+    cyclesData.forEach((cycle, idx) => {
+        const tab = document.createElement('div');
+        tab.className = `cycle-tab ${cycle.id === selectedCycleId ? 'active' : ''} ${cycle.isCurrent ? 'current' : ''}`;
+        
+        const formatDate = (date) => {
+            return `${date.getMonth() + 1}/${date.getDate()}`;
+        };
+
+        tab.innerHTML = `
+            <div class="tab-content">
+                <div class="tab-date">${formatDate(cycle.startDate)} - ${formatDate(cycle.endDate)}</div>
+                <div class="tab-info">
+                    <span class="tab-count">${cycle.trips.length}趟</span>
+                    ${cycle.isCurrent ? '<span class="tab-indicator">●</span>' : ''}
+                </div>
+            </div>
+            <button class="delete-cycle-btn" onclick="event.stopPropagation(); window.deleteCycle(${cycle.id});" title="刪除週期">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        `;
+        
+        tab.onclick = () => window.selectCycle(cycle.id);
+        tabsContainer.appendChild(tab);
+    });
+
+    // 新增週期按鈕
+    const addBtn = document.createElement('button');
+    addBtn.className = 'add-cycle-btn';
+    addBtn.innerHTML = '<i class="fa-solid fa-plus"></i>';
+    addBtn.onclick = window.addCycle;
+    tabsContainer.appendChild(addBtn);
+}
+
+// 取得當前選中的週期資料
+function getSelectedCycle() {
+    const cyclesData = calculateCycles();
+    if (cyclesData.length === 0) return null;
+    
+    // 如果沒有選中的週期，預設選擇第一個
+    if (!selectedCycleId) {
+        selectedCycleId = cyclesData[0].id;
+    }
+    
+    // 根據 ID 找到選中的週期
+    const selected = cyclesData.find(c => c.id === selectedCycleId);
+    
+    // 如果找不到（可能被刪除了），預設選擇第一個
+    if (!selected && cyclesData.length > 0) {
+        selectedCycleId = cyclesData[0].id;
+        return cyclesData[0];
+    }
+    
+    return selected;
+}
+
+// 初始化週期設定
+async function initCycleSettings() {
+    const cycleInput = document.getElementById('cycleStartDate');
+    const cycleLabel = document.querySelector('.cycle-settings label');
+    if (!cycleInput || !currentUser) return;
+    
+    // 如果沒有任何週期，創建第一個
+    if (cycles.length === 0) {
+        const today = new Date().toISOString().split('T')[0];
+        cycles.push({
+            id: Date.now(),
+            startDate: today,
+            name: '週期 1'
+        });
+        await saveCycles();
+    }
+    
+    // 設定當前週期的起始日
+    const cyclesData = calculateCycles();
+    if (cyclesData.length > 0) {
+        // 如果沒有選中的週期，找到當前週期並選中
+        if (!selectedCycleId) {
+            const currentCycle = cyclesData.find(c => c.isCurrent);
+            selectedCycleId = currentCycle ? currentCycle.id : cyclesData[0].id;
+        }
+        
+        const selectedCycle = cyclesData.find(c => c.id === selectedCycleId);
+        if (selectedCycle) {
+            const cycle = cycles.find(c => c.id === selectedCycle.id);
+            if (cycle) {
+                cycleInput.value = cycle.startDate;
+                
+                // 更新標籤顯示起迄日
+                const endDate = new Date(selectedCycle.endDate);
+                const endDateStr = `${endDate.getMonth() + 1}/${endDate.getDate()}`;
+                if (cycleLabel) {
+                    cycleLabel.innerHTML = `<i class="fa-solid fa-calendar-days"></i> 本週期：起始日`;
+                }
+            }
+        }
+    }
 }
