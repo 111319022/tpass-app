@@ -720,3 +720,33 @@ function getIconClass(type) {
     if(type==='bike') return 'fa-bicycle';
     return 'fa-circle';
 }
+
+// === [新增] iOS 引導加入主畫面邏輯 ===
+
+window.checkPWAStatus = function() {
+    // 偵測是否為 iOS
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    // 偵測是否已經在 standalone 模式 (已加入主畫面)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+    // 如果是 iOS 且還沒加入主畫面
+    if (isIOS && !isStandalone) {
+        // 檢查是否已經點過「我知道了」 (避免每次進來都跳)
+        const hasSeenGuide = localStorage.getItem('hasSeenIOSGuide');
+        if (!hasSeenGuide) {
+            document.getElementById('ios-guide').classList.remove('hidden');
+        }
+    }
+}
+
+window.closeGuide = function() {
+    document.getElementById('ios-guide').classList.add('hidden');
+    // 紀錄已看過，24小時內不再顯示 (或永久不顯示)
+    localStorage.setItem('hasSeenIOSGuide', 'true');
+}
+
+// 在頁面載入後執行檢查
+window.addEventListener('load', () => {
+    // 延遲一點點時間顯示，使用者體驗較好
+    setTimeout(checkPWAStatus, 2000);
+});
