@@ -824,3 +824,21 @@ body { background: var(--bg); color: var(--text); padding-bottom: 90px; }
 .btn-delete-cycle:hover {
     color: #d63031;
 }
+
+/* [新增] 列表項目可點擊樣式 */
+.history-item {
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.history-item:active {
+    transform: scale(0.98);
+    background-color: #f8f9fa;
+}
+
+/* [新增] 筆記欄位樣式 */
+textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: #f8faff;
+}
