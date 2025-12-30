@@ -10,9 +10,7 @@
 
 <br>
 
-<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbm90eW14OG15bGZ5eHZ5eHhzMXh5eHhzMXh5eHhzMXh5eHhzMSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/LpSf15JdJqS3S1s47N/giphy.gif" width="100">
-
-*(這裡建議放一張 App 的 Logo 或簡單的示意 GIF，目前先留空或放一個簡單的動態圖)*
+//圖片待補
 
 <br>
 
@@ -64,8 +62,6 @@
 
 ## 📸 介面導覽
 
-> *建議在此處拖拉上傳 1-2 張您的 App 真實截圖，會比任何文字都有說服力。*
-
 | **儀表板 (Dashboard)** | **行程紀錄 (History)** |
 |:---:|:---:|
 | <img src="" alt="請上傳截圖" width="250" /> | <img src="" alt="請上傳截圖" width="250" /> |
@@ -85,7 +81,7 @@
 3.啟動 直接開啟 index.html 即可運行。
 
 <div align="center">
-
+---
 Made with 🧠 by Raaay
 
 </div>
