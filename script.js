@@ -65,7 +65,8 @@ const els = {
     groupStations: document.getElementById('group-stations'),
     inputRoute: document.getElementById('routeId'),
     inputStart: document.getElementById('startStation'),
-    inputEnd: document.getElementById('endStation')
+    inputEnd: document.getElementById('endStation'),
+    transferLabel: document.getElementById('transferLabel')
 };
 
 // === 程式入口 ===
@@ -92,6 +93,12 @@ updateFormFields('mrt');
 // 掛載到 window 讓 HTML onclick 呼叫
 window.updateIdentity = function(type) {
     currentIdentity = type;
+    
+    // 更新轉乘標籤文字
+    const discount = FARE_CONFIG[currentIdentity].transferDiscount;
+    if (els.transferLabel) {
+        els.transferLabel.textContent = `我是轉乘 (自動 -${discount}元)`;
+    }
     
     // 重新渲染介面 (因為計算邏輯會改變)
     renderUI();
@@ -213,6 +220,9 @@ els.form.addEventListener('submit', async (e) => {
     submitBtn.disabled = true;
     submitBtn.innerText = "儲存中...";
 
+    // 根據當前身分取得轉乘優惠金額
+    const transferDiscount = FARE_CONFIG[currentIdentity].transferDiscount;
+
     try {
         await addDoc(collection(db, "users", currentUser.uid, "trips"), {
             createdAt: selectedDate.getTime(),
@@ -220,7 +230,7 @@ els.form.addEventListener('submit', async (e) => {
             timeStr: timeStr,
             type,
             originalPrice: price,
-            paidPrice: isTransfer ? Math.max(0, price - 6) : price,
+            paidPrice: isTransfer ? Math.max(0, price - transferDiscount) : price,
             isTransfer,
             routeId,
             startStation,
