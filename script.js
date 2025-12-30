@@ -316,8 +316,9 @@ function calculate() {
     else if (mrtCount > 20) mrtRate = 0.10;
     else if (mrtCount > 10) mrtRate = 0.05;
     if (mrtRate > 0) {
-        r1_cashback += mrtSum * mrtRate;
-        r1_details.push(`北捷 ${mrtCount} 趟，回饋 ${(mrtRate*100)}%`);
+        const mrtCashback = mrtSum * mrtRate;
+        r1_cashback += mrtCashback;
+        r1_details.push(`北捷 ${mrtCount} 趟，回饋 ${(mrtRate*100)}%|$${Math.floor(mrtCashback)}`);
     }
 
     // 台鐵回饋...
@@ -328,8 +329,9 @@ function calculate() {
     else if (traCount > 20) traRate = 0.15;
     else if (traCount > 10) traRate = 0.10;
     if (traRate > 0) {
-        r1_cashback += traSum * traRate;
-        r1_details.push(`台鐵 ${traCount} 趟，回饋 ${(traRate*100)}%`);
+        const traCashback = traSum * traRate;
+        r1_cashback += traCashback;
+        r1_details.push(`台鐵 ${traCount} 趟，回饋 ${(traRate*100)}%|$${Math.floor(traCashback)}`);
     }
 
     // TPass 2.0...
@@ -338,8 +340,9 @@ function calculate() {
     const railCount = stats.counts.mrt + stats.counts.tra + stats.counts.tymrt + stats.counts.lrt;
     const railSum = stats.sums.mrt + stats.sums.tra + stats.sums.tymrt + stats.sums.lrt;
     if (railCount >= 11) {
-        r2_cashback += railSum * 0.02;
-        r2_details.push(`軌道 ${railCount} 趟，回饋 2%`);
+        const railCashback = railSum * 0.02;
+        r2_cashback += railCashback;
+        r2_details.push(`軌道 ${railCount} 趟，回饋 2%|$${Math.floor(railCashback)}`);
     }
 
     const busCount = stats.counts.bus + stats.counts.coach;
@@ -348,8 +351,9 @@ function calculate() {
     if (busCount > 30) busRate = 0.30;
     else if (busCount >= 11) busRate = 0.15;
     if (busRate > 0) {
-        r2_cashback += busSum * busRate;
-        r2_details.push(`公車客運 ${busCount} 趟，回饋 ${(busRate*100)}%`);
+        const busCashback = busSum * busRate;
+        r2_cashback += busCashback;
+        r2_details.push(`公車客運 ${busCount} 趟，回饋 ${(busRate*100)}%|$${Math.floor(busCashback)}`);
     }
 
     return {
@@ -371,9 +375,15 @@ function renderUI() {
     els.finalCost.innerText = `$${finalVal}`;
     els.rawTotal.innerText = `$${Math.floor(data.totalPaid)}`;
     els.rule1Discount.innerText = `-$${Math.floor(data.r1.amount)}`;
-    els.rule1Detail.innerHTML = data.r1.details.length ? data.r1.details.map(d => `<div>${d}</div>`).join('') : '';
+    els.rule1Detail.innerHTML = data.r1.details.length ? data.r1.details.map(d => {
+        const [text, amount] = d.split('|');
+        return `<div style="display:flex; justify-content:space-between;"><span>${text}</span><span>${amount}</span></div>`;
+    }).join('') : '';
     els.rule2Discount.innerText = `-$${Math.floor(data.r2.amount)}`;
-    els.rule2Detail.innerHTML = data.r2.details.length ? data.r2.details.map(d => `<div>${d}</div>`).join('') : '';
+    els.rule2Detail.innerHTML = data.r2.details.length ? data.r2.details.map(d => {
+        const [text, amount] = d.split('|');
+        return `<div style="display:flex; justify-content:space-between;"><span>${text}</span><span>${amount}</span></div>`;
+    }).join('') : '';
     els.tripCount.innerText = trips.length;
 
     const diff = TPASS_PRICE - finalVal;
