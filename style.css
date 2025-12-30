@@ -98,6 +98,34 @@ body { background: var(--bg); color: var(--text); padding-bottom: 90px; }
 .section-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
 .text-btn { background: none; border: none; color: var(--text-sub); font-size: 14px; cursor: pointer; }
 .history-list { list-style: none; }
+
+/* 日期分隔線樣式 */
+.date-separator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 20px 0 10px 0;
+    color: var(--text-sub);
+    font-size: 13px;
+    font-weight: bold;
+    position: relative;
+}
+
+/* 加上兩條橫線讓它看起來像分隔線 */
+.date-separator::before,
+.date-separator::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #e0e0e0;
+    margin: 0 15px;
+}
+
+/* 為了讓第一天的日期不需要上面的間距 */
+.history-list > .date-separator:first-child {
+    margin-top: 0;
+}
+
 .history-item { background: var(--card); padding: 12px 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
 .item-left { display: flex; align-items: center; gap: 12px; width: 70%; } /* 限制寬度讓文字省略 */
 .t-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; flex-shrink: 0; }

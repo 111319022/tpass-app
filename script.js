@@ -40,6 +40,7 @@ const els = {
     diffText: document.getElementById('diffText'),
     historyList: document.getElementById('historyList'),
     tripCount: document.getElementById('tripCount'),
+    tripDate: document.getElementById('tripDate'),
     modal: document.getElementById('entryModal'),
     form: document.getElementById('tripForm'),
     transportRadios: document.querySelectorAll('input[name="type"]'),
@@ -92,7 +93,21 @@ function setupRealtimeListener(uid) {
 // === 表單與互動邏輯 ===
 
 window.toggleModal = function() {
-    els.modal.classList.toggle('hidden');
+    const isHidden = els.modal.classList.contains('hidden');
+    
+    if (isHidden) {
+        // 當打開 Modal 時，預設設定為「今天」
+        // 注意：input type="date" 需要 YYYY-MM-DD 格式
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        els.tripDate.value = `${yyyy}-${mm}-${dd}`;
+        
+        els.modal.classList.remove('hidden');
+    } else {
+        els.modal.classList.add('hidden');
+    }
 }
 
 els.transportRadios.forEach(radio => {
@@ -121,6 +136,19 @@ els.form.addEventListener('submit', async (e) => {
     const price = parseFloat(document.getElementById('price').value);
     const isTransfer = document.getElementById('transfer').checked;
     
+    // 取得使用者選擇的日期
+    const dateInputVal = els.tripDate.value; // "2023-12-30"
+    if (!dateInputVal) return alert("請選擇日期");
+
+    // 建立 Date 物件 (用於排序與顯示)
+    // 技巧：將時間設為當下時間，這樣如果補登今天的，順序會對；如果是補登以前的，就用該日期的當下時間
+    const selectedDate = new Date(dateInputVal);
+    const now = new Date();
+    selectedDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+
+    // 格式化顯示用字串 (YYYY/MM/DD)
+    const dateStr = dateInputVal.replace(/-/g, '/');
+    
     // 欄位防呆：若隱藏則為空字串
     const routeId = !els.groupRoute.classList.contains('hidden') ? els.inputRoute.value.trim() : '';
     const startStation = !els.groupStations.classList.contains('hidden') ? els.inputStart.value.trim() : '';
@@ -134,8 +162,8 @@ els.form.addEventListener('submit', async (e) => {
 
     try {
         await addDoc(collection(db, "users", currentUser.uid, "trips"), {
-            createdAt: Date.now(),
-            dateStr: new Date().toLocaleDateString(),
+            createdAt: selectedDate.getTime(),
+            dateStr: dateStr,
             type,
             originalPrice: price,
             paidPrice: isTransfer ? Math.max(0, price - 6) : price,
@@ -280,7 +308,25 @@ function renderUI() {
         return;
     }
 
+    let lastDateStr = null; // 用來記錄上一筆資料的日期
+
     trips.forEach(trip => {
+        // 檢查是否需要插入日期分隔線
+        if (trip.dateStr !== lastDateStr) {
+            const separator = document.createElement('li');
+            separator.className = 'date-separator';
+            
+            // 判斷是否為今天，顯示得更人性化
+            const tripDate = new Date(trip.dateStr);
+            const today = new Date();
+            const isToday = tripDate.toDateString() === today.toDateString();
+            
+            separator.innerText = isToday ? `今天 (${trip.dateStr})` : trip.dateStr;
+            els.historyList.appendChild(separator);
+            
+            lastDateStr = trip.dateStr;
+        }
+
         const tDef = TRANSPORT_TYPES[trip.type] || TRANSPORT_TYPES.mrt;
         const li = document.createElement('li');
         li.className = 'history-item';
@@ -313,7 +359,7 @@ function renderUI() {
                 </div>
                 <div class="item-info">
                     <h4>${titleDesc} ${trip.isTransfer ? '<i class="fa-solid fa-link" style="color:#27ae60; font-size:12px;"></i>' : ''}</h4>
-                    <small>${trip.dateStr} • ${tDef.name}</small>
+                    <small>${tDef.name}</small>
                 </div>
             </div>
             ${priceHtml}
