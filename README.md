@@ -49,7 +49,7 @@
 
 ## ⚡️ 技術核心
 
-我們堅持使用最輕量、最穩定的技術棧，確保 App 在任何裝置上都飛快流暢。
+使用最輕量、最穩定的技術棧，確保 App 在任何裝置上都能輕鬆運行。
 
 `HTML5` &nbsp; `CSS3 (Flexbox/Grid)` &nbsp; `JavaScript (ES6+)`
 
@@ -65,7 +65,7 @@
 
 | **儀表板 (Dashboard)** | **行程紀錄 (History)** |
 |:---:|:---:|
-| <img src="" alt="請上傳截圖" width="250" /> | <img src="" alt="請上傳截圖" width="250" /> |
+| <img src="screenshot_1.png" alt="截圖" width="250" /> | <img src="screenshot_2.png" alt="截圖" width="250" /> |
 | *直觀顯示回本進度與金額* | *自動依日期分組，清晰明瞭* |
 
 ---
