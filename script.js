@@ -36,11 +36,19 @@ const TRANSPORT_TYPES = {
 const els = {
     // 儀表板與統計
     finalCost: document.getElementById('finalCost'),
-    rawTotal: document.getElementById('rawTotal'),
+    
+    // [新增] 明細折疊區塊相關 ID
+    displayOriginalTotal: document.getElementById('displayOriginalTotal'),
+    listOriginalDetails: document.getElementById('listOriginalDetails'),
+    displayPaidTotal: document.getElementById('displayPaidTotal'),
+    listPaidDetails: document.getElementById('listPaidDetails'),
+
+    // 優惠規則區塊
     rule1Discount: document.getElementById('rule1Discount'),
     rule1Detail: document.getElementById('rule1Detail'),
     rule2Discount: document.getElementById('rule2Discount'),
     rule2Detail: document.getElementById('rule2Detail'),
+    
     statusText: document.getElementById('statusText'),
     diffText: document.getElementById('diffText'),
     historyList: document.getElementById('historyList'),
@@ -70,7 +78,7 @@ const els = {
     inputEnd: document.getElementById('endStation'),
     transferLabel: document.getElementById('transferLabel'),
 
-    // [新增] 編輯 Modal 相關元素
+    // 編輯 Modal 相關元素
     editModal: document.getElementById('editModal'),
     editForm: document.getElementById('editForm'),
     editTripId: document.getElementById('editTripId'),
@@ -78,7 +86,7 @@ const els = {
     editTime: document.getElementById('editTime'),
     editPrice: document.getElementById('editPrice'),
     editTransfer: document.getElementById('editTransfer'),
-    editNote: document.getElementById('editNote'), // 備註
+    editNote: document.getElementById('editNote'),
     editRouteId: document.getElementById('editRouteId'),
     editStart: document.getElementById('editStart'),
     editEnd: document.getElementById('editEnd'),
@@ -505,10 +513,21 @@ els.btnDeleteTrip.addEventListener('click', async () => {
     }
 });
 
-// === 核心計算邏輯 ===
+// === 核心計算邏輯 (修正版) ===
 function calculate() {
-    let stats = { totalPaid: 0, counts: {}, sums: {} };
-    Object.keys(TRANSPORT_TYPES).forEach(k => { stats.counts[k] = 0; stats.sums[k] = 0; });
+    let stats = { 
+        totalPaid: 0, 
+        totalOriginal: 0, // [新增] 總原價
+        counts: {}, 
+        originalSums: {}, // [Rule 1 用]
+        paidSums: {}      // [Rule 2 用]
+    };
+
+    Object.keys(TRANSPORT_TYPES).forEach(k => { 
+        stats.counts[k] = 0; 
+        stats.originalSums[k] = 0; 
+        stats.paidSums[k] = 0; 
+    });
 
     const discount = FARE_CONFIG[currentIdentity].transferDiscount;
 
@@ -518,68 +537,95 @@ function calculate() {
             return;
         }
 
+        // 計算這一筆的「實付金額」
         let finalPrice = t.originalPrice;
         if (t.isTransfer) {
             finalPrice = Math.max(0, t.originalPrice - discount);
         }
 
+        // 總支出 (顯示在儀表板左邊)
         stats.totalPaid += finalPrice;
+        
+        // [新增] 總原價
+        stats.totalOriginal += t.originalPrice;
+        
+        // 累積次數
         stats.counts[t.type]++;
-        stats.sums[t.type] += t.originalPrice;
+        
+        // [Rule 1 用] 累積原價
+        stats.originalSums[t.type] += t.originalPrice;
+
+        // [Rule 2 用] 累積實付金額
+        stats.paidSums[t.type] += finalPrice;
     });
 
-    // 北捷回饋
+    // --- Rule 1: 北捷與台鐵常客優惠 (依照「原價」計算) ---
     let r1_cashback = 0;
     let r1_details = [];
+    
+    // 北捷 (看 originalSums)
     const mrtCount = stats.counts.mrt;
-    const mrtSum = stats.sums.mrt;
+    const mrtSum = stats.originalSums.mrt; // 使用原價
     let mrtRate = 0;
     if (mrtCount > 40) mrtRate = 0.15;
     else if (mrtCount > 20) mrtRate = 0.10;
     else if (mrtCount > 10) mrtRate = 0.05;
+    
     if (mrtRate > 0) {
         const mrtCashback = mrtSum * mrtRate;
         r1_cashback += mrtCashback;
         r1_details.push({ text: `北捷 ${mrtCount} 趟，回饋 ${(mrtRate*100)}%`, amount: `-$${Math.floor(mrtCashback)}` });
     }
 
-    // 台鐵回饋
+    // 台鐵 (看 originalSums)
     const traCount = stats.counts.tra;
-    const traSum = stats.sums.tra;
+    const traSum = stats.originalSums.tra; // 使用原價
     let traRate = 0;
     if (traCount > 40) traRate = 0.20;
     else if (traCount > 20) traRate = 0.15;
     else if (traCount > 10) traRate = 0.10;
+    
     if (traRate > 0) {
         const traCashback = traSum * traRate;
         r1_cashback += traCashback;
         r1_details.push({ text: `台鐵 ${traCount} 趟，回饋 ${(traRate*100)}%`, amount: `-$${Math.floor(traCashback)}` });
     }
 
-    // TPass 2.0 回饋
+    // --- Rule 2: TPass 2.0 回饋 (依照「實付金額」計算) ---
     let r2_cashback = 0;
     let r2_details = [];
+    
+    // 軌道運具 (北捷/台鐵/機捷/輕軌)
     const railCount = stats.counts.mrt + stats.counts.tra + stats.counts.tymrt + stats.counts.lrt;
-    const railSum = stats.sums.mrt + stats.sums.tra + stats.sums.tymrt + stats.sums.lrt;
+    // [修正] 改用 paidSums (實付金額) 來算 2%
+    const railPaidSum = stats.paidSums.mrt + stats.paidSums.tra + stats.paidSums.tymrt + stats.paidSums.lrt;
+    
     if (railCount >= 11) {
-        const railCashback = railSum * 0.02;
+        const railCashback = railPaidSum * 0.02; // 用實付金額 x 2%
         r2_cashback += railCashback;
         r2_details.push({ text: `軌道 ${railCount} 趟，回饋 2%`, amount: `-$${Math.floor(railCashback)}` });
     }
 
+    // 公車與客運
     const busCount = stats.counts.bus + stats.counts.coach;
-    const busSum = stats.sums.bus + stats.sums.coach;
+    // [修正] 改用 paidSums (實付金額) 來算 15%/30%
+    const busPaidSum = stats.paidSums.bus + stats.paidSums.coach;
+    
     let busRate = 0;
     if (busCount > 30) busRate = 0.30;
     else if (busCount >= 11) busRate = 0.15;
+    
     if (busRate > 0) {
-        const busCashback = busSum * busRate;
+        const busCashback = busPaidSum * busRate; // 用實付金額 x 匯率
         r2_cashback += busCashback;
         r2_details.push({ text: `公車客運 ${busCount} 趟，回饋 ${(busRate*100)}%`, amount: `-$${Math.floor(busCashback)}` });
     }
 
     return {
         totalPaid: stats.totalPaid,
+        totalOriginal: stats.totalOriginal, // [新增]
+        originalSums: stats.originalSums,   // [新增]
+        paidSums: stats.paidSums,           // [新增]
         r1: { amount: r1_cashback, details: r1_details },
         r2: { amount: r2_cashback, details: r2_details },
         finalCost: stats.totalPaid - r1_cashback - r2_cashback
@@ -592,15 +638,29 @@ function renderUI() {
     const data = calculate();
     const finalVal = Math.floor(data.finalCost);
 
-    // 更新儀表板
+    // 1. 更新大標題金額
     els.finalCost.innerText = `$${finalVal}`;
-    els.rawTotal.innerText = `$${Math.floor(data.totalPaid)}`;
+
+    // 2. 更新 [原始金額] 區塊 (折疊明細)
+    els.displayOriginalTotal.innerText = `$${Math.floor(data.totalOriginal)}`;
+    els.listOriginalDetails.innerHTML = generateDetailHtml(data.originalSums);
+
+    // 3. 更新 [實付金額] 區塊 (折疊明細)
+    els.displayPaidTotal.innerText = `$${Math.floor(data.totalPaid)}`;
+    els.listPaidDetails.innerHTML = generateDetailHtml(data.paidSums);
+
+    // 4. 更新優惠區塊 (規則 1 & 2)
     els.rule1Discount.innerText = `-$${Math.floor(data.r1.amount)}`;
-    els.rule1Detail.innerHTML = data.r1.details.length ? data.r1.details.map(d => `<div class="rule-detail-row"><span>${d.text}</span><span>${d.amount}</span></div>`).join('') : '';
+    els.rule1Detail.innerHTML = data.r1.details.length 
+        ? data.r1.details.map(d => `<div class="rule-detail-row"><span>${d.text}</span><span>${d.amount}</span></div>`).join('') 
+        : '';
+
     els.rule2Discount.innerText = `-$${Math.floor(data.r2.amount)}`;
-    els.rule2Detail.innerHTML = data.r2.details.length ? data.r2.details.map(d => `<div class="rule-detail-row"><span>${d.text}</span><span>${d.amount}</span></div>`).join('') : '';
+    els.rule2Detail.innerHTML = data.r2.details.length 
+        ? data.r2.details.map(d => `<div class="rule-detail-row"><span>${d.text}</span><span>${d.amount}</span></div>`).join('') 
+        : '';
     
-    // 更新狀態
+    // 5. 更新狀態文字
     const diff = TPASS_PRICE - finalVal;
     if (diff < 0) {
         els.statusText.innerText = "已回本！";
@@ -612,7 +672,7 @@ function renderUI() {
         els.diffText.innerText = `還差 $${diff} 元回本`;
     }
 
-    // 重新渲染列表
+    // 6. 渲染歷史列表
     els.historyList.innerHTML = '';
 
     if (!currentSelectedCycle) {
@@ -681,7 +741,7 @@ function renderUI() {
             priceHtml = `<div class="item-right"><div class="price-display">$${displayPaid}</div></div>`;
         }
 
-        // [修改] 讓整行可點擊
+        // 讓整行可點擊
         li.setAttribute('onclick', `openEditModal('${trip.id}')`);
         
         // 備註小圖示
@@ -710,6 +770,36 @@ function renderUI() {
     }
 }
 
+// [新增] 產生細項 HTML 的輔助函式
+function generateDetailHtml(sumsObj) {
+    let html = '';
+    let hasData = false;
+
+    // 遍歷所有運具類型
+    for (const [type, sum] of Object.entries(sumsObj)) {
+        if (sum > 0) {
+            hasData = true;
+            const name = TRANSPORT_TYPES[type].name;
+            const colorClass = TRANSPORT_TYPES[type].class; // 用於之後可以擴充顏色點點
+            
+            html += `
+                <div class="detail-row">
+                    <span>
+                        <i class="fa-solid fa-circle" style="font-size:8px; margin-right:5px; opacity:0.7;"></i>
+                        ${name}
+                    </span>
+                    <span>$${Math.floor(sum)}</span>
+                </div>
+            `;
+        }
+    }
+
+    if (!hasData) {
+        return '<div style="text-align:center; opacity:0.5;">尚無資料</div>';
+    }
+    return html;
+}
+
 function getIconClass(type) {
     if(type==='mrt') return 'fa-train-subway';
     if(type==='bus') return 'fa-bus';
@@ -721,17 +811,12 @@ function getIconClass(type) {
     return 'fa-circle';
 }
 
-// === [新增] iOS 引導加入主畫面邏輯 ===
-
+// === iOS 引導加入主畫面邏輯 ===
 window.checkPWAStatus = function() {
-    // 偵測是否為 iOS
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    // 偵測是否已經在 standalone 模式 (已加入主畫面)
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
-    // 如果是 iOS 且還沒加入主畫面
     if (isIOS && !isStandalone) {
-        // 檢查是否已經點過「我知道了」 (避免每次進來都跳)
         const hasSeenGuide = localStorage.getItem('hasSeenIOSGuide');
         if (!hasSeenGuide) {
             document.getElementById('ios-guide').classList.remove('hidden');
@@ -741,12 +826,9 @@ window.checkPWAStatus = function() {
 
 window.closeGuide = function() {
     document.getElementById('ios-guide').classList.add('hidden');
-    // 紀錄已看過，24小時內不再顯示 (或永久不顯示)
     localStorage.setItem('hasSeenIOSGuide', 'true');
 }
 
-// 在頁面載入後執行檢查
 window.addEventListener('load', () => {
-    // 延遲一點點時間顯示，使用者體驗較好
     setTimeout(checkPWAStatus, 2000);
 });

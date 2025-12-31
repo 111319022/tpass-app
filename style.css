@@ -907,3 +907,86 @@ textarea:focus {
     width: 100%;
     border-radius: 14px;
 }
+
+/* === [新增] 明細折疊區塊樣式 === */
+
+.price-section {
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.price-section:last-of-type {
+    border-bottom: none;
+}
+
+.price-section summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    list-style: none; /* 隱藏預設三角形 */
+    transition: opacity 0.2s;
+}
+
+.price-section summary::-webkit-details-marker {
+    display: none;
+}
+
+/* 自定義箭頭 */
+.price-section summary::after {
+    content: '\f107'; /* FontAwesome Down Arrow */
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    font-size: 12px;
+    margin-left: 8px;
+    transition: transform 0.3s;
+    opacity: 0.6;
+    order: 2; /* 讓箭頭排在最後面(如果需要) */
+}
+
+/* 展開時箭頭旋轉 */
+.price-section[open] summary::after {
+    transform: rotate(180deg);
+}
+
+/* 為了讓金額靠右，箭頭跟隨文字，我們微調 summary */
+.price-section summary {
+    position: relative;
+}
+.price-section summary span:last-child {
+    margin-left: auto; /* 金額推到最右 */
+    margin-right: 5px;
+    font-weight: bold;
+}
+
+/* 折疊內容區 */
+.price-details {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    padding-bottom: 4px;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.detail-row span:nth-child(2) {
+    font-family: monospace; /* 數字對齊 */
+    font-size: 13px;
+}

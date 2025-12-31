@@ -7,11 +7,14 @@
     <meta name="application-name" content="TPass 回本計算器">
     <meta name="author" content="Raaay">
     <title>TPASS 回本計算器</title>
+    
     <link rel="apple-touch-icon" href="icon.png">
-<link rel="icon" type="image/png" href="icon.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="TPASS計算機">
+    <link rel="icon" type="image/png" href="icon.png">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TPASS計算機">
+    
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -66,26 +69,39 @@
             </div>
 
             <div class="breakdown-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">
-                    <h4 style="margin:0; border:none; padding:0;"><i class="fa-solid fa-calculator"></i> 優惠回饋明細</h4>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">
+                    <h4 style="margin:0; border:none; padding:0;"><i class="fa-solid fa-calculator"></i> 費用與回饋明細</h4>
                     <a href="trans-rule.html" style="color:white; font-size:12px; text-decoration:none; background:rgba(255,255,255,0.2); padding:6px 12px; border-radius:15px; display:flex; align-items:center; gap:5px; transition:0.2s;">
                         <i class="fa-solid fa-circle-info"></i> <span>查看規則</span>
                     </a>
                 </div>
 
-                <div class="breakdown-item">
-                    <span>原始搭乘總額</span>
-                    <span id="rawTotal">$0</span>
-                </div>
+                <details class="price-section">
+                    <summary>
+                        <span>原始票價總額</span>
+                        <span id="displayOriginalTotal">$0</span>
+                    </summary>
+                    <div id="listOriginalDetails" class="price-details"></div>
+                </details>
+
+                <details class="price-section" open>
+                    <summary>
+                        <span>實際扣款總額 <small style="opacity:0.7; font-size:11px;">(扣轉乘)</small></span>
+                        <span id="displayPaidTotal">$0</span>
+                    </summary>
+                    <div id="listPaidDetails" class="price-details"></div>
+                </details>
+
+                <hr style="border:0; border-top:1px dashed rgba(255,255,255,0.2); margin: 10px 0;">
                 
                 <div class="breakdown-item discount">
-                    <span><i class="fa-solid fa-gem"></i> 常客優惠</span>
+                    <span><i class="fa-solid fa-gem"></i> 常客優惠回饋</span>
                     <span id="rule1Discount">-$0</span>
                 </div>
                 <div class="rule-detail" id="rule1Detail"></div>
 
                 <div class="breakdown-item discount">
-                    <span><i class="fa-solid fa-ticket"></i> TPass 2.0</span>
+                    <span><i class="fa-solid fa-ticket"></i> TPass 2.0 回饋</span>
                     <span id="rule2Discount">-$0</span>
                 </div>
                 <div class="rule-detail" id="rule2Detail"></div>
@@ -106,136 +122,137 @@
                 <i class="fa-solid fa-plus"></i> 記一筆
             </button>
         </div>
-
-        <div id="settingsModal" class="modal hidden">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3><i class="fa-solid fa-sliders"></i> 設定與週期管理</h3>
-                    <button class="close-btn" onclick="toggleSettingsModal()">&times;</button>
-                </div>
-                
-                <form id="settingsForm">
-                    <div class="form-group">
-                        <label>乘客身分 (影響轉乘優惠金額)</label>
-                        <div class="identity-selector" style="display:flex; gap:10px;">
-                            <input type="radio" name="settingsIdentity" id="setId_adult" value="adult" checked>
-                            <label for="setId_adult" class="radio-box">
-                                全票 (成人)<br>
-                                <small style="font-size:11px; color:#888;">轉乘折 $8</small>
-                            </label>
-                            
-                            <input type="radio" name="settingsIdentity" id="setId_student" value="student">
-                            <label for="setId_student" class="radio-box">
-                                學生票<br>
-                                <small style="font-size:11px; color:#888;">轉乘折 $6</small>
-                            </label>
-                        </div>
-                    </div>
-
-                    <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
-
-                    <div class="form-group">
-                        <label><i class="fa-solid fa-circle-plus"></i> 新增月票週期</label>
-                        <div style="display:flex; gap:10px;">
-                            <input type="date" id="newCycleDate" style="flex:1; padding:10px; border-radius:8px; border:1px solid #ddd; font-family:inherit;">
-                            <button type="button" id="btnAddCycle" class="submit-btn" style="width:auto; padding:0 15px; background:#2ecc71;">新增</button>
-                        </div>
-                        <small style="color:#888; margin-top:5px; display:block;">選擇啟用日，系統自動計算30天。</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label><i class="fa-solid fa-clock-rotate-left"></i> 已建立的週期</label>
-                        <ul id="cycleList" class="cycle-manage-list">
-                            <li style="color:#999; text-align:center; padding:10px;">尚無資料</li>
-                        </ul>
-                    </div>
-
-                    <button type="submit" class="submit-btn" style="background:#6c5ce7; margin-top:10px;">關閉並儲存</button>
-                </form>
+    </div> 
+    <div id="settingsModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-sliders"></i> 設定與週期管理</h3>
+                <button class="close-btn" onclick="toggleSettingsModal()">&times;</button>
             </div>
-        </div>
-
-        <div id="entryModal" class="modal hidden">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>新增行程</h3>
-                    <button class="close-btn" onclick="window.toggleModal()">&times;</button>
+            
+            <form id="settingsForm">
+                <div class="form-group">
+                    <label>乘客身分 (影響轉乘優惠金額)</label>
+                    <div class="identity-selector" style="display:flex; gap:10px;">
+                        <input type="radio" name="settingsIdentity" id="setId_adult" value="adult" checked>
+                        <label for="setId_adult" class="radio-box">
+                            全票 (成人)<br>
+                            <small style="font-size:11px; color:#888;">轉乘折 $8</small>
+                        </label>
+                        
+                        <input type="radio" name="settingsIdentity" id="setId_student" value="student">
+                        <label for="setId_student" class="radio-box">
+                            學生票<br>
+                            <small style="font-size:11px; color:#888;">轉乘折 $6</small>
+                        </label>
+                    </div>
                 </div>
-                
-                <form id="tripForm">
-                    <div class="form-group" style="display:flex; gap:10px; align-items:flex-end;">
-                        <div style="flex:1;">
-                            <label>搭乘日期</label>
-                            <input type="date" id="tripDate" required style="font-family: inherit; width:100%;">
-                        </div>
-                        <div style="flex:1;">
-                            <label>搭乘時間</label>
-                            <input type="time" id="tripTime" step="1" required style="font-family: inherit; width:100%;">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>選擇運具</label>
-                        <div class="transport-grid" id="transportSelector">
-                            <label class="t-option">
-                                <input type="radio" name="type" value="mrt" checked>
-                                <div class="t-box c-mrt"><i class="fa-solid fa-train-subway"></i><small>北捷</small></div>
-                            </label>
-                            <label class="t-option">
-                                <input type="radio" name="type" value="bus">
-                                <div class="t-box c-bus"><i class="fa-solid fa-bus"></i><small>公車</small></div>
-                            </label>
-                            <label class="t-option">
-                                <input type="radio" name="type" value="coach">
-                                <div class="t-box c-coach"><i class="fa-solid fa-bus-simple"></i><small>客運</small></div>
-                            </label>
-                            <label class="t-option">
-                                <input type="radio" name="type" value="tra">
-                                <div class="t-box c-tra"><i class="fa-solid fa-train"></i><small>台鐵</small></div>
-                            </label>
-                            <label class="t-option">
-                                <input type="radio" name="type" value="tymrt">
-                                <div class="t-box c-tymrt"><i class="fa-solid fa-plane-departure"></i><small>機捷</small></div>
-                            </label>
-                            <label class="t-option">
-                                <input type="radio" name="type" value="lrt">
-                                <div class="t-box c-lrt"><i class="fa-solid fa-train-tram"></i><small>輕軌</small></div>
-                            </label>
-                            <label class="t-option">
-                                <input type="radio" name="type" value="bike">
-                                <div class="t-box c-bike"><i class="fa-solid fa-bicycle"></i><small>Ubike</small></div>
-                            </label>
-                        </div>
-                    </div>
 
-                    <div class="form-group hidden" id="group-route">
-                        <label>路線編號</label>
-                        <input type="text" id="routeId" placeholder="例如: 307, 統聯1610">
-                    </div>
+                <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
 
-                    <div class="form-group" id="group-stations">
-                        <label>起訖站點</label>
-                        <div class="station-inputs">
-                            <input type="text" id="startStation" placeholder="起點">
-                            <i class="fa-solid fa-arrow-right station-arrow"></i>
-                            <input type="text" id="endStation" placeholder="終點">
-                        </div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-circle-plus"></i> 新增月票週期</label>
+                    <div style="display:flex; gap:10px;">
+                        <input type="date" id="newCycleDate" style="flex:1; padding:10px; border-radius:8px; border:1px solid #ddd; font-family:inherit;">
+                        <button type="button" id="btnAddCycle" class="submit-btn" style="width:auto; padding:0 15px; background:#2ecc71;">新增</button>
                     </div>
+                    <small style="color:#888; margin-top:5px; display:block;">選擇啟用日，系統自動計算30天。</small>
+                </div>
 
-                    <div class="form-group">
-                        <label>單程全票原價 (尚未扣轉乘)</label>
-                        <input type="number" id="price" placeholder="例如: 30" required inputmode="numeric">
-                    </div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-clock-rotate-left"></i> 已建立的週期</label>
+                    <ul id="cycleList" class="cycle-manage-list">
+                        <li style="color:#999; text-align:center; padding:10px;">尚無資料</li>
+                    </ul>
+                </div>
 
-                    <div class="form-group checkbox-group">
-                        <input type="checkbox" id="transfer">
-                        <label for="transfer" id="transferLabel">我是轉乘 (自動扣除優惠)</label>
-                    </div>
-
-                    <button type="submit" class="submit-btn">加入計算</button>
-                </form>
-            </div>
+                <button type="submit" class="submit-btn" style="background:#6c5ce7; margin-top:10px;">關閉並儲存</button>
+            </form>
         </div>
-       <div id="ios-guide" class="modal hidden">
+    </div>
+
+    <div id="entryModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>新增行程</h3>
+                <button class="close-btn" onclick="window.toggleModal()">&times;</button>
+            </div>
+            
+            <form id="tripForm">
+                <div class="form-group" style="display:flex; gap:10px; align-items:flex-end;">
+                    <div style="flex:1;">
+                        <label>搭乘日期</label>
+                        <input type="date" id="tripDate" required style="font-family: inherit; width:100%;">
+                    </div>
+                    <div style="flex:1;">
+                        <label>搭乘時間</label>
+                        <input type="time" id="tripTime" step="1" required style="font-family: inherit; width:100%;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>選擇運具</label>
+                    <div class="transport-grid" id="transportSelector">
+                        <label class="t-option">
+                            <input type="radio" name="type" value="mrt" checked>
+                            <div class="t-box c-mrt"><i class="fa-solid fa-train-subway"></i><small>北捷</small></div>
+                        </label>
+                        <label class="t-option">
+                            <input type="radio" name="type" value="bus">
+                            <div class="t-box c-bus"><i class="fa-solid fa-bus"></i><small>公車</small></div>
+                        </label>
+                        <label class="t-option">
+                            <input type="radio" name="type" value="coach">
+                            <div class="t-box c-coach"><i class="fa-solid fa-bus-simple"></i><small>客運</small></div>
+                        </label>
+                        <label class="t-option">
+                            <input type="radio" name="type" value="tra">
+                            <div class="t-box c-tra"><i class="fa-solid fa-train"></i><small>台鐵</small></div>
+                        </label>
+                        <label class="t-option">
+                            <input type="radio" name="type" value="tymrt">
+                            <div class="t-box c-tymrt"><i class="fa-solid fa-plane-departure"></i><small>機捷</small></div>
+                        </label>
+                        <label class="t-option">
+                            <input type="radio" name="type" value="lrt">
+                            <div class="t-box c-lrt"><i class="fa-solid fa-train-tram"></i><small>輕軌</small></div>
+                        </label>
+                        <label class="t-option">
+                            <input type="radio" name="type" value="bike">
+                            <div class="t-box c-bike"><i class="fa-solid fa-bicycle"></i><small>Ubike</small></div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group hidden" id="group-route">
+                    <label>路線編號</label>
+                    <input type="text" id="routeId" placeholder="例如: 307, 統聯1610">
+                </div>
+
+                <div class="form-group" id="group-stations">
+                    <label>起訖站點</label>
+                    <div class="station-inputs">
+                        <input type="text" id="startStation" placeholder="起點">
+                        <i class="fa-solid fa-arrow-right station-arrow"></i>
+                        <input type="text" id="endStation" placeholder="終點">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>單程全票原價 (尚未扣轉乘)</label>
+                    <input type="number" id="price" placeholder="例如: 30" required inputmode="numeric">
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="transfer">
+                    <label for="transfer" id="transferLabel">我是轉乘 (自動扣除優惠)</label>
+                </div>
+
+                <button type="submit" class="submit-btn">加入計算</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="ios-guide" class="modal hidden">
         <div class="modal-content">
             <div style="font-size: 48px; margin-bottom: 10px;">📲</div>
             <h3 style="margin: 0 0 10px 0; font-size: 22px; font-weight: 700;">加入主畫面</h3>
@@ -260,8 +277,6 @@
 
             <button onclick="closeGuide()" class="submit-btn guide-btn">我知道了</button>
         </div>
-    </div>
-</div>
     </div>
 
     <div id="editModal" class="modal hidden">
