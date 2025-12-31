@@ -65,7 +65,7 @@
 
 | **儀表板 (Dashboard)** | **行程紀錄 (History)** |
 |:---:|:---:|
-| <img src="screenshot_1.png" alt="截圖" width="250" /> | <img src="screenshot_2.png" alt="截圖" width="250" /> |
+| <img src="/screenshot/screenshot_1.PNG" alt="截圖" width="250" /> | <img src="/screenshot/screenshot_2.PNG" alt="截圖" width="250" /> |
 | *直觀顯示回本進度與金額* | *自動依日期分組，清晰明瞭* |
 
 ---
