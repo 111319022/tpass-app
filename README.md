@@ -64,9 +64,10 @@
 ## 📸 介面導覽
 
 | **儀表板 (Dashboard)** | **行程紀錄 (History)** | **輸入畫面** |
-|:---:|:---:|
-| <img src="/screenshot/screenshot_1.PNG" alt="截圖" width="250" /> | <img src="/screenshot/screenshot_2.PNG" alt="截圖" width="250" /> | <img src="/screenshot/screenshot_3.PNG" alt="截圖" width="250" /> |
+|:---:|:---:|:---:|
+| <img src="screenshot/screenshot_1.PNG" alt="截圖" width="250" /> | <img src="screenshot/screenshot_2.PNG" alt="截圖" width="250" /> | <img src="screenshot/screenshot_3.PNG" alt="截圖" width="250" /> |
 | *直觀顯示回本進度與金額* | *自動依日期分組，清晰明瞭* | *簡單直覺的輸入畫面* |
+
 
 ---
 
