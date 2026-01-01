@@ -123,6 +123,7 @@
             </button>
         </div>
     </div> 
+    
     <div id="settingsModal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -242,9 +243,17 @@
                     <input type="number" id="price" placeholder="例如: 30" required inputmode="numeric">
                 </div>
 
-                <div class="form-group checkbox-group">
-                    <input type="checkbox" id="transfer">
-                    <label for="transfer" id="transferLabel">我是轉乘 (自動扣除優惠)</label>
+                <div class="form-group" style="display:flex; gap:15px; background: rgba(0,0,0,0.03); padding: 10px; border-radius: 10px;">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="transfer">
+                        <label for="transfer" id="transferLabel">我是轉乘</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="isFree">
+                        <label for="isFree" style="color:#e17055; font-weight:bold;">
+                            <i class="fa-solid fa-gift"></i> 此趟免費
+                        </label>
+                    </div>
                 </div>
 
                 <button type="submit" class="submit-btn">加入計算</button>
@@ -353,9 +362,17 @@
                     <input type="number" id="editPrice" required inputmode="numeric">
                 </div>
 
-                <div class="form-group checkbox-group">
-                    <input type="checkbox" id="editTransfer">
-                    <label for="editTransfer" id="editTransferLabel">我是轉乘</label>
+                <div class="form-group" style="display:flex; gap:15px; background: rgba(0,0,0,0.03); padding: 10px; border-radius: 10px;">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="editTransfer">
+                        <label for="editTransfer" id="editTransferLabel">我是轉乘</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="editIsFree">
+                        <label for="editIsFree" style="color:#e17055; font-weight:bold;">
+                            <i class="fa-solid fa-gift"></i> 此趟免費
+                        </label>
+                    </div>
                 </div>
 
                 <div class="form-group">
