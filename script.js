@@ -37,7 +37,7 @@ const els = {
     // 儀表板與統計
     finalCost: document.getElementById('finalCost'),
     
-    // [新增] 明細折疊區塊相關 ID
+    // 明細折疊區塊相關 ID
     displayOriginalTotal: document.getElementById('displayOriginalTotal'),
     listOriginalDetails: document.getElementById('listOriginalDetails'),
     displayPaidTotal: document.getElementById('displayPaidTotal'),
@@ -513,21 +513,26 @@ els.btnDeleteTrip.addEventListener('click', async () => {
     }
 });
 
-// === 核心計算邏輯 (修正版) ===
+// === 核心計算邏輯 (跨月分組修正版) ===
+f// === 核心計算邏輯 (跨月分組 + 顯示回饋%) ===
 function calculate() {
-    let stats = { 
-        totalPaid: 0, 
-        totalOriginal: 0, // [新增] 總原價
-        counts: {}, 
-        originalSums: {}, // [Rule 1 用]
-        paidSums: {}      // [Rule 2 用]
+    // 1. 總體統計 (用於顯示儀表板的大數字)
+    let totalStats = {
+        totalPaid: 0,
+        totalOriginal: 0,
+        originalSums: {}, // 各運具總原價
+        paidSums: {}      // 各運具總實付
     };
 
-    Object.keys(TRANSPORT_TYPES).forEach(k => { 
-        stats.counts[k] = 0; 
-        stats.originalSums[k] = 0; 
-        stats.paidSums[k] = 0; 
+    // 初始化各運具總和
+    Object.keys(TRANSPORT_TYPES).forEach(k => {
+        totalStats.originalSums[k] = 0;
+        totalStats.paidSums[k] = 0;
     });
+
+    // 2. 月份分組統計 (用於計算回饋)
+    // 結構: { '2025/01': { counts: {mrt:0...}, originalSums: {...}, paidSums: {...} } }
+    let monthlyStats = {};
 
     const discount = FARE_CONFIG[currentIdentity].transferDiscount;
 
@@ -537,98 +542,130 @@ function calculate() {
             return;
         }
 
-        // 計算這一筆的「實付金額」
+        // --- A. 累加總體統計 ---
         let finalPrice = t.originalPrice;
         if (t.isTransfer) {
             finalPrice = Math.max(0, t.originalPrice - discount);
         }
 
-        // 總支出 (顯示在儀表板左邊)
-        stats.totalPaid += finalPrice;
-        
-        // [新增] 總原價
-        stats.totalOriginal += t.originalPrice;
-        
-        // 累積次數
-        stats.counts[t.type]++;
-        
-        // [Rule 1 用] 累積原價
-        stats.originalSums[t.type] += t.originalPrice;
+        totalStats.totalPaid += finalPrice;
+        totalStats.totalOriginal += t.originalPrice;
+        totalStats.originalSums[t.type] += t.originalPrice;
+        totalStats.paidSums[t.type] += finalPrice;
 
-        // [Rule 2 用] 累積實付金額
-        stats.paidSums[t.type] += finalPrice;
+        // --- B. 累加月份統計 ---
+        // 取得月份 Key (例如 "2025/01")
+        const monthKey = t.dateStr.slice(0, 7);
+
+        if (!monthlyStats[monthKey]) {
+            monthlyStats[monthKey] = {
+                counts: {},
+                originalSums: {},
+                paidSums: {}
+            };
+            // 初始化該月份的計數器
+            Object.keys(TRANSPORT_TYPES).forEach(k => {
+                monthlyStats[monthKey].counts[k] = 0;
+                monthlyStats[monthKey].originalSums[k] = 0;
+                monthlyStats[monthKey].paidSums[k] = 0;
+            });
+        }
+
+        monthlyStats[monthKey].counts[t.type]++;
+        monthlyStats[monthKey].originalSums[t.type] += t.originalPrice;
+        monthlyStats[monthKey].paidSums[t.type] += finalPrice;
     });
 
-    // --- Rule 1: 北捷與台鐵常客優惠 (依照「原價」計算) ---
-    let r1_cashback = 0;
-    let r1_details = [];
-    
-    // 北捷 (看 originalSums)
-    const mrtCount = stats.counts.mrt;
-    const mrtSum = stats.originalSums.mrt; // 使用原價
-    let mrtRate = 0;
-    if (mrtCount > 40) mrtRate = 0.15;
-    else if (mrtCount > 20) mrtRate = 0.10;
-    else if (mrtCount > 10) mrtRate = 0.05;
-    
-    if (mrtRate > 0) {
-        const mrtCashback = mrtSum * mrtRate;
-        r1_cashback += mrtCashback;
-        r1_details.push({ text: `北捷 ${mrtCount} 趟，回饋 ${(mrtRate*100)}%`, amount: `-$${Math.floor(mrtCashback)}` });
-    }
+    // --- 計算回饋 (遍歷每個月份) ---
+    let r1_total_cashback = 0;
+    let r1_all_details = [];
 
-    // 台鐵 (看 originalSums)
-    const traCount = stats.counts.tra;
-    const traSum = stats.originalSums.tra; // 使用原價
-    let traRate = 0;
-    if (traCount > 40) traRate = 0.20;
-    else if (traCount > 20) traRate = 0.15;
-    else if (traCount > 10) traRate = 0.10;
-    
-    if (traRate > 0) {
-        const traCashback = traSum * traRate;
-        r1_cashback += traCashback;
-        r1_details.push({ text: `台鐵 ${traCount} 趟，回饋 ${(traRate*100)}%`, amount: `-$${Math.floor(traCashback)}` });
-    }
+    let r2_total_cashback = 0;
+    let r2_all_details = [];
 
-    // --- Rule 2: TPass 2.0 回饋 (依照「實付金額」計算) ---
-    let r2_cashback = 0;
-    let r2_details = [];
-    
-    // 軌道運具 (北捷/台鐵/機捷/輕軌)
-    const railCount = stats.counts.mrt + stats.counts.tra + stats.counts.tymrt + stats.counts.lrt;
-    // [修正] 改用 paidSums (實付金額) 來算 2%
-    const railPaidSum = stats.paidSums.mrt + stats.paidSums.tra + stats.paidSums.tymrt + stats.paidSums.lrt;
-    
-    if (railCount >= 11) {
-        const railCashback = railPaidSum * 0.02; // 用實付金額 x 2%
-        r2_cashback += railCashback;
-        r2_details.push({ text: `軌道 ${railCount} 趟，回饋 2%`, amount: `-$${Math.floor(railCashback)}` });
-    }
+    // 依照月份排序 (舊 -> 新)
+    const sortedMonths = Object.keys(monthlyStats).sort();
 
-    // 公車與客運
-    const busCount = stats.counts.bus + stats.counts.coach;
-    // [修正] 改用 paidSums (實付金額) 來算 15%/30%
-    const busPaidSum = stats.paidSums.bus + stats.paidSums.coach;
-    
-    let busRate = 0;
-    if (busCount > 30) busRate = 0.30;
-    else if (busCount >= 11) busRate = 0.15;
-    
-    if (busRate > 0) {
-        const busCashback = busPaidSum * busRate; // 用實付金額 x 匯率
-        r2_cashback += busCashback;
-        r2_details.push({ text: `公車客運 ${busCount} 趟，回饋 ${(busRate*100)}%`, amount: `-$${Math.floor(busCashback)}` });
-    }
+    sortedMonths.forEach(month => {
+        const mData = monthlyStats[month];
+        const monthLabel = `${month.split('/')[1]}月`; // 顯示 "01月"
+
+        // === Rule 1: 常客優惠 (依照該月累積次數 & 原價) ===
+        
+        // 北捷
+        const mrtCount = mData.counts.mrt;
+        const mrtSum = mData.originalSums.mrt;
+        let mrtRate = 0;
+        if (mrtCount > 40) mrtRate = 0.15;
+        else if (mrtCount > 20) mrtRate = 0.10;
+        else if (mrtCount > 10) mrtRate = 0.05;
+
+        if (mrtRate > 0) {
+            const amt = mrtSum * mrtRate;
+            r1_total_cashback += amt;
+            r1_all_details.push({ 
+                text: `<span class="month-badge">${monthLabel}</span>北捷 ${mrtCount} 趟，回饋 ${Math.round(mrtRate*100)}%`, 
+                amount: `-$${Math.floor(amt)}` 
+            });
+        }
+
+        // 台鐵
+        const traCount = mData.counts.tra;
+        const traSum = mData.originalSums.tra;
+        let traRate = 0;
+        if (traCount > 40) traRate = 0.20;
+        else if (traCount > 20) traRate = 0.15;
+        else if (traCount > 10) traRate = 0.10;
+        
+        if (traRate > 0) {
+            const amt = traSum * traRate;
+            r1_total_cashback += amt;
+            r1_all_details.push({ 
+                text: `<span class="month-badge">${monthLabel}</span>台鐵 ${traCount} 趟，回饋 ${Math.round(traRate*100)}%`, 
+                amount: `-$${Math.floor(amt)}` 
+            });
+        }
+
+        // === Rule 2: TPASS 2.0 (依照該月實付金額) ===
+        
+        // 軌道
+        const railCount = mData.counts.mrt + mData.counts.tra + mData.counts.tymrt + mData.counts.lrt;
+        const railPaidSum = mData.paidSums.mrt + mData.paidSums.tra + mData.paidSums.tymrt + mData.paidSums.lrt;
+        
+        if (railCount >= 11) { 
+            const amt = railPaidSum * 0.02; // 2%
+            r2_total_cashback += amt;
+            r2_all_details.push({ 
+                text: `<span class="month-badge">${monthLabel}</span>軌道 ${railCount} 趟，回饋 2%`, 
+                amount: `-$${Math.floor(amt)}` 
+            });
+        }
+
+        // 公車客運
+        const busCount = mData.counts.bus + mData.counts.coach;
+        const busPaidSum = mData.paidSums.bus + mData.paidSums.coach;
+        let busRate = 0;
+        if (busCount > 30) busRate = 0.30;       // 單月 > 30 次
+        else if (busCount >= 11) busRate = 0.15; // 單月 > 11 次
+        
+        if (busRate > 0) {
+            const amt = busPaidSum * busRate;
+            r2_total_cashback += amt;
+            r2_all_details.push({ 
+                text: `<span class="month-badge">${monthLabel}</span>公車客運 ${busCount} 趟，回饋 ${Math.round(busRate*100)}%`, 
+                amount: `-$${Math.floor(amt)}` 
+            });
+        }
+    });
 
     return {
-        totalPaid: stats.totalPaid,
-        totalOriginal: stats.totalOriginal, // [新增]
-        originalSums: stats.originalSums,   // [新增]
-        paidSums: stats.paidSums,           // [新增]
-        r1: { amount: r1_cashback, details: r1_details },
-        r2: { amount: r2_cashback, details: r2_details },
-        finalCost: stats.totalPaid - r1_cashback - r2_cashback
+        totalPaid: totalStats.totalPaid,
+        totalOriginal: totalStats.totalOriginal,
+        originalSums: totalStats.originalSums,
+        paidSums: totalStats.paidSums,
+        r1: { amount: r1_total_cashback, details: r1_all_details },
+        r2: { amount: r2_total_cashback, details: r2_all_details },
+        finalCost: totalStats.totalPaid - r1_total_cashback - r2_total_cashback
     };
 }
 
@@ -770,7 +807,7 @@ function renderUI() {
     }
 }
 
-// [新增] 產生細項 HTML 的輔助函式
+// 產生細項 HTML 的輔助函式
 function generateDetailHtml(sumsObj) {
     let html = '';
     let hasData = false;
@@ -780,7 +817,6 @@ function generateDetailHtml(sumsObj) {
         if (sum > 0) {
             hasData = true;
             const name = TRANSPORT_TYPES[type].name;
-            const colorClass = TRANSPORT_TYPES[type].class; // 用於之後可以擴充顏色點點
             
             html += `
                 <div class="detail-row">

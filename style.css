@@ -1,14 +1,11 @@
 /* User Bar 樣式 */
 .user-bar {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     padding: 10px 15px;
     background: #fff;
 }
-.app-brand { display: flex; flex-direction: column; color: var(--text); }
-.app-name { font-weight: 800; font-size: 16px; letter-spacing: 0.2px; }
-.app-brand small { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
 
 .auth-btn {
     padding: 8px 16px;
@@ -992,4 +989,17 @@ textarea:focus {
 .detail-row span:nth-child(2) {
     font-family: monospace; /* 數字對齊 */
     font-size: 13px;
+}
+
+/* [新增] 優惠明細中的月份標籤 */
+.month-badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    margin-right: 6px;
+    font-weight: normal;
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
