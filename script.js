@@ -77,7 +77,7 @@ const els = {
     inputStart: document.getElementById('startStation'),
     inputEnd: document.getElementById('endStation'),
     transferLabel: document.getElementById('transferLabel'),
-    // [新增] 免費核取方塊
+    // 免費核取方塊
     isFree: document.getElementById('isFree'),
 
     // 編輯 Modal 相關元素
@@ -88,7 +88,7 @@ const els = {
     editTime: document.getElementById('editTime'),
     editPrice: document.getElementById('editPrice'),
     editTransfer: document.getElementById('editTransfer'),
-    // [新增] 編輯免費核取方塊
+    // 編輯免費核取方塊
     editIsFree: document.getElementById('editIsFree'),
     editNote: document.getElementById('editNote'),
     editRouteId: document.getElementById('editRouteId'),
@@ -117,7 +117,7 @@ initAuthListener(async (user) => {
     }
 });
 
-// === 讀取設定 (身分 + 週期列表) ===
+// === 讀取設定 ===
 async function loadUserSettings(uid) {
     try {
         const userDocRef = doc(db, "users", uid);
@@ -147,7 +147,6 @@ async function loadUserSettings(uid) {
 }
 
 // === 週期管理邏輯 ===
-
 function renderCycleSelector() {
     els.cycleSelector.innerHTML = '';
     
@@ -315,9 +314,7 @@ window.toggleModal = function() {
         updateFormFields(document.querySelector('input[name="type"]:checked').value);
         updateTransferLabel();
         
-        // 重置免費勾選
         els.isFree.checked = false;
-        
         els.modal.classList.remove('hidden');
     } else {
         els.modal.classList.add('hidden');
@@ -355,7 +352,7 @@ els.form.addEventListener('submit', async (e) => {
     const type = document.querySelector('input[name="type"]:checked').value;
     const price = parseFloat(document.getElementById('price').value);
     const isTransfer = document.getElementById('transfer').checked;
-    const isFree = els.isFree.checked; // [新增]
+    const isFree = els.isFree.checked;
     
     const dateInputVal = els.tripDate.value;
     const timeInputVal = els.tripTime.value;
@@ -385,9 +382,9 @@ els.form.addEventListener('submit', async (e) => {
             timeStr: timeStr,
             type,
             originalPrice: price,
-            paidPrice: isFree ? 0 : (isTransfer ? Math.max(0, price - discount) : price), // [修改] 免費則為0
+            paidPrice: isFree ? 0 : (isTransfer ? Math.max(0, price - discount) : price),
             isTransfer,
-            isFree: isFree, // [新增]
+            isFree: isFree,
             routeId,
             startStation,
             endStation
@@ -406,19 +403,16 @@ els.form.addEventListener('submit', async (e) => {
 });
 
 // === 編輯與詳情功能 ===
-
-// 1. 打開編輯 Modal
 window.openEditModal = function(tripId) {
     const trip = trips.find(t => t.id === tripId);
     if (!trip) return;
 
-    // 填入基本資料
     els.editTripId.value = trip.id;
     els.editDate.value = trip.dateStr.replace(/\//g, '-'); 
     els.editTime.value = trip.timeStr || '00:00:00';
     els.editPrice.value = trip.originalPrice;
     els.editTransfer.checked = trip.isTransfer;
-    els.editIsFree.checked = trip.isFree || false; // [新增]
+    els.editIsFree.checked = trip.isFree || false;
     els.editNote.value = trip.note || ''; 
     
     els.editRouteId.value = trip.routeId || '';
@@ -436,12 +430,10 @@ window.openEditModal = function(tripId) {
     els.editModal.classList.remove('hidden');
 }
 
-// 2. 關閉編輯 Modal
 window.closeEditModal = function() {
     els.editModal.classList.add('hidden');
 }
 
-// 3. 監聽編輯表單的運具切換
 els.editTransportRadios.forEach(radio => {
     radio.addEventListener('change', (e) => updateEditFormFields(e.target.value));
 });
@@ -460,7 +452,6 @@ function updateEditFormFields(type) {
     }
 }
 
-// 4. 提交編輯
 els.editForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!currentUser) return;
@@ -469,7 +460,7 @@ els.editForm.addEventListener('submit', async (e) => {
     const type = document.querySelector('input[name="editType"]:checked').value;
     const price = parseFloat(els.editPrice.value);
     const isTransfer = els.editTransfer.checked;
-    const isFree = els.editIsFree.checked; // [新增]
+    const isFree = els.editIsFree.checked;
     const dateInputVal = els.editDate.value;
     const timeInputVal = els.editTime.value;
     const note = els.editNote.value.trim();
@@ -488,9 +479,9 @@ els.editForm.addEventListener('submit', async (e) => {
             timeStr: timeInputVal,
             type: type,
             originalPrice: price,
-            paidPrice: isFree ? 0 : (isTransfer ? Math.max(0, price - discount) : price), // [修改]
+            paidPrice: isFree ? 0 : (isTransfer ? Math.max(0, price - discount) : price),
             isTransfer: isTransfer,
-            isFree: isFree, // [新增]
+            isFree: isFree,
             routeId: els.editRouteId.value.trim(),
             startStation: els.editStart.value.trim(),
             endStation: els.editEnd.value.trim(),
@@ -504,7 +495,6 @@ els.editForm.addEventListener('submit', async (e) => {
     }
 });
 
-// 5. 刪除按鈕邏輯
 els.btnDeleteTrip.addEventListener('click', async () => {
     const tripId = els.editTripId.value;
     if (!tripId) return;
@@ -520,7 +510,7 @@ els.btnDeleteTrip.addEventListener('click', async () => {
     }
 });
 
-// === 核心計算邏輯 (跨月分組 + 顯示回饋%) ===
+// === 核心計算邏輯 (跨月分組 + 修正小數點誤差) ===
 function calculate() {
     let totalStats = {
         totalPaid: 0,
@@ -544,11 +534,9 @@ function calculate() {
         }
 
         // --- A. 累加總體統計 ---
-        // [修改] 如果是免費，價格就是 0，但原價保留紀錄
         let op = t.isFree ? 0 : t.originalPrice; 
         let pp = t.isFree ? 0 : t.paidPrice;
         
-        // 確保相容舊資料 (舊資料可能沒有 paidPrice)
         if (pp === undefined) {
              pp = t.isTransfer ? Math.max(0, t.originalPrice - discount) : t.originalPrice;
         }
@@ -574,9 +562,9 @@ function calculate() {
             });
         }
 
-        monthlyStats[monthKey].counts[t.type]++; // 免費仍然 +1 次
-        monthlyStats[monthKey].originalSums[t.type] += op; // 免費則 +0
-        monthlyStats[monthKey].paidSums[t.type] += pp;     // 免費則 +0
+        monthlyStats[monthKey].counts[t.type]++;
+        monthlyStats[monthKey].originalSums[t.type] += op;
+        monthlyStats[monthKey].paidSums[t.type] += pp;
     });
 
     // --- 計算回饋 ---
@@ -601,11 +589,12 @@ function calculate() {
         else if (mrtCount > 10) mrtRate = 0.05;
 
         if (mrtRate > 0) {
-            const amt = mrtSum * mrtRate;
+            // [修正] 這裡直接 Math.floor，確保累加的是整數
+            const amt = Math.floor(mrtSum * mrtRate);
             r1_total_cashback += amt;
             r1_all_details.push({ 
                 text: `<span class="month-badge">${monthLabel}</span>北捷 ${mrtCount} 趟，回饋 ${Math.round(mrtRate*100)}%`, 
-                amount: `-$${Math.floor(amt)}` 
+                amount: `-$${amt}` 
             });
         }
 
@@ -617,11 +606,12 @@ function calculate() {
         else if (traCount > 10) traRate = 0.10;
         
         if (traRate > 0) {
-            const amt = traSum * traRate;
+            // [修正] 這裡直接 Math.floor
+            const amt = Math.floor(traSum * traRate);
             r1_total_cashback += amt;
             r1_all_details.push({ 
                 text: `<span class="month-badge">${monthLabel}</span>台鐵 ${traCount} 趟，回饋 ${Math.round(traRate*100)}%`, 
-                amount: `-$${Math.floor(amt)}` 
+                amount: `-$${amt}` 
             });
         }
 
@@ -630,11 +620,12 @@ function calculate() {
         const railPaidSum = mData.paidSums.mrt + mData.paidSums.tra + mData.paidSums.tymrt + mData.paidSums.lrt;
         
         if (railCount >= 11) { 
-            const amt = railPaidSum * 0.02; 
+            // [修正] 這裡直接 Math.floor
+            const amt = Math.floor(railPaidSum * 0.02); 
             r2_total_cashback += amt;
             r2_all_details.push({ 
                 text: `<span class="month-badge">${monthLabel}</span>軌道 ${railCount} 趟，回饋 2%`, 
-                amount: `-$${Math.floor(amt)}` 
+                amount: `-$${amt}` 
             });
         }
 
@@ -645,11 +636,12 @@ function calculate() {
         else if (busCount >= 11) busRate = 0.15; 
         
         if (busRate > 0) {
-            const amt = busPaidSum * busRate;
+            // [修正] 這裡直接 Math.floor
+            const amt = Math.floor(busPaidSum * busRate);
             r2_total_cashback += amt;
             r2_all_details.push({ 
                 text: `<span class="month-badge">${monthLabel}</span>公車客運 ${busCount} 趟，回饋 ${Math.round(busRate*100)}%`, 
-                amount: `-$${Math.floor(amt)}` 
+                amount: `-$${amt}` 
             });
         }
     });
@@ -671,16 +663,13 @@ function renderUI() {
     const data = calculate();
     const finalVal = Math.floor(data.finalCost);
 
-    // 1. 更新大標題金額
     els.finalCost.innerText = `$${finalVal}`;
 
-    // 2. 更新明細
     els.displayOriginalTotal.innerText = `$${Math.floor(data.totalOriginal)}`;
     els.listOriginalDetails.innerHTML = generateDetailHtml(data.originalSums);
     els.displayPaidTotal.innerText = `$${Math.floor(data.totalPaid)}`;
     els.listPaidDetails.innerHTML = generateDetailHtml(data.paidSums);
 
-    // 4. 更新優惠
     els.rule1Discount.innerText = `-$${Math.floor(data.r1.amount)}`;
     els.rule1Detail.innerHTML = data.r1.details.length 
         ? data.r1.details.map(d => `<div class="rule-detail-row"><span>${d.text}</span><span>${d.amount}</span></div>`).join('') 
@@ -691,7 +680,6 @@ function renderUI() {
         ? data.r2.details.map(d => `<div class="rule-detail-row"><span>${d.text}</span><span>${d.amount}</span></div>`).join('') 
         : '';
     
-    // 5. 更新狀態
     const diff = TPASS_PRICE - finalVal;
     if (diff < 0) {
         els.statusText.innerText = "已回本！";
@@ -703,7 +691,6 @@ function renderUI() {
         els.diffText.innerText = `還差 $${diff} 元回本`;
     }
 
-    // 6. 渲染歷史列表
     els.historyList.innerHTML = '';
 
     if (!currentSelectedCycle) {
@@ -748,7 +735,6 @@ function renderUI() {
         const li = document.createElement('li');
         li.className = 'history-item';
         
-        // 標題邏輯
         let titleDesc = tDef.name;
         if (trip.type === 'bus') {
             titleDesc = trip.routeId ? `${trip.routeId}路公車` : '公車';
@@ -762,10 +748,8 @@ function renderUI() {
             }
         }
 
-        // [修改] 顯示金額邏輯 (處理免費)
         let priceHtml = '';
         if (trip.isFree) {
-            // 免費圖示
             priceHtml = `<div class="item-right"><div class="price-display" style="color:#e17055;"><i class="fa-solid fa-gift"></i> $0</div></div>`;
         } else {
             const displayPaid = trip.isTransfer ? Math.max(0, trip.originalPrice - discount) : trip.originalPrice;
@@ -779,7 +763,6 @@ function renderUI() {
         li.setAttribute('onclick', `openEditModal('${trip.id}')`);
         
         const noteIcon = trip.note ? `<i class="fa-solid fa-note-sticky" style="color:#f1c40f; margin-left:5px;"></i>` : '';
-        // [新增] 轉乘圖示與免費圖示並存
         const transferIcon = trip.isTransfer ? '<i class="fa-solid fa-link" style="color:#27ae60; font-size:12px;"></i>' : '';
 
         li.innerHTML = `
