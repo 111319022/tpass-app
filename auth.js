@@ -33,7 +33,10 @@ ui.btn.addEventListener('click', async () => {
 ui.logoutBtn.addEventListener('click', async () => {
     try {
         await signOut(auth);
-        // 登出成功後 onAuthStateChanged 會自動觸發
+        
+        // [新增] 登出後跳轉回首頁 (介紹頁)
+        window.location.href = "index.html";
+        
     } catch (error) {
         console.error("Logout failed:", error);
     }
