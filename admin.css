@@ -384,4 +384,47 @@ details.price-details[open] summary::after {
     margin-bottom: 3px;
 }
 
+/* === [新增] 手機版 RWD 修正 === */
+@media (max-width: 600px) {
+    .terminal-container {
+        padding: 15px; /* 手機版邊距縮小一點 */
+    }
+
+    /* Header 改為上下堆疊 */
+    .console-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    /* 左側標題區佔滿寬度，並讓 Badge 靠右 */
+    .header-left {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .header-left h1 {
+        font-size: 20px; /* 標題字體稍微縮小 */
+        white-space: nowrap; /* 防止換行 */
+    }
+
+    /* 右側操作區佔滿寬度，並分散對齊 */
+    .header-right {
+        width: 100%;
+        justify-content: space-between;
+        gap: 0;
+    }
+
+    /* 統計面板改為垂直排列 */
+    .stats-overview {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    /* 調整 Grid 卡片在手機上的寬度 */
+    .grid-container {
+        grid-template-columns: 1fr; /* 強制單欄 */
+    }
+}
+
 @keyframes blink { 50% { opacity: 0; } }
