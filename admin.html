@@ -42,6 +42,29 @@
         </div>
     </div>
 
+    <div id="logModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalUserName">USER_LOGS</h3>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th>DATE</th>
+                            <th>TYPE</th>
+                            <th>ROUTE</th>
+                            <th>PRICE(ORG/PD)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalLogList">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="admin.js"></script>
 </body>
 </html>

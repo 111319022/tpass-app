@@ -7,6 +7,8 @@ const activeCyclesEl = document.getElementById('activeCycles');
 const profitUsersEl = document.getElementById('profitUsers');
 const refreshBtn = document.getElementById('refreshBtn');
 
+window.allTripsCache = {};
+
 // 時間顯示
 setInterval(() => {
     const now = new Date();
@@ -16,25 +18,20 @@ setInterval(() => {
 // === 核心：載入所有數據 ===
 async function loadAllData() {
     userGrid.innerHTML = '<div class="loading-text">SCANNING DATABASE...</div>';
+    window.allTripsCache = {}; 
     
     try {
-        // 1. 抓取所有使用者
         const usersSnap = await getDocs(collection(db, "users"));
         
         let stats = { users: 0, active: 0, profit: 0 };
-        let html = '';
-
         stats.users = usersSnap.size;
 
-        // 使用 Promise.all 平行處理每個使用者的資料讀取
         const userPromises = usersSnap.docs.map(async (userDoc) => {
             const uid = userDoc.id;
             const userData = userDoc.data();
             
-            // 找出最新週期
             let currentCycle = null;
             if (userData.cycles && userData.cycles.length > 0) {
-                // 排序找出最新的 (假設 cycles 存的是 timestamp)
                 const sorted = userData.cycles.sort((a, b) => b.start - a.start);
                 currentCycle = sorted[0];
             } else if (userData.period) {
@@ -42,47 +39,50 @@ async function loadAllData() {
             }
 
             if (!currentCycle) {
-                return createCardHtml(userData, null, null); // 沒設定週期的用戶
+                return createCardHtml(uid, userData, null, null);
             }
 
             stats.active++;
 
-            // 2. 抓取該用戶、該週期的行程
             const tripsQ = query(
                 collection(db, "users", uid, "trips"),
                 where("createdAt", ">=", currentCycle.start),
-                where("createdAt", "<=", currentCycle.end)
+                where("createdAt", "<=", currentCycle.end),
+                orderBy("createdAt", "desc")
             );
             
             const tripsSnap = await getDocs(tripsQ);
             const trips = tripsSnap.docs.map(t => t.data());
 
-            // 3. 計算回本狀態 (簡化版計算邏輯)
+            window.allTripsCache[uid] = trips;
+
             const result = calculateProfit(trips, userData.identity || 'adult');
             
-            if (result.finalCost < 1200) stats.profit++;
+            if (result.finalCost > 1200) stats.profit++;
 
-            return createCardHtml(userData, currentCycle, result);
+            return createCardHtml(uid, userData, currentCycle, result);
         });
 
         const cards = await Promise.all(userPromises);
         userGrid.innerHTML = cards.join('');
 
-        // 更新統計看板
         totalUsersEl.innerText = stats.users;
         activeCyclesEl.innerText = stats.active;
         profitUsersEl.innerText = stats.profit;
 
     } catch (e) {
         console.error(e);
-        userGrid.innerHTML = `<div style="color:var(--neon-red); text-align:center;">ACCESS DENIED: Check Firestore Rules<br>${e.message}</div>`;
+        userGrid.innerHTML = `<div style="color:var(--neon-red); text-align:center;">ACCESS DENIED<br>${e.message}</div>`;
     }
 }
 
-// === 計算邏輯 (與主程式類似，但純數據處理) ===
+// === 計算邏輯 (更新：回傳詳細 breakdown) ===
 function calculateProfit(trips, identity) {
     const discount = (identity === 'student') ? 6 : 8;
+    
+    let totalOriginal = 0;
     let totalPaid = 0;
+    
     let originalSums = { mrt:0, tra:0, bus:0, coach:0, tymrt:0, lrt:0, bike:0 };
     let paidSums = { mrt:0, tra:0, bus:0, coach:0, tymrt:0, lrt:0, bike:0 };
     let counts = { mrt:0, tra:0, bus:0, coach:0, tymrt:0, lrt:0, bike:0 };
@@ -92,8 +92,9 @@ function calculateProfit(trips, identity) {
         let pp = t.isFree ? 0 : t.paidPrice;
         if (pp === undefined) pp = t.isTransfer ? Math.max(0, t.originalPrice - discount) : t.originalPrice;
 
-        const type = t.type || 'mrt'; // fallback
+        const type = t.type || 'mrt'; 
         
+        totalOriginal += op;
         totalPaid += pp;
         
         if (!originalSums[type]) originalSums[type] = 0;
@@ -105,22 +106,21 @@ function calculateProfit(trips, identity) {
         counts[type]++;
     });
 
-    // Rule 1: 常客 (原價)
+    // Rule 1: 常客回饋
     let r1 = 0;
-    // 北捷
     const mrtC = counts.mrt || 0;
     const mrtS = originalSums.mrt || 0;
     if(mrtC > 40) r1 += Math.floor(mrtS * 0.15);
     else if(mrtC > 20) r1 += Math.floor(mrtS * 0.10);
     else if(mrtC > 10) r1 += Math.floor(mrtS * 0.05);
-    // 台鐵
+
     const traC = counts.tra || 0;
     const traS = originalSums.tra || 0;
     if(traC > 40) r1 += Math.floor(traS * 0.20);
     else if(traC > 20) r1 += Math.floor(traS * 0.15);
     else if(traC > 10) r1 += Math.floor(traS * 0.10);
 
-    // Rule 2: TPASS 2.0 (實付)
+    // Rule 2: TPASS 2.0
     let r2 = 0;
     const railC = (counts.mrt||0) + (counts.tra||0) + (counts.tymrt||0) + (counts.lrt||0);
     const railS = (paidSums.mrt||0) + (paidSums.tra||0) + (paidSums.tymrt||0) + (paidSums.lrt||0);
@@ -132,21 +132,47 @@ function calculateProfit(trips, identity) {
     else if(busC >= 11) r2 += Math.floor(busS * 0.15);
 
     return {
+        totalOriginal,
         totalPaid,
         rewards: r1 + r2,
+        r1,
+        r2,
         finalCost: totalPaid - r1 - r2,
-        tripCount: trips.length
+        tripCount: trips.length,
+        // [新增] 回傳明細供顯示
+        originalSums,
+        paidSums,
+        counts
     };
 }
 
+// === [新增] 生成折疊明細 HTML 的輔助函式 ===
+function generateBreakdownHtml(sums, counts) {
+    let html = '';
+    const typeNames = {
+        mrt: 'MRT', bus: 'BUS', coach: 'COACH', tra: 'TRA', 
+        tymrt: 'TYMRT', lrt: 'LRT', bike: 'UBIKE'
+    };
+
+    for (const [key, val] of Object.entries(sums)) {
+        if (val > 0) {
+            html += `
+            <div class="breakdown-row">
+                <span>${typeNames[key]} (${counts[key]}T)</span>
+                <span>$${val}</span>
+            </div>`;
+        }
+    }
+    return html || '<div class="breakdown-row"><span>NO_DATA</span></div>';
+}
+
 // === 生成卡片 HTML ===
-function createCardHtml(user, cycle, result) {
-    const avatar = 'https://cdn-icons-png.flaticon.com/512/149/149071.png'; // 預設頭像
+function createCardHtml(uid, user, cycle, result) {
+    const avatar = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
     const name = user.displayName || 'Anonymous';
     const email = user.email || 'No Email';
     
     if (!cycle) {
-        // 無週期用戶樣式
         return `
         <div class="user-card">
             <div class="card-status-bar"></div>
@@ -165,16 +191,14 @@ function createCardHtml(user, cycle, result) {
     const end = new Date(cycle.end).toLocaleDateString();
     
     const diff = 1200 - result.finalCost;
-    const isWin = diff < 0; // 回本 (花費 < 1200 ??? 不對，是回本計算邏輯)
-    // 修正回本邏輯：如果 最終支出 < 1200，代表 1200月票比較貴 => 虧本 (Loss)
-    // 如果 最終支出 > 1200，代表 1200月票比較便宜 => 賺到 (Win)
-    // 等等，你的 App 邏輯是： finalCost 是「不用月票要花的錢」。
-    // 所以 finalCost > 1200 是回本 (Win)。
-    
     const isProfit = result.finalCost > 1200;
     const statusClass = isProfit ? 'status-win' : 'status-loss';
     const diffText = isProfit ? `PROFIT: $${Math.abs(diff)}` : `LOSS: $${diff}`;
     const resultColor = isProfit ? 'var(--neon-green)' : 'var(--neon-red)';
+
+    // 生成明細
+    const originalDetails = generateBreakdownHtml(result.originalSums, result.counts);
+    const paidDetails = generateBreakdownHtml(result.paidSums, result.counts);
 
     return `
     <div class="user-card ${statusClass}">
@@ -191,24 +215,109 @@ function createCardHtml(user, cycle, result) {
             CYCLE: ${start} -> ${end}
         </div>
 
-        <div class="data-row">
-            <span>TRIPS_LOGGED</span>
-            <span class="val-money">${result.tripCount}</span>
-        </div>
-        <div class="data-row">
-            <span>REAL_SPEND</span>
-            <span class="val-money">$${result.finalCost}</span>
+        <div class="data-group">
+            <div class="data-row" style="margin-bottom:10px;">
+                <span>TOTAL_TRIPS</span>
+                <span class="val-money">${result.tripCount}</span>
+            </div>
+
+            <details class="price-details">
+                <summary>
+                    <span>ORIGINAL_PRICE</span>
+                    <span class="val-money">$${result.totalOriginal}</span>
+                </summary>
+                <div class="breakdown-list">
+                    ${originalDetails}
+                </div>
+            </details>
+
+            <details class="price-details">
+                <summary>
+                    <span>ACTUAL_PAID</span>
+                    <span class="val-money">$${result.totalPaid}</span>
+                </summary>
+                <div class="breakdown-list">
+                    ${paidDetails}
+                </div>
+            </details>
+
+            <div class="data-row" style="margin-top:10px;">
+                <span>REWARDS_TOTAL</span>
+                <span class="val-money" style="color:var(--neon-purple)">-$${result.rewards}</span>
+            </div>
+            <div class="reward-sub-row">
+                <span>└ LOYALTY (R1)</span>
+                <span>-$${result.r1}</span>
+            </div>
+            <div class="reward-sub-row">
+                <span>└ TPASS 2.0 (R2)</span>
+                <span>-$${result.r2}</span>
+            </div>
+
+            <div class="data-row" style="border-top:1px solid #333; margin-top:10px; padding-top:10px;">
+                <span>REAL_SPEND</span>
+                <span class="val-money" style="font-size:15px;">$${result.finalCost}</span>
+            </div>
         </div>
         
-        <div style="margin-top:15px; border-top:1px dashed #333; padding-top:10px; display:flex; justify-content:space-between; align-items:center;">
-            <small style="color:#666">TPASS_STATUS</small>
+        <div class="status-footer">
             <span class="val-result" style="color:${resultColor}">${diffText}</span>
         </div>
+
+        <button class="view-logs-btn" onclick="openLogModal('${uid}', '${name}')">
+            <i class="fa-solid fa-list-ul"></i> CMD: VIEW_LOGS
+        </button>
     </div>
     `;
 }
 
+// === Modal 相關功能 (保持不變) ===
+window.openLogModal = function(uid, name) {
+    const modal = document.getElementById('logModal');
+    const modalTitle = document.getElementById('modalUserName');
+    const listBody = document.getElementById('modalLogList');
+    
+    modalTitle.innerText = `LOGS: ${name}`;
+    listBody.innerHTML = '';
+
+    const trips = window.allTripsCache[uid] || [];
+
+    if (trips.length === 0) {
+        listBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#555;">NO_DATA_FOUND</td></tr>';
+    } else {
+        trips.forEach(t => {
+            const date = new Date(t.createdAt);
+            const dateStr = `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`;
+            
+            let routeInfo = t.routeId || '';
+            if (t.startStation && t.endStation) routeInfo += ` ${t.startStation}→${t.endStation}`;
+            if (!routeInfo) routeInfo = '-';
+
+            const typeMap = {
+                mrt: 'MRT', bus: 'BUS', coach: 'COACH', tra: 'TRA', tymrt: 'TYMRT', lrt: 'LRT', bike: 'UBIKE'
+            };
+            const typeStr = typeMap[t.type] || t.type.toUpperCase();
+
+            const org = t.originalPrice;
+            const pd = t.isFree ? 0 : (t.paidPrice !== undefined ? t.paidPrice : org);
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${dateStr}</td>
+                <td><span class="type-badge">${typeStr}</span></td>
+                <td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${routeInfo}</td>
+                <td>$${org} / <span style="color:#aaa">$${pd}</span></td>
+            `;
+            listBody.appendChild(row);
+        });
+    }
+    modal.classList.remove('hidden');
+}
+
+window.closeModal = function() {
+    document.getElementById('logModal').classList.add('hidden');
+}
+
 refreshBtn.addEventListener('click', loadAllData);
 
-// Init
 loadAllData();
