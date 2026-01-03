@@ -1,6 +1,6 @@
 {
-  "name": "TPASS 回本計算器",
-  "short_name": "TPASS計算機",
+  "name": "TPASS回本計算機",
+  "short_name": "TPASS回本計算機",
   "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#1a2a6c",
