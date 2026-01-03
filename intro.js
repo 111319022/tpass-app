@@ -73,7 +73,7 @@ startBtn.addEventListener('click', async () => {
         // 設定 localStorage 標記已看過介紹 (可選)
         localStorage.setItem('hasSeenIntro', 'true');
 
-        window.location.href = "index.html";
+        window.location.href = "app.html";
 
     } catch (error) {
         console.error("Login Error:", error);
@@ -83,3 +83,12 @@ startBtn.addEventListener('click', async () => {
     }
 });
 
+// [新增] 檢查登入狀態，若已登入則直接跳轉到 app.html
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+// 注意：要確保這裡有 import auth
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        window.location.href = "app.html";
+    }
+});
