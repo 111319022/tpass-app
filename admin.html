@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPASS 監控後台 // SYSTEM ADMIN</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+    <div class="terminal-container">
+        <header class="console-header">
+            <div class="header-left">
+                <i class="fa-solid fa-server"></i>
+                <h1>TPASS_MONITOR_SYS</h1>
+                <span class="status-badge">ONLINE</span>
+            </div>
+            <div class="header-right">
+                <span id="systemTime">00:00:00</span>
+                <button id="refreshBtn" class="cmd-btn"><i class="fa-solid fa-rotate"></i> REFRESH_DATA</button>
+            </div>
+        </header>
+
+        <div class="stats-overview">
+            <div class="stat-panel">
+                <small>TOTAL_USERS</small>
+                <span id="totalUsers">0</span>
+            </div>
+            <div class="stat-panel">
+                <small>ACTIVE_CYCLES</small>
+                <span id="activeCycles">0</span>
+            </div>
+            <div class="stat-panel">
+                <small>PROFIT_USERS</small>
+                <span id="profitUsers" style="color:var(--neon-green)">0</span>
+            </div>
+        </div>
+
+        <div class="grid-container" id="userGrid">
+            <div class="loading-text">INITIALIZING DATA STREAM...</div>
+        </div>
+    </div>
+
+    <script type="module" src="admin.js"></script>
+</body>
+</html>
