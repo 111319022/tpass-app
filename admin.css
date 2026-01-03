@@ -494,4 +494,5 @@ details.price-details[open] summary::after {
         padding-right: 0;
     }
 }
+
 @keyframes blink { 50% { opacity: 0; } }
