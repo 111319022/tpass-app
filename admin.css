@@ -104,7 +104,6 @@ h1 { font-size: 24px; color: var(--text-bright); letter-spacing: 2px; }
 .grid-container {
     flex: 1;
     display: grid;
-    /* [修改] 寬度加大到 380px，讓內容更舒適 */
     grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
     gap: 20px;
     overflow-y: auto;
@@ -304,7 +303,7 @@ h1 { font-size: 24px; color: var(--text-bright); letter-spacing: 2px; }
     animation: blink 1s infinite;
 }
 
-/* === [修正] 折疊明細樣式 === */
+/* === 折疊明細樣式 === */
 details.price-details {
     margin-bottom: 6px;
     border-bottom: 1px dashed rgba(255,255,255,0.1);
@@ -312,40 +311,35 @@ details.price-details {
 
 details.price-details summary {
     display: flex;
-    align-items: center; /* 垂直置中 */
+    align-items: center;
     cursor: pointer;
-    padding: 6px 0; /* 稍微增加高度讓點擊更容易 */
+    padding: 6px 0;
     list-style: none;
     transition: color 0.2s;
     font-size: 13px;
     width: 100%;
 }
 
-/* 隱藏預設三角形 (Safari/Chrome) */
 details.price-details summary::-webkit-details-marker { display: none; }
 
 details.price-details summary:hover {
     color: var(--neon-blue);
 }
 
-/* 關鍵修正：讓左邊的標題 (第一個 span) 自動佔據剩餘空間，把數值推到右邊 */
 details.price-details summary span:first-child {
     margin-right: auto;
-    color: #888; /* 讓標題顏色跟其他欄位一致 */
+    color: #888;
 }
 
-/* 調整數值與 +/- 符號的距離 */
 details.price-details summary span.val-money {
     margin-right: 10px;
 }
 
-/* +/- 符號樣式優化 */
 details.price-details summary::after {
     content: '+';
     color: #666;
     font-weight: bold;
     font-size: 14px;
-    /* 設定固定寬度，避免展開/收合時文字跳動 */
     width: 12px; 
     text-align: center; 
 }
@@ -374,7 +368,6 @@ details.price-details[open] summary::after {
     font-family: 'JetBrains Mono', monospace;
 }
 
-/* R1 R2 樣式 */
 .reward-sub-row {
     display: flex;
     justify-content: space-between;
@@ -384,56 +377,15 @@ details.price-details[open] summary::after {
     margin-bottom: 3px;
 }
 
-/* === [新增] 手機版 RWD 修正 === */
+@keyframes blink { 50% { opacity: 0; } }
+
+/* === [修正] 手機版 RWD 整合設定 === */
 @media (max-width: 600px) {
     .terminal-container {
-        padding: 15px; /* 手機版邊距縮小一點 */
+        padding: 10px; /* 邊距縮小 */
     }
 
-    /* Header 改為上下堆疊 */
-    .console-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 15px;
-    }
-
-    /* 左側標題區佔滿寬度，並讓 Badge 靠右 */
-    .header-left {
-        width: 100%;
-        justify-content: space-between;
-    }
-    
-    .header-left h1 {
-        font-size: 20px; /* 標題字體稍微縮小 */
-        white-space: nowrap; /* 防止換行 */
-    }
-
-    /* 右側操作區佔滿寬度，並分散對齊 */
-    .header-right {
-        width: 100%;
-        justify-content: space-between;
-        gap: 0;
-    }
-
-    /* 統計面板改為垂直排列 */
-    .stats-overview {
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    /* 調整 Grid 卡片在手機上的寬度 */
-    .grid-container {
-        grid-template-columns: 1fr; /* 強制單欄 */
-    }
-}
-
-/* === [修正] 手機版 RWD (統計數據並排) === */
-@media (max-width: 600px) {
-    .terminal-container {
-        padding: 10px; /* 邊距再縮小一點，爭取空間 */
-    }
-
-    /* Header 維持上下堆疊 */
+    /* Header 垂直堆疊：左標題在上，右操作區在下 */
     .console-header {
         flex-direction: column;
         align-items: flex-start;
@@ -447,52 +399,63 @@ details.price-details[open] summary::after {
     }
     
     .header-left h1 {
-        font-size: 18px; /* 標題再小一點以免爆開 */
+        font-size: 18px; 
         white-space: nowrap; 
     }
 
+    /* [修改] 右側操作區：讓按鈕靠右並排 */
     .header-right {
         width: 100%;
-        justify-content: space-between;
-        gap: 0;
+        display: flex;
+        justify-content: flex-end; /* 整體靠右 */
+        gap: 10px; /* 按鈕間距 */
+        align-items: center;
     }
 
-    /* [關鍵修改] 統計面板強制橫向排列 */
+    /* 時間靠左 (推擠其他元素到最右) */
+    #systemTime {
+        margin-right: auto; 
+        font-size: 12px;
+    }
+
+    .cmd-btn {
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+
+    /* 統計面板強制橫向排列 (一行顯示) */
     .stats-overview {
-        flex-direction: row; /* 橫向 */
-        gap: 8px; /* 間距縮小 */
+        flex-direction: row; 
+        gap: 8px; 
         margin-bottom: 20px;
     }
 
     .stat-panel {
-        flex: 1; /* 平均分配寬度 */
-        padding: 10px 5px; /* 上下10px, 左右5px (極限壓縮) */
-        min-width: 0; /* 允許內容縮小，防止被長文字撐開 */
+        flex: 1; 
+        padding: 10px 5px; 
+        min-width: 0; 
     }
 
     .stat-panel small {
-        font-size: 9px; /* 標籤字縮小 */
-        white-space: nowrap; /* 不換行 */
+        font-size: 9px; 
+        white-space: nowrap; 
         display: block;
-        overflow: hidden;         /* 超出隱藏 */
-        text-overflow: ellipsis;  /* 變成點點點 */
+        overflow: hidden;         
+        text-overflow: ellipsis;  
     }
 
     .stat-panel span {
-        font-size: 20px; /* 數字縮小 */
+        font-size: 20px; 
     }
     
-    /* 調整裝飾性角落的大小，避免遮到字 */
     .stat-panel::after {
         width: 6px; 
         height: 6px;
     }
 
-    /* 卡片維持單欄 */
+    /* Grid 維持單欄滿版 */
     .grid-container {
         grid-template-columns: 1fr; 
         padding-right: 0;
     }
 }
-
-@keyframes blink { 50% { opacity: 0; } }
