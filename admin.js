@@ -1,11 +1,16 @@
-import { db } from "./firebase-config.js";
+import { db, auth } from "./firebase-config.js"; // [修改] 引入 auth
 import { collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"; // [新增] 引入監聽器
 
 const userGrid = document.getElementById('userGrid');
 const totalUsersEl = document.getElementById('totalUsers');
 const activeCyclesEl = document.getElementById('activeCycles');
 const profitUsersEl = document.getElementById('profitUsers');
 const refreshBtn = document.getElementById('refreshBtn');
+
+// === [設定] 管理員 Email ===
+// 請確認這裡填寫的是您要用來管理後台的 Google 帳號 Email
+const ADMIN_EMAIL = "rayhsu63@gmail.com"; 
 
 window.allTripsCache = {};
 
@@ -14,6 +19,20 @@ setInterval(() => {
     const now = new Date();
     document.getElementById('systemTime').innerText = now.toTimeString().split(' ')[0];
 }, 1000);
+
+// === [新增] 權限檢查與啟動 ===
+// 只有在確認身分後，才執行 loadAllData
+onAuthStateChanged(auth, (user) => {
+    if (user && user.email === ADMIN_EMAIL) {
+        // 是管理員，允許載入資料
+        console.log("ADMIN ACCESS GRANTED");
+        loadAllData();
+    } else {
+        // 不是管理員，或沒登入 -> 踢回首頁
+        alert("ACCESS DENIED: 權限不足，無法訪問後台");
+        window.location.replace("index.html");
+    }
+});
 
 // === 核心：載入所有數據 ===
 async function loadAllData() {
@@ -294,7 +313,7 @@ window.openLogModal = function(uid, name) {
             if (!routeInfo) routeInfo = '-';
 
             const typeMap = {
-                mrt: 'MRT', bus: 'BUS', coach: 'COACH', tra: 'TRA', tymrt: 'TYMRT', lrt: 'LRT', bike: 'UBIKE'
+                mrt: 'MRT', bus: 'BUS', coach: 'HIGHWAY BUS', tra: 'TRA', tymrt: 'TYMRT', lrt: 'LRT', bike: 'UBIKE'
             };
             const typeStr = typeMap[t.type] || t.type.toUpperCase();
 
@@ -320,4 +339,3 @@ window.closeModal = function() {
 
 refreshBtn.addEventListener('click', loadAllData);
 
-loadAllData();
