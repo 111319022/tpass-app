@@ -427,4 +427,71 @@ details.price-details[open] summary::after {
     }
 }
 
+/* === [修正] 手機版 RWD (統計數據並排) === */
+@media (max-width: 600px) {
+    .terminal-container {
+        padding: 10px; /* 邊距再縮小一點，爭取空間 */
+    }
+
+    /* Header 維持上下堆疊 */
+    .console-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .header-left {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .header-left h1 {
+        font-size: 18px; /* 標題再小一點以免爆開 */
+        white-space: nowrap; 
+    }
+
+    .header-right {
+        width: 100%;
+        justify-content: space-between;
+        gap: 0;
+    }
+
+    /* [關鍵修改] 統計面板強制橫向排列 */
+    .stats-overview {
+        flex-direction: row; /* 橫向 */
+        gap: 8px; /* 間距縮小 */
+        margin-bottom: 20px;
+    }
+
+    .stat-panel {
+        flex: 1; /* 平均分配寬度 */
+        padding: 10px 5px; /* 上下10px, 左右5px (極限壓縮) */
+        min-width: 0; /* 允許內容縮小，防止被長文字撐開 */
+    }
+
+    .stat-panel small {
+        font-size: 9px; /* 標籤字縮小 */
+        white-space: nowrap; /* 不換行 */
+        display: block;
+        overflow: hidden;         /* 超出隱藏 */
+        text-overflow: ellipsis;  /* 變成點點點 */
+    }
+
+    .stat-panel span {
+        font-size: 20px; /* 數字縮小 */
+    }
+    
+    /* 調整裝飾性角落的大小，避免遮到字 */
+    .stat-panel::after {
+        width: 6px; 
+        height: 6px;
+    }
+
+    /* 卡片維持單欄 */
+    .grid-container {
+        grid-template-columns: 1fr; 
+        padding-right: 0;
+    }
+}
 @keyframes blink { 50% { opacity: 0; } }
