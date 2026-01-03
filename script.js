@@ -510,7 +510,7 @@ els.btnDeleteTrip.addEventListener('click', async () => {
     }
 });
 
-// === 核心計算邏輯 (跨月分組 + 修正小數點誤差) ===
+// === 核心計算邏輯 ===
 function calculate() {
     let totalStats = {
         totalPaid: 0,
@@ -589,7 +589,6 @@ function calculate() {
         else if (mrtCount > 10) mrtRate = 0.05;
 
         if (mrtRate > 0) {
-            // [修正] 這裡直接 Math.floor，確保累加的是整數
             const amt = Math.floor(mrtSum * mrtRate);
             r1_total_cashback += amt;
             r1_all_details.push({ 
@@ -606,7 +605,6 @@ function calculate() {
         else if (traCount > 10) traRate = 0.10;
         
         if (traRate > 0) {
-            // [修正] 這裡直接 Math.floor
             const amt = Math.floor(traSum * traRate);
             r1_total_cashback += amt;
             r1_all_details.push({ 
@@ -620,7 +618,6 @@ function calculate() {
         const railPaidSum = mData.paidSums.mrt + mData.paidSums.tra + mData.paidSums.tymrt + mData.paidSums.lrt;
         
         if (railCount >= 11) { 
-            // [修正] 這裡直接 Math.floor
             const amt = Math.floor(railPaidSum * 0.02); 
             r2_total_cashback += amt;
             r2_all_details.push({ 
@@ -636,7 +633,6 @@ function calculate() {
         else if (busCount >= 11) busRate = 0.15; 
         
         if (busRate > 0) {
-            // [修正] 這裡直接 Math.floor
             const amt = Math.floor(busPaidSum * busRate);
             r2_total_cashback += amt;
             r2_all_details.push({ 
@@ -663,8 +659,10 @@ function renderUI() {
     const data = calculate();
     const finalVal = Math.floor(data.finalCost);
 
+    // 1. 更新大標題金額
     els.finalCost.innerText = `$${finalVal}`;
 
+    // 2. 更新明細
     els.displayOriginalTotal.innerText = `$${Math.floor(data.totalOriginal)}`;
     els.listOriginalDetails.innerHTML = generateDetailHtml(data.originalSums);
     els.displayPaidTotal.innerText = `$${Math.floor(data.totalPaid)}`;
@@ -680,6 +678,7 @@ function renderUI() {
         ? data.r2.details.map(d => `<div class="rule-detail-row"><span>${d.text}</span><span>${d.amount}</span></div>`).join('') 
         : '';
     
+    // 5. 更新狀態
     const diff = TPASS_PRICE - finalVal;
     if (diff < 0) {
         els.statusText.innerText = "已回本！";
@@ -709,8 +708,26 @@ function renderUI() {
         return;
     }
 
-    let lastDateStr = null;
+    // [新增] 步驟1: 預先計算每一天的總金額
+    const dailyTotals = {};
     const discount = FARE_CONFIG[currentIdentity].transferDiscount;
+
+    trips.forEach(t => {
+        if (!currentSelectedCycle || t.createdAt < currentSelectedCycle.start || t.createdAt > currentSelectedCycle.end) {
+            return;
+        }
+        
+        let cost = 0;
+        if (t.isFree) cost = 0;
+        else if (t.paidPrice !== undefined) cost = t.paidPrice;
+        else cost = t.isTransfer ? Math.max(0, t.originalPrice - discount) : t.originalPrice;
+        
+        if (!dailyTotals[t.dateStr]) dailyTotals[t.dateStr] = 0;
+        dailyTotals[t.dateStr] += cost;
+    });
+
+    // [新增] 步驟2: 渲染列表時插入金額
+    let lastDateStr = null;
     let currentCycleTripCount = 0; 
 
     trips.forEach(trip => {
@@ -723,10 +740,23 @@ function renderUI() {
         if (trip.dateStr !== lastDateStr) {
             const separator = document.createElement('li');
             separator.className = 'date-separator';
+            
             const tripD = new Date(trip.dateStr);
             const today = new Date();
             const isToday = tripD.toDateString() === today.toDateString();
-            separator.innerText = isToday ? `今天 (${trip.dateStr})` : trip.dateStr;
+            const dateText = isToday ? `今天 (${trip.dateStr})` : trip.dateStr;
+            const daySum = dailyTotals[trip.dateStr] || 0;
+
+            // 使用 innerHTML 製作漂亮的日期標籤 + 金額膠囊
+            separator.innerHTML = `
+                <span style="display:flex; align-items:center; gap:8px;">
+                    <span>${dateText}</span>
+                    <span style="font-size:11px; background:rgba(0,0,0,0.08); color:#666; padding:2px 8px; border-radius:12px; font-weight:normal;">
+                        $${daySum}
+                    </span>
+                </span>
+            `;
+            
             els.historyList.appendChild(separator);
             lastDateStr = trip.dateStr;
         }
