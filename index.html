@@ -18,10 +18,20 @@
                 <div class="card-content welcome-card">
                     <h1 class="welcome-title">歡迎來到<br>TPASS 計算機</h1>
                     <p class="author-tag">By Raaay</p>
+                    
                     <div class="welcome-deco">
                         <i class="fa-solid fa-train-subway"></i>
                         <i class="fa-solid fa-bus"></i>
                         <i class="fa-solid fa-bicycle"></i>
+                    </div>
+
+                    <div class="quick-access">
+                        <button id="quickLoginBtn" class="quick-login-btn">
+                            <i class="fa-brands fa-google"></i> 直接登入
+                        </button>
+                        <div class="swipe-hint">
+                            滑動來查看說明 <i class="fa-solid fa-arrow-right-long"></i>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -32,7 +42,7 @@
                         <i class="fa-solid fa-bus"></i>
                     </div>
                     <h2>通勤，也要精打細算</h2>
-                    <p>專為基北北桃通勤族打造。<br>TPASS 1200 買下去，到底有沒有回本？<br>讓我們幫你算清楚。</p>
+                    <p>專為基北北桃通勤族打造。<br>1200 買下去，到底有沒有回本？<br>讓我們幫你算清楚。</p>
                 </div>
             </div>
 
@@ -42,7 +52,7 @@
                         <i class="fa-solid fa-calculator"></i>
                     </div>
                     <h2>智慧轉乘與優惠</h2>
-                    <p>自動扣除轉乘優惠 ($8/$6)。<br>支援「常客優惠」階梯回饋與「TPASS 2.0」運具補貼計算。</p>
+                    <p>自動扣除轉乘優惠 ($8/$6)。<br>支援「常客優惠」階梯回饋<br>與「TPASS 2.0」運具補貼計算。</p>
                 </div>
             </div>
 
@@ -56,7 +66,7 @@
                 </div>
             </div>
 
-            <div class="card">
+            <div class="card" id="pwa-card">
                 <div class="card-content pwa-card">
                     <div class="icon-circle" style="background: #0984e3;">
                         <i class="fa-solid fa-mobile-screen-button"></i>
@@ -69,7 +79,7 @@
                             <div class="step-icon"><i class="fa-brands fa-apple"></i></div>
                             <div class="step-text">
                                 <strong>iOS (Safari)</strong><br>
-                                長按網址列，點擊「分享」<i class="fa-solid fa-arrow-up-from-bracket" style="font-size:12px;"></i> → 選擇「加入主畫面」。
+                                點擊下方「分享」<i class="fa-solid fa-arrow-up-from-bracket" style="font-size:12px;"></i> → 選擇「加入主畫面」。
                             </div>
                         </div>
                         <div class="pwa-step">
@@ -123,14 +133,7 @@
                 <i class="fa-solid fa-chevron-left"></i>
             </button>
             
-            <div class="dots" id="dots">
-                <span class="dot active"></span>
-                <span class="dot"></span>
-                <span class="dot"></span>
-                <span class="dot"></span>
-                <span class="dot"></span>
-                <span class="dot"></span>
-            </div>
+            <div class="dots" id="dots"></div>
             
             <button id="nextBtn" class="nav-btn">
                 <i class="fa-solid fa-chevron-right"></i>
