@@ -339,3 +339,7 @@ window.closeModal = function() {
 
 refreshBtn.addEventListener('click', loadAllData);
 
+// [新增] 回到 App 按鈕監聽
+document.getElementById('backBtn').addEventListener('click', () => {
+    window.location.href = "app.html";
+});
