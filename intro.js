@@ -114,7 +114,11 @@ async function handleLogin(btnElement, isQuickLogin = false) {
             userData.identity = selectedIdentity;
         }
 
-        await setDoc(doc(db, "users", user.uid), userData, { merge: true });
+await setDoc(doc(db, "users", user.uid), {
+    // ...略
+    email: user.email,          // 這裡會補寫入 email
+    displayName: user.displayName // 這裡會補寫入 名字
+}, { merge: true }); // merge: true 代表更新現有資料
 
         localStorage.setItem('hasSeenIntro', 'true');
         window.location.replace("app.html");
@@ -134,8 +138,3 @@ startBtn.addEventListener('click', () => handleLogin(startBtn, false));
 // 綁定第一頁的「直接登入」按鈕 (不會更新身分)
 quickLoginBtn.addEventListener('click', () => handleLogin(quickLoginBtn, true));
 
-await setDoc(doc(db, "users", user.uid), {
-    // ...略
-    email: user.email,          // 這裡會補寫入 email
-    displayName: user.displayName // 這裡會補寫入 名字
-}, { merge: true }); // merge: true 代表更新現有資料
