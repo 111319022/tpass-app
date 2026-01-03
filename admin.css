@@ -304,7 +304,7 @@ h1 { font-size: 24px; color: var(--text-bright); letter-spacing: 2px; }
     animation: blink 1s infinite;
 }
 
-/* === [新增] 折疊明細樣式 === */
+/* === [修正] 折疊明細樣式 === */
 details.price-details {
     margin-bottom: 6px;
     border-bottom: 1px dashed rgba(255,255,255,0.1);
@@ -312,26 +312,44 @@ details.price-details {
 
 details.price-details summary {
     display: flex;
-    justify-content: space-between;
+    align-items: center; /* 垂直置中 */
     cursor: pointer;
-    padding: 4px 0;
-    list-style: none; /* 隱藏預設三角形 */
+    padding: 6px 0; /* 稍微增加高度讓點擊更容易 */
+    list-style: none;
     transition: color 0.2s;
     font-size: 13px;
+    width: 100%;
 }
+
+/* 隱藏預設三角形 (Safari/Chrome) */
 details.price-details summary::-webkit-details-marker { display: none; }
 
 details.price-details summary:hover {
     color: var(--neon-blue);
 }
 
+/* 關鍵修正：讓左邊的標題 (第一個 span) 自動佔據剩餘空間，把數值推到右邊 */
+details.price-details summary span:first-child {
+    margin-right: auto;
+    color: #888; /* 讓標題顏色跟其他欄位一致 */
+}
+
+/* 調整數值與 +/- 符號的距離 */
+details.price-details summary span.val-money {
+    margin-right: 10px;
+}
+
+/* +/- 符號樣式優化 */
 details.price-details summary::after {
     content: '+';
     color: #666;
     font-weight: bold;
-    margin-left: 8px;
-    font-size: 12px;
+    font-size: 14px;
+    /* 設定固定寬度，避免展開/收合時文字跳動 */
+    width: 12px; 
+    text-align: center; 
 }
+
 details.price-details[open] summary::after {
     content: '-';
     color: var(--neon-blue);
