@@ -9,9 +9,9 @@
 
 body {
     background: var(--bg-gradient);
-    height: 100vh; /* 使用 viewport height */
+    height: 100vh;
     width: 100vw;
-    overflow: hidden; /* 防止整體捲動 */
+    overflow: hidden;
 }
 
 .intro-container {
@@ -19,10 +19,10 @@ body {
     height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: space-between; /* 讓內容上下撐開 */
+    justify-content: space-between;
 }
 
-/* === 滑動軌道 (核心修正) === */
+/* === 滑動軌道 === */
 .slider {
     display: flex;
     width: 100%;
@@ -34,12 +34,10 @@ body {
     -webkit-overflow-scrolling: touch;
 }
 
-/* 隱藏卷軸 */
 .slider::-webkit-scrollbar { display: none; }
 
-/* === 單張卡片修正 === */
+/* === 單張卡片基礎樣式 === */
 .card {
-    /* 關鍵修正：確保每張卡片剛好是螢幕寬度，不多也不少 */
     min-width: 100vw; 
     width: 100vw;
     height: 100%;
@@ -47,20 +45,19 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 20px; /* 卡片外部留白 */
+    padding: 20px 25px; /* 稍微增加左右 padding */
 }
 
 .card-content {
     background: var(--card-bg);
-    padding: 40px 30px;
+    padding: 40px 25px;
     border-radius: 30px;
     text-align: center;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     width: 100%;
-    max-width: 340px; /* 限制最大寬度避免過寬 */
+    max-width: 360px;
     backdrop-filter: blur(10px);
     animation: fadeIn 0.8s ease;
-    /* 確保內容不會溢出 */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -71,30 +68,88 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* 卡片內部元素 */
+/* 卡片通用元素 */
 .icon-circle {
-    width: 80px;
-    height: 80px;
+    width: 70px; /* 稍微縮小圖示 */
+    height: 70px;
     background: var(--primary);
     color: white;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 32px;
-    margin-bottom: 25px;
+    font-size: 28px;
+    margin-bottom: 20px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.2);
     flex-shrink: 0;
 }
 
-h2 { margin-bottom: 15px; color: var(--text); font-size: 24px; }
-p { color: #666; line-height: 1.6; font-size: 15px; margin-bottom: 20px; }
+h2 { margin-bottom: 15px; color: var(--text); font-size: 22px; }
+p { color: #666; line-height: 1.5; font-size: 15px; margin-bottom: 20px; }
+
+/* === [新增] 歡迎卡片特定樣式 === */
+.welcome-title {
+    font-size: 32px;
+    color: var(--text);
+    margin-bottom: 10px;
+    line-height: 1.2;
+}
+.author-tag {
+    font-size: 18px;
+    color: var(--primary);
+    font-weight: bold;
+    margin-bottom: 30px;
+}
+.welcome-deco {
+    display: flex;
+    gap: 15px;
+    font-size: 24px;
+    color: var(--text);
+    opacity: 0.3;
+    margin-top: 20px;
+}
+
+/* === [新增] PWA 安裝教學樣式 === */
+.pwa-instructions {
+    width: 100%;
+    text-align: left;
+    background: rgba(0,0,0,0.05);
+    border-radius: 15px;
+    padding: 15px;
+}
+.pwa-step {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    align-items: flex-start;
+}
+.pwa-step:last-child { margin-bottom: 0; }
+
+.step-icon {
+    font-size: 24px;
+    color: var(--text);
+    width: 30px;
+    text-align: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+.step-text {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.5;
+}
+.step-text strong {
+    color: var(--text);
+    font-size: 14px;
+    display: block;
+    margin-bottom: 4px;
+}
 
 /* === 最終頁：身分選擇 === */
 .identity-selection {
     display: flex;
     gap: 10px;
-    margin: 20px 0 30px 0;
+    margin: 10px 0 25px 0;
     width: 100%;
 }
 
@@ -104,7 +159,7 @@ p { color: #666; line-height: 1.6; font-size: 15px; margin-bottom: 20px; }
 .id-box {
     border: 2px solid #eee;
     border-radius: 15px;
-    padding: 15px 5px;
+    padding: 12px 5px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -113,7 +168,7 @@ p { color: #666; line-height: 1.6; font-size: 15px; margin-bottom: 20px; }
     height: 100%;
 }
 
-.id-box i { font-size: 20px; margin-bottom: 8px; }
+.id-box i { font-size: 18px; margin-bottom: 6px; }
 .id-box span { font-weight: bold; font-size: 13px; margin-bottom: 4px; }
 .id-box small { font-size: 10px; }
 
@@ -128,12 +183,12 @@ p { color: #666; line-height: 1.6; font-size: 15px; margin-bottom: 20px; }
 /* Google 按鈕 */
 .google-btn {
     width: 100%;
-    padding: 15px;
+    padding: 12px;
     border: none;
     border-radius: 50px;
     background: #2c3e50;
     color: white;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: bold;
     cursor: pointer;
     display: flex;
@@ -144,9 +199,9 @@ p { color: #666; line-height: 1.6; font-size: 15px; margin-bottom: 20px; }
 }
 .google-btn:hover { background: #34495e; transform: scale(1.02); }
 
-/* === 底部控制區修正 === */
+/* === 底部控制區 === */
 .controls {
-    padding: 20px 20px 40px 20px;
+    padding: 20px 25px 35px 25px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -155,31 +210,32 @@ p { color: #666; line-height: 1.6; font-size: 15px; margin-bottom: 20px; }
     margin: 0 auto;
 }
 
-.dots { display: flex; gap: 8px; }
+.dots { display: flex; gap: 6px; }
 .dot {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
     background: rgba(255,255,255,0.4);
     border-radius: 50%;
     transition: 0.3s;
 }
-.dot.active { background: white; width: 20px; border-radius: 10px; }
+.dot.active { background: white; width: 18px; border-radius: 10px; }
 
 .nav-btn {
     background: rgba(255,255,255,0.2);
     border: 1px solid rgba(255,255,255,0.4);
     color: white;
-    padding: 8px 16px;
-    border-radius: 20px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 16px;
     display: flex;
     align-items: center;
-    gap: 5px;
-    transition: opacity 0.3s;
+    justify-content: center;
+    transition: opacity 0.3s, background 0.2s;
 }
+.nav-btn:active { background: rgba(255,255,255,0.4); }
 
-/* 隱藏按鈕的樣式 */
 .nav-btn.hidden {
     opacity: 0;
     pointer-events: none;

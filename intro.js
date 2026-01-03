@@ -1,5 +1,5 @@
 import { auth, db } from "./firebase-config.js";
-import { signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const slider = document.getElementById('slider');
@@ -8,11 +8,18 @@ const prevBtn = document.getElementById('prevBtn');
 const dots = document.querySelectorAll('.dot');
 const startBtn = document.getElementById('startBtn');
 
+// [新增] 檢查登入狀態，若已登入則直接跳轉到主程式
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        // 這裡假設主程式為 app.html，請確認你的檔案名稱
+        window.location.href = "app.html";
+    }
+});
+
 // 1. 滑動邏輯與介面更新
 slider.addEventListener('scroll', () => {
     const scrollLeft = slider.scrollLeft;
     const width = slider.offsetWidth;
-    // 使用 Math.round 確保滑過一半就算下一頁
     const index = Math.round(scrollLeft / width);
 
     updateUI(index);
@@ -33,8 +40,8 @@ function updateUI(index) {
         prevBtn.classList.remove('hidden');
     }
 
-    // 最後一頁 (index 3)：隱藏下一頁
-    if (index === 3) {
+    // [修改] 最後一頁：隱藏下一頁 (使用 dots.length - 1 來動態判斷)
+    if (index === dots.length - 1) {
         nextBtn.classList.add('hidden');
     } else {
         nextBtn.classList.remove('hidden');
@@ -52,13 +59,14 @@ prevBtn.addEventListener('click', () => {
     slider.scrollBy({ left: -width, behavior: 'smooth' });
 });
 
-// 3. 登入並儲存設定邏輯 (保持不變)
+// 3. 登入並儲存設定邏輯
 startBtn.addEventListener('click', async () => {
     const selectedIdentity = document.querySelector('input[name="identity"]:checked').value;
     const provider = new GoogleAuthProvider();
     
-    startBtn.innerText = "登入處理中...";
+    startBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 處理中...';
     startBtn.disabled = true;
+    startBtn.style.opacity = '0.7';
 
     try {
         const result = await signInWithPopup(auth, provider);
@@ -67,28 +75,21 @@ startBtn.addEventListener('click', async () => {
         await setDoc(doc(db, "users", user.uid), {
             identity: selectedIdentity,
             email: user.email,
-            displayName: user.displayName
+            displayName: user.displayName,
+            lastLogin: new Date()
         }, { merge: true });
 
-        // 設定 localStorage 標記已看過介紹 (可選)
+        // 標記已看過介紹
         localStorage.setItem('hasSeenIntro', 'true');
 
+        // 跳轉到主程式
         window.location.href = "app.html";
 
     } catch (error) {
         console.error("Login Error:", error);
-        alert("登入失敗，請重試");
-        startBtn.innerText = "登入並開始";
+        alert("登入失敗，請檢查網路連線後重試。");
+        startBtn.innerHTML = '<i class="fa-brands fa-google"></i> 登入並開始';
         startBtn.disabled = false;
-    }
-});
-
-// [新增] 檢查登入狀態，若已登入則直接跳轉到 app.html
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-// 注意：要確保這裡有 import auth
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        window.location.href = "app.html";
+        startBtn.style.opacity = '1';
     }
 });
