@@ -304,4 +304,66 @@ h1 { font-size: 24px; color: var(--text-bright); letter-spacing: 2px; }
     animation: blink 1s infinite;
 }
 
+/* === [新增] 折疊明細樣式 === */
+details.price-details {
+    margin-bottom: 6px;
+    border-bottom: 1px dashed rgba(255,255,255,0.1);
+}
+
+details.price-details summary {
+    display: flex;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 4px 0;
+    list-style: none; /* 隱藏預設三角形 */
+    transition: color 0.2s;
+    font-size: 13px;
+}
+details.price-details summary::-webkit-details-marker { display: none; }
+
+details.price-details summary:hover {
+    color: var(--neon-blue);
+}
+
+details.price-details summary::after {
+    content: '+';
+    color: #666;
+    font-weight: bold;
+    margin-left: 8px;
+    font-size: 12px;
+}
+details.price-details[open] summary::after {
+    content: '-';
+    color: var(--neon-blue);
+}
+
+.breakdown-list {
+    background: rgba(0,0,0,0.3);
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    border-left: 2px solid #444;
+}
+
+.breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 4px;
+}
+.breakdown-row span:last-child {
+    color: #ccc;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* R1 R2 樣式 */
+.reward-sub-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #888;
+    padding-left: 10px;
+    margin-bottom: 3px;
+}
+
 @keyframes blink { 50% { opacity: 0; } }
