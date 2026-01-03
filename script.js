@@ -37,7 +37,7 @@ const els = {
     // 儀表板與統計
     finalCost: document.getElementById('finalCost'),
     
-    // 明細折疊區塊相關 ID
+    // 明細折疊區塊
     displayOriginalTotal: document.getElementById('displayOriginalTotal'),
     listOriginalDetails: document.getElementById('listOriginalDetails'),
     displayPaidTotal: document.getElementById('displayPaidTotal'),
@@ -77,10 +77,9 @@ const els = {
     inputStart: document.getElementById('startStation'),
     inputEnd: document.getElementById('endStation'),
     transferLabel: document.getElementById('transferLabel'),
-    // 免費核取方塊
     isFree: document.getElementById('isFree'),
 
-    // 編輯 Modal 相關元素
+    // 編輯 Modal
     editModal: document.getElementById('editModal'),
     editForm: document.getElementById('editForm'),
     editTripId: document.getElementById('editTripId'),
@@ -88,7 +87,6 @@ const els = {
     editTime: document.getElementById('editTime'),
     editPrice: document.getElementById('editPrice'),
     editTransfer: document.getElementById('editTransfer'),
-    // 編輯免費核取方塊
     editIsFree: document.getElementById('editIsFree'),
     editNote: document.getElementById('editNote'),
     editRouteId: document.getElementById('editRouteId'),
@@ -516,12 +514,14 @@ function calculate() {
         totalPaid: 0,
         totalOriginal: 0,
         originalSums: {}, 
-        paidSums: {}      
+        paidSums: {},
+        counts: {} // [新增] 用來存各運具總次數
     };
 
     Object.keys(TRANSPORT_TYPES).forEach(k => {
         totalStats.originalSums[k] = 0;
         totalStats.paidSums[k] = 0;
+        totalStats.counts[k] = 0; // [新增] 初始化
     });
 
     let monthlyStats = {};
@@ -545,6 +545,7 @@ function calculate() {
         totalStats.totalOriginal += op;
         totalStats.originalSums[t.type] += op;
         totalStats.paidSums[t.type] += pp;
+        totalStats.counts[t.type]++; // [新增] 累加次數
 
         // --- B. 累加月份統計 ---
         const monthKey = t.dateStr.slice(0, 7);
@@ -647,6 +648,7 @@ function calculate() {
         totalOriginal: totalStats.totalOriginal,
         originalSums: totalStats.originalSums,
         paidSums: totalStats.paidSums,
+        counts: totalStats.counts, // [新增] 回傳次數統計
         r1: { amount: r1_total_cashback, details: r1_all_details },
         r2: { amount: r2_total_cashback, details: r2_all_details },
         finalCost: totalStats.totalPaid - r1_total_cashback - r2_total_cashback
@@ -659,14 +661,13 @@ function renderUI() {
     const data = calculate();
     const finalVal = Math.floor(data.finalCost);
 
-    // 1. 更新大標題金額
     els.finalCost.innerText = `$${finalVal}`;
 
-    // 2. 更新明細
+    // [修改] 傳入 counts 資訊
     els.displayOriginalTotal.innerText = `$${Math.floor(data.totalOriginal)}`;
-    els.listOriginalDetails.innerHTML = generateDetailHtml(data.originalSums);
+    els.listOriginalDetails.innerHTML = generateDetailHtml(data.originalSums, data.counts);
     els.displayPaidTotal.innerText = `$${Math.floor(data.totalPaid)}`;
-    els.listPaidDetails.innerHTML = generateDetailHtml(data.paidSums);
+    els.listPaidDetails.innerHTML = generateDetailHtml(data.paidSums, data.counts);
 
     els.rule1Discount.innerText = `-$${Math.floor(data.r1.amount)}`;
     els.rule1Detail.innerHTML = data.r1.details.length 
@@ -678,7 +679,6 @@ function renderUI() {
         ? data.r2.details.map(d => `<div class="rule-detail-row"><span>${d.text}</span><span>${d.amount}</span></div>`).join('') 
         : '';
     
-    // 5. 更新狀態
     const diff = TPASS_PRICE - finalVal;
     if (diff < 0) {
         els.statusText.innerText = "已回本！";
@@ -708,7 +708,6 @@ function renderUI() {
         return;
     }
 
-    // [新增] 步驟1: 預先計算每一天的總金額
     const dailyTotals = {};
     const discount = FARE_CONFIG[currentIdentity].transferDiscount;
 
@@ -726,7 +725,6 @@ function renderUI() {
         dailyTotals[t.dateStr] += cost;
     });
 
-    // [新增] 步驟2: 渲染列表時插入金額
     let lastDateStr = null;
     let currentCycleTripCount = 0; 
 
@@ -747,7 +745,6 @@ function renderUI() {
             const dateText = isToday ? `今天 (${trip.dateStr})` : trip.dateStr;
             const daySum = dailyTotals[trip.dateStr] || 0;
 
-            // 使用 innerHTML 製作漂亮的日期標籤 + 金額膠囊
             separator.innerHTML = `
                 <span style="display:flex; align-items:center; gap:8px;">
                     <span>${dateText}</span>
@@ -818,7 +815,8 @@ function renderUI() {
     }
 }
 
-function generateDetailHtml(sumsObj) {
+// [修改] 增加 countsObj 參數
+function generateDetailHtml(sumsObj, countsObj) {
     let html = '';
     let hasData = false;
 
@@ -826,11 +824,14 @@ function generateDetailHtml(sumsObj) {
         if (sum > 0) {
             hasData = true;
             const name = TRANSPORT_TYPES[type].name;
+            const count = countsObj[type] || 0; // 取得該運具的次數
+            
             html += `
                 <div class="detail-row">
                     <span>
                         <i class="fa-solid fa-circle" style="font-size:8px; margin-right:5px; opacity:0.7;"></i>
                         ${name}
+                        <small style="opacity:0.7; margin-left:5px;">(${count} 趟)</small>
                     </span>
                     <span>$${Math.floor(sum)}</span>
                 </div>
