@@ -12,7 +12,7 @@ const quickLoginBtn = document.getElementById('quickLoginBtn');
 // [新增] 檢查登入狀態 (Auth Guard)
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        window.location.href = "app.html";
+        window.location.replace("app.html");
     }
 });
 
@@ -117,7 +117,7 @@ async function handleLogin(btnElement, isQuickLogin = false) {
         await setDoc(doc(db, "users", user.uid), userData, { merge: true });
 
         localStorage.setItem('hasSeenIntro', 'true');
-        window.location.href = "app.html";
+        window.location.replace("app.html");
 
     } catch (error) {
         console.error("Login Error:", error);
