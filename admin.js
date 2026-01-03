@@ -150,7 +150,7 @@ function calculateProfit(trips, identity) {
 function generateBreakdownHtml(sums, counts) {
     let html = '';
     const typeNames = {
-        mrt: 'MRT', bus: 'BUS', coach: 'COACH', tra: 'TRA', 
+        mrt: 'MRT', bus: 'BUS', coach: 'HIGHWAY BUS', tra: 'TRA', 
         tymrt: 'TYMRT', lrt: 'LRT', bike: 'UBIKE'
     };
 
