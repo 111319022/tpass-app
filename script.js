@@ -4,6 +4,7 @@ import {
     collection, addDoc, deleteDoc, query, orderBy, onSnapshot, 
     doc, setDoc, getDoc, updateDoc 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+const ADMIN_EMAIL = "rayhsu63@gmail.com";
 
 // === 狀態變數 ===
 let currentUser = null;
@@ -36,7 +37,9 @@ const TRANSPORT_TYPES = {
 const els = {
     // 儀表板與統計
     finalCost: document.getElementById('finalCost'),
-    
+
+    adminBtn: document.getElementById('adminBtn'), // [新增]
+
     // 明細折疊區塊
     displayOriginalTotal: document.getElementById('displayOriginalTotal'),
     listOriginalDetails: document.getElementById('listOriginalDetails'),
@@ -107,6 +110,21 @@ initAuthListener(async (user) => {
         // ... 原本的載入邏輯 ...
         await loadUserSettings(user.uid);
         setupRealtimeListener(user.uid);
+
+        // [新增] 檢查是否為管理員
+        // 只有 Email 吻合時，才顯示後台按鈕並綁定跳轉事件
+        if (user.email === ADMIN_EMAIL) {
+            if (els.adminBtn) {
+                els.adminBtn.classList.remove('hidden');
+                els.adminBtn.onclick = () => {
+                    window.location.href = "admin.html";
+                };
+            }
+        } else {
+            // 非管理員確保隱藏
+            if (els.adminBtn) els.adminBtn.classList.add('hidden');
+        }
+
     } else {
         // [修改] 如果在 app.html 發現沒登入，直接踢回首頁 (index.html)
         window.location.href = "index.html";
