@@ -87,7 +87,6 @@ prevBtn.addEventListener('click', () => {
 });
 
 // === 4. 登入邏輯封裝 ===
-// isQuickLogin: 如果是 true，就不會寫入「身分設定」，避免老手被強制洗成預設值
 async function handleLogin(btnElement, isQuickLogin = false) {
     const provider = new GoogleAuthProvider();
     const originalText = btnElement.innerHTML;
@@ -100,25 +99,21 @@ async function handleLogin(btnElement, isQuickLogin = false) {
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
 
-        // 準備要寫入的資料
+        // 1. 準備要寫入的資料
         let userData = {
             email: user.email,
             displayName: user.displayName,
             lastLogin: new Date()
         };
 
-        // 只有在「完整流程」(最後一頁) 登入時，才寫入選擇的身分
-        // 這樣「直接登入」的老手，身分設定會維持原本資料庫的樣子
+        // 2. 只有在「完整流程」(最後一頁) 登入時，才寫入選擇的身分
         if (!isQuickLogin) {
             const selectedIdentity = document.querySelector('input[name="identity"]:checked').value;
             userData.identity = selectedIdentity;
         }
 
-await setDoc(doc(db, "users", user.uid), {
-    // ...略
-    email: user.email,          // 這裡會補寫入 email
-    displayName: user.displayName // 這裡會補寫入 名字
-}, { merge: true }); // merge: true 代表更新現有資料
+        // 3. [修正重點] 這裡要使用上面準備好的 userData 變數
+        await setDoc(doc(db, "users", user.uid), userData, { merge: true });
 
         localStorage.setItem('hasSeenIntro', 'true');
         window.location.replace("app.html");
