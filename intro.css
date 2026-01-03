@@ -1,0 +1,186 @@
+:root {
+    --bg-gradient: linear-gradient(160deg, #1a2a6c, #b21f1f, #fdbb2d);
+    --card-bg: rgba(255, 255, 255, 0.9);
+    --text: #2c3e50;
+    --primary: #4A90E2;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+body {
+    background: var(--bg-gradient);
+    height: 100vh; /* 使用 viewport height */
+    width: 100vw;
+    overflow: hidden; /* 防止整體捲動 */
+}
+
+.intro-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* 讓內容上下撐開 */
+}
+
+/* === 滑動軌道 (核心修正) === */
+.slider {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* 隱藏卷軸 */
+.slider::-webkit-scrollbar { display: none; }
+
+/* === 單張卡片修正 === */
+.card {
+    /* 關鍵修正：確保每張卡片剛好是螢幕寬度，不多也不少 */
+    min-width: 100vw; 
+    width: 100vw;
+    height: 100%;
+    scroll-snap-align: start;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px; /* 卡片外部留白 */
+}
+
+.card-content {
+    background: var(--card-bg);
+    padding: 40px 30px;
+    border-radius: 30px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    width: 100%;
+    max-width: 340px; /* 限制最大寬度避免過寬 */
+    backdrop-filter: blur(10px);
+    animation: fadeIn 0.8s ease;
+    /* 確保內容不會溢出 */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 卡片內部元素 */
+.icon-circle {
+    width: 80px;
+    height: 80px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 32px;
+    margin-bottom: 25px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    flex-shrink: 0;
+}
+
+h2 { margin-bottom: 15px; color: var(--text); font-size: 24px; }
+p { color: #666; line-height: 1.6; font-size: 15px; margin-bottom: 20px; }
+
+/* === 最終頁：身分選擇 === */
+.identity-selection {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0 30px 0;
+    width: 100%;
+}
+
+.id-option { flex: 1; cursor: pointer; }
+.id-option input { display: none; }
+
+.id-box {
+    border: 2px solid #eee;
+    border-radius: 15px;
+    padding: 15px 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: 0.2s;
+    color: #888;
+    height: 100%;
+}
+
+.id-box i { font-size: 20px; margin-bottom: 8px; }
+.id-box span { font-weight: bold; font-size: 13px; margin-bottom: 4px; }
+.id-box small { font-size: 10px; }
+
+.id-option input:checked + .id-box {
+    border-color: var(--primary);
+    background: #eaf2fa;
+    color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(74, 144, 226, 0.2);
+}
+
+/* Google 按鈕 */
+.google-btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 50px;
+    background: #2c3e50;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: 0.2s;
+}
+.google-btn:hover { background: #34495e; transform: scale(1.02); }
+
+/* === 底部控制區修正 === */
+.controls {
+    padding: 20px 20px 40px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+.dots { display: flex; gap: 8px; }
+.dot {
+    width: 8px;
+    height: 8px;
+    background: rgba(255,255,255,0.4);
+    border-radius: 50%;
+    transition: 0.3s;
+}
+.dot.active { background: white; width: 20px; border-radius: 10px; }
+
+.nav-btn {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.4);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: opacity 0.3s;
+}
+
+/* 隱藏按鈕的樣式 */
+.nav-btn.hidden {
+    opacity: 0;
+    pointer-events: none;
+}

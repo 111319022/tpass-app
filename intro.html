@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>歡迎使用 TPASS 計算機</title>
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" type="image/png" href="icon.png">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="intro.css">
+</head>
+<body>
+
+    <div class="intro-container">
+        <div class="slider" id="slider">
+            
+            <div class="card">
+                <div class="card-content">
+                    <div class="icon-circle">
+                        <i class="fa-solid fa-bus"></i>
+                    </div>
+                    <h2>通勤，也要精打細算</h2>
+                    <p>專為基北北桃通勤族打造。<br>1200 買下去，到底有沒有回本？讓TPASS計算機幫你算清楚。</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-content">
+                    <div class="icon-circle" style="background: #2ecc71;">
+                        <i class="fa-solid fa-calculator"></i>
+                    </div>
+                    <h2>智慧轉乘與優惠</h2>
+                    <p>自動扣除轉乘優惠 ($8/$6)。<br>支援「常客優惠」階梯回饋與「TPASS 2.0」運具補貼計算。</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-content">
+                    <div class="icon-circle" style="background: #e17055;">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                    </div>
+                    <h2>雲端同步，隨時查看</h2>
+                    <p>支援 PWA 安裝，像 App 一樣好用。<br>資料跟著 Google 帳號走，手機電腦都能記。</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-content">
+                    <div class="icon-circle" style="background: #6c5ce7;">
+                        <i class="fa-solid fa-user-check"></i>
+                    </div>
+                    <h2>開始使用</h2>
+                    <p>請先選擇您的票種身分，<br>這將影響轉乘優惠的計算金額。</p>
+
+                    <div class="identity-selection">
+                        <label class="id-option">
+                            <input type="radio" name="identity" value="adult" checked>
+                            <div class="id-box">
+                                <i class="fa-solid fa-user"></i>
+                                <span>全票 (成人)</span>
+                                <small>轉乘折 $8</small>
+                            </div>
+                        </label>
+                        <label class="id-option">
+                            <input type="radio" name="identity" value="student">
+                            <div class="id-box">
+                                <i class="fa-solid fa-graduation-cap"></i>
+                                <span>學生票</span>
+                                <small>轉乘折 $6</small>
+                            </div>
+                        </label>
+                    </div>
+
+                    <button id="startBtn" class="google-btn">
+                        <i class="fa-brands fa-google"></i> 登入並開始
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="controls">
+            <button id="prevBtn" class="nav-btn hidden">
+                <i class="fa-solid fa-chevron-left"></i> 上一頁
+            </button>
+            
+            <div class="dots" id="dots">
+                <span class="dot active"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+            </div>
+            
+            <button id="nextBtn" class="nav-btn">
+                下一頁 <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <script type="module" src="intro.js"></script>
+</body>
+</html>

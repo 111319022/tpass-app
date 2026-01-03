@@ -876,3 +876,19 @@ window.closeGuide = function() {
 window.addEventListener('load', () => {
     setTimeout(checkPWAStatus, 2000);
 });
+
+// 在 script.js 的入口處
+
+initAuthListener(async (user) => {
+    currentUser = user; 
+    if (user) {
+        // ... 原本的載入邏輯 ...
+        await loadUserSettings(user.uid);
+        setupRealtimeListener(user.uid);
+    } else {
+        // [修改] 如果在 app.html 發現沒登入，直接踢回首頁 (index.html)
+        window.location.href = "index.html";
+        
+        // (原本的 UI 清空邏輯可以保留或移除，因為已經跳轉了)
+    }
+});
