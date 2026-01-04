@@ -183,7 +183,7 @@ function calculateProfit(trips, identity) {
             const amt = Math.floor(mrtS * mrtRate);
             r1 += amt;
             r1_details.push({
-                text: `<span class="month-badge">${monthLabel}</span>北捷 ${mrtC} 趟，回饋 ${Math.round(mrtRate*100)}%`,
+                text: `<span class="month-badge">${monthLabel}</span>TPE MRT ${mrtC}T，REFOUND ${Math.round(mrtRate*100)}%`,
                 amount: amt
             });
         }
