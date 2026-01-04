@@ -1,6 +1,6 @@
-import { db, auth } from "./firebase-config.js"; // [修改] 引入 auth
+import { db, auth } from "./firebase-config.js"; 
 import { collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"; // [新增] 引入監聽器
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"; 
 
 const userGrid = document.getElementById('userGrid');
 const totalUsersEl = document.getElementById('totalUsers');
@@ -9,7 +9,6 @@ const profitUsersEl = document.getElementById('profitUsers');
 const refreshBtn = document.getElementById('refreshBtn');
 
 // === [設定] 管理員 Email ===
-// 請確認這裡填寫的是您要用來管理後台的 Google 帳號 Email
 const ADMIN_EMAIL = "rayhsu63@gmail.com"; 
 
 window.allTripsCache = {};
@@ -20,15 +19,12 @@ setInterval(() => {
     document.getElementById('systemTime').innerText = now.toTimeString().split(' ')[0];
 }, 1000);
 
-// === [新增] 權限檢查與啟動 ===
-// 只有在確認身分後，才執行 loadAllData
+// === 權限檢查與啟動 ===
 onAuthStateChanged(auth, (user) => {
     if (user && user.email === ADMIN_EMAIL) {
-        // 是管理員，允許載入資料
         console.log("ADMIN ACCESS GRANTED");
         loadAllData();
     } else {
-        // 不是管理員，或沒登入 -> 踢回首頁
         alert("ACCESS DENIED: 權限不足，無法訪問後台");
         window.location.replace("index.html");
     }
@@ -95,7 +91,7 @@ async function loadAllData() {
     }
 }
 
-// === [修正] 計算邏輯：支援跨月拆分計算 ===
+// === [修正] 計算邏輯：支援跨月拆分計算 + 英文月份 ===
 function calculateProfit(trips, identity) {
     const discount = (identity === 'student') ? 6 : 8;
     
@@ -103,26 +99,24 @@ function calculateProfit(trips, identity) {
     let totalOriginal = 0;
     let totalPaid = 0;
     
-    // 這些是用來顯示「車種細項」的，維持全域加總
     let originalSums = { mrt:0, tra:0, bus:0, coach:0, tymrt:0, lrt:0, bike:0 };
     let paidSums = { mrt:0, tra:0, bus:0, coach:0, tymrt:0, lrt:0, bike:0 };
     let counts = { mrt:0, tra:0, bus:0, coach:0, tymrt:0, lrt:0, bike:0 };
 
-    // [新增] 用於計算優惠的月份統計容器 (Key: YYYY/MM)
+    // 用於計算優惠的月份統計 (Key: YYYY/MM)
     let monthlyStats = {};
 
     trips.forEach(t => {
         let op = t.isFree ? 0 : t.originalPrice;
         let pp = t.isFree ? 0 : t.paidPrice;
         
-        // 補全 paidPrice 邏輯 (防止舊資料沒有這欄位)
         if (pp === undefined) {
              pp = t.isTransfer ? Math.max(0, t.originalPrice - discount) : t.originalPrice;
         }
 
         const type = t.type || 'mrt'; 
         
-        // --- A. 累加全域數據 (顯示用) ---
+        // --- A. 累加全域數據 ---
         totalOriginal += op;
         totalPaid += pp;
         
@@ -134,8 +128,7 @@ function calculateProfit(trips, identity) {
         paidSums[type] += pp;
         counts[type]++;
 
-        // --- B. 累加月份數據 (計算回饋用) ---
-        // 假設 dateStr 格式是 "YYYY/MM/DD" 或 "YYYY-MM-DD"
+        // --- B. 累加月份數據 ---
         const dateStr = t.dateStr || '';
         const monthKey = dateStr.slice(0, 7); // 取出 "YYYY/MM"
 
@@ -149,7 +142,6 @@ function calculateProfit(trips, identity) {
             }
             const mData = monthlyStats[monthKey];
             
-            // 確保物件屬性存在
             if (!mData.counts[type]) mData.counts[type] = 0;
             if (!mData.originalSums[type]) mData.originalSums[type] = 0;
             if (!mData.paidSums[type]) mData.paidSums[type] = 0;
@@ -160,35 +152,85 @@ function calculateProfit(trips, identity) {
         }
     });
 
-    // 2. 依照月份「分別」計算優惠，再加總
-    let r1 = 0; // Loyalty Total
-    let r2 = 0; // TPASS 2.0 Total
+    // 2. 依照月份分別計算優惠，並生成詳細文字
+    let r1 = 0;
+    let r2 = 0;
+    let r1_details = [];
+    let r2_details = [];
 
-    Object.keys(monthlyStats).forEach(month => {
+    // 定義英文月份陣列
+    const enMonthNames = ["JAN.", "FEB.", "MAR.", "APR.", "MAY.", "JUN.", "JUL.", "AUG.", "SEP.", "OCT.", "NOV.", "DEC."];
+
+    const sortedMonths = Object.keys(monthlyStats).sort();
+
+    sortedMonths.forEach(month => {
         const mData = monthlyStats[month];
+        
+        // [修改] 將月份數字轉換為英文縮寫
+        // month 格式為 "YYYY/MM"，取出 MM (1~12)
+        const monthIndex = parseInt(month.split('/')[1], 10) - 1; 
+        const monthLabel = (monthIndex >= 0 && monthIndex < 12) ? enMonthNames[monthIndex] : 'UNK.';
 
-        // === Rule 1: 常客回饋 (MRT/TRA - 用原始金額算) ===
+        // === Rule 1: 常客回饋 (MRT/TRA) ===
         const mrtC = mData.counts.mrt || 0;
         const mrtS = mData.originalSums.mrt || 0;
-        if(mrtC > 40) r1 += Math.floor(mrtS * 0.15);
-        else if(mrtC > 20) r1 += Math.floor(mrtS * 0.10);
-        else if(mrtC > 10) r1 += Math.floor(mrtS * 0.05);
+        let mrtRate = 0;
+        if(mrtC > 40) mrtRate = 0.15;
+        else if(mrtC > 20) mrtRate = 0.10;
+        else if(mrtC > 10) mrtRate = 0.05;
+
+        if (mrtRate > 0) {
+            const amt = Math.floor(mrtS * mrtRate);
+            r1 += amt;
+            r1_details.push({
+                text: `<span class="month-badge">${monthLabel}</span>北捷 ${mrtC} 趟，回饋 ${Math.round(mrtRate*100)}%`,
+                amount: amt
+            });
+        }
 
         const traC = mData.counts.tra || 0;
         const traS = mData.originalSums.tra || 0;
-        if(traC > 40) r1 += Math.floor(traS * 0.20);
-        else if(traC > 20) r1 += Math.floor(traS * 0.15);
-        else if(traC > 10) r1 += Math.floor(traS * 0.10);
+        let traRate = 0;
+        if(traC > 40) traRate = 0.20;
+        else if(traC > 20) traRate = 0.15;
+        else if(traC > 10) traRate = 0.10;
+        
+        if (traRate > 0) {
+            const amt = Math.floor(traS * traRate);
+            r1 += amt;
+            r1_details.push({
+                text: `<span class="month-badge">${monthLabel}</span>台鐵 ${traC} 趟，回饋 ${Math.round(traRate*100)}%`,
+                amount: amt
+            });
+        }
 
-        // === Rule 2: TPASS 2.0 (軌道/公車 - 用實付金額算) ===
+        // === Rule 2: TPASS 2.0 (軌道/公車) ===
         const railC = (mData.counts.mrt||0) + (mData.counts.tra||0) + (mData.counts.tymrt||0) + (mData.counts.lrt||0);
         const railS = (mData.paidSums.mrt||0) + (mData.paidSums.tra||0) + (mData.paidSums.tymrt||0) + (mData.paidSums.lrt||0);
-        if(railC >= 11) r2 += Math.floor(railS * 0.02);
+        
+        if(railC >= 11) {
+            const amt = Math.floor(railS * 0.02);
+            r2 += amt;
+            r2_details.push({
+                text: `<span class="month-badge">${monthLabel}</span>RAILWAYS ${railC}T，REFOUND 2%`,
+                amount: amt
+            });
+        }
 
         const busC = (mData.counts.bus||0) + (mData.counts.coach||0);
         const busS = (mData.paidSums.bus||0) + (mData.paidSums.coach||0);
-        if(busC > 30) r2 += Math.floor(busS * 0.30);
-        else if(busC >= 11) r2 += Math.floor(busS * 0.15);
+        let busRate = 0;
+        if(busC > 30) busRate = 0.30;
+        else if(busC >= 11) busRate = 0.15;
+        
+        if (busRate > 0) {
+            const amt = Math.floor(busS * busRate);
+            r2 += amt;
+            r2_details.push({
+                text: `<span class="month-badge">${monthLabel}</span>BUSES ${busC}T，REFOUND ${Math.round(busRate*100)}%`,
+                amount: amt
+            });
+        }
     });
 
     return {
@@ -197,6 +239,8 @@ function calculateProfit(trips, identity) {
         rewards: r1 + r2,
         r1,
         r2,
+        r1_details,
+        r2_details,
         finalCost: totalPaid - r1 - r2,
         tripCount: trips.length,
         originalSums,
@@ -205,7 +249,7 @@ function calculateProfit(trips, identity) {
     };
 }
 
-// === [新增] 生成折疊明細 HTML 的輔助函式 ===
+// === 生成折疊明細 HTML 的輔助函式 ===
 function generateBreakdownHtml(sums, counts) {
     let html = '';
     const typeNames = {
@@ -255,9 +299,24 @@ function createCardHtml(uid, user, cycle, result) {
     const diffText = isProfit ? `PROFIT: $${Math.abs(diff)}` : `LOSS: $${diff}`;
     const resultColor = isProfit ? 'var(--neon-green)' : 'var(--neon-red)';
 
-    // 生成明細
     const originalDetails = generateBreakdownHtml(result.originalSums, result.counts);
     const paidDetails = generateBreakdownHtml(result.paidSums, result.counts);
+
+    // [新增] 生成 R1 細項 HTML
+    const r1DetailsHtml = result.r1_details.length > 0 ? result.r1_details.map(d => `
+        <div class="reward-detail-row">
+            <span>${d.text}</span>
+            <span>-$${d.amount}</span>
+        </div>
+    `).join('') : '<div class="reward-detail-row"><span>NO_DATA</span></div>';
+
+    // [新增] 生成 R2 細項 HTML
+    const r2DetailsHtml = result.r2_details.length > 0 ? result.r2_details.map(d => `
+        <div class="reward-detail-row">
+            <span>${d.text}</span>
+            <span>-$${d.amount}</span>
+        </div>
+    `).join('') : '<div class="reward-detail-row"><span>NO_DATA</span></div>';
 
     return `
     <div class="user-card ${statusClass}">
@@ -304,14 +363,18 @@ function createCardHtml(uid, user, cycle, result) {
                 <span>REWARDS_TOTAL</span>
                 <span class="val-money" style="color:var(--neon-purple)">-$${result.rewards}</span>
             </div>
+            
             <div class="reward-sub-row">
                 <span>└ LOYALTY (R1)</span>
                 <span>-$${result.r1}</span>
             </div>
-            <div class="reward-sub-row">
+            ${r1DetailsHtml}
+
+            <div class="reward-sub-row" style="margin-top:5px;">
                 <span>└ TPASS 2.0 (R2)</span>
                 <span>-$${result.r2}</span>
             </div>
+            ${r2DetailsHtml}
 
             <div class="data-row" style="border-top:1px solid #333; margin-top:10px; padding-top:10px;">
                 <span>REAL_SPEND</span>
@@ -330,7 +393,7 @@ function createCardHtml(uid, user, cycle, result) {
     `;
 }
 
-// === Modal 相關功能 (保持不變) ===
+// === Modal 相關功能 ===
 window.openLogModal = function(uid, name) {
     const modal = document.getElementById('logModal');
     const modalTitle = document.getElementById('modalUserName');
@@ -379,7 +442,6 @@ window.closeModal = function() {
 
 refreshBtn.addEventListener('click', loadAllData);
 
-// [新增] 回到 App 按鈕監聽
 document.getElementById('backBtn').addEventListener('click', () => {
     window.location.href = "app.html";
 });
