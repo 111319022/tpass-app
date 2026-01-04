@@ -199,7 +199,7 @@ function calculateProfit(trips, identity) {
             const amt = Math.floor(traS * traRate);
             r1 += amt;
             r1_details.push({
-                text: `<span class="month-badge">${monthLabel}</span>台鐵 ${traC} 趟，回饋 ${Math.round(traRate*100)}%`,
+                text: `<span class="month-badge">${monthLabel}</span>TR ${traC}T，REFOUND ${Math.round(traRate*100)}%`,
                 amount: amt
             });
         }
