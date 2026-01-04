@@ -464,3 +464,29 @@ details.price-details[open] summary::after {
 input, select, textarea {
     font-size: 16px !important;
 }
+
+/* === [新增] 優惠詳細資訊樣式 === */
+.month-badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 10px;
+    margin-right: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.reward-detail-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px; /* 比主標題再小一點 */
+    color: #666;
+    padding-left: 18px; /* 縮排 */
+    margin-bottom: 2px;
+}
+
+.reward-detail-row span:last-child {
+    font-family: 'JetBrains Mono', monospace;
+    opacity: 0.8;
+}
