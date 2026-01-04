@@ -95,60 +95,101 @@ async function loadAllData() {
     }
 }
 
-// === 計算邏輯 (更新：回傳詳細 breakdown) ===
+// === [修正] 計算邏輯：支援跨月拆分計算 ===
 function calculateProfit(trips, identity) {
     const discount = (identity === 'student') ? 6 : 8;
     
+    // 1. 全域累計 (用於顯示卡片上的總數與車種統計)
     let totalOriginal = 0;
     let totalPaid = 0;
     
+    // 這些是用來顯示「車種細項」的，維持全域加總
     let originalSums = { mrt:0, tra:0, bus:0, coach:0, tymrt:0, lrt:0, bike:0 };
     let paidSums = { mrt:0, tra:0, bus:0, coach:0, tymrt:0, lrt:0, bike:0 };
     let counts = { mrt:0, tra:0, bus:0, coach:0, tymrt:0, lrt:0, bike:0 };
 
+    // [新增] 用於計算優惠的月份統計容器 (Key: YYYY/MM)
+    let monthlyStats = {};
+
     trips.forEach(t => {
         let op = t.isFree ? 0 : t.originalPrice;
         let pp = t.isFree ? 0 : t.paidPrice;
-        if (pp === undefined) pp = t.isTransfer ? Math.max(0, t.originalPrice - discount) : t.originalPrice;
+        
+        // 補全 paidPrice 邏輯 (防止舊資料沒有這欄位)
+        if (pp === undefined) {
+             pp = t.isTransfer ? Math.max(0, t.originalPrice - discount) : t.originalPrice;
+        }
 
         const type = t.type || 'mrt'; 
         
+        // --- A. 累加全域數據 (顯示用) ---
         totalOriginal += op;
         totalPaid += pp;
         
-        if (!originalSums[type]) originalSums[type] = 0;
-        if (!paidSums[type]) paidSums[type] = 0;
-        if (!counts[type]) counts[type] = 0;
+        if (originalSums[type] === undefined) originalSums[type] = 0;
+        if (paidSums[type] === undefined) paidSums[type] = 0;
+        if (counts[type] === undefined) counts[type] = 0;
 
         originalSums[type] += op;
         paidSums[type] += pp;
         counts[type]++;
+
+        // --- B. 累加月份數據 (計算回饋用) ---
+        // 假設 dateStr 格式是 "YYYY/MM/DD" 或 "YYYY-MM-DD"
+        const dateStr = t.dateStr || '';
+        const monthKey = dateStr.slice(0, 7); // 取出 "YYYY/MM"
+
+        if (monthKey) {
+            if (!monthlyStats[monthKey]) {
+                monthlyStats[monthKey] = {
+                    counts: { mrt:0, tra:0, bus:0, coach:0, tymrt:0, lrt:0, bike:0 },
+                    originalSums: { mrt:0, tra:0, bus:0, coach:0, tymrt:0, lrt:0, bike:0 },
+                    paidSums: { mrt:0, tra:0, bus:0, coach:0, tymrt:0, lrt:0, bike:0 }
+                };
+            }
+            const mData = monthlyStats[monthKey];
+            
+            // 確保物件屬性存在
+            if (!mData.counts[type]) mData.counts[type] = 0;
+            if (!mData.originalSums[type]) mData.originalSums[type] = 0;
+            if (!mData.paidSums[type]) mData.paidSums[type] = 0;
+
+            mData.counts[type]++;
+            mData.originalSums[type] += op;
+            mData.paidSums[type] += pp;
+        }
     });
 
-    // Rule 1: 常客回饋
-    let r1 = 0;
-    const mrtC = counts.mrt || 0;
-    const mrtS = originalSums.mrt || 0;
-    if(mrtC > 40) r1 += Math.floor(mrtS * 0.15);
-    else if(mrtC > 20) r1 += Math.floor(mrtS * 0.10);
-    else if(mrtC > 10) r1 += Math.floor(mrtS * 0.05);
+    // 2. 依照月份「分別」計算優惠，再加總
+    let r1 = 0; // Loyalty Total
+    let r2 = 0; // TPASS 2.0 Total
 
-    const traC = counts.tra || 0;
-    const traS = originalSums.tra || 0;
-    if(traC > 40) r1 += Math.floor(traS * 0.20);
-    else if(traC > 20) r1 += Math.floor(traS * 0.15);
-    else if(traC > 10) r1 += Math.floor(traS * 0.10);
+    Object.keys(monthlyStats).forEach(month => {
+        const mData = monthlyStats[month];
 
-    // Rule 2: TPASS 2.0
-    let r2 = 0;
-    const railC = (counts.mrt||0) + (counts.tra||0) + (counts.tymrt||0) + (counts.lrt||0);
-    const railS = (paidSums.mrt||0) + (paidSums.tra||0) + (paidSums.tymrt||0) + (paidSums.lrt||0);
-    if(railC >= 11) r2 += Math.floor(railS * 0.02);
+        // === Rule 1: 常客回饋 (MRT/TRA - 用原始金額算) ===
+        const mrtC = mData.counts.mrt || 0;
+        const mrtS = mData.originalSums.mrt || 0;
+        if(mrtC > 40) r1 += Math.floor(mrtS * 0.15);
+        else if(mrtC > 20) r1 += Math.floor(mrtS * 0.10);
+        else if(mrtC > 10) r1 += Math.floor(mrtS * 0.05);
 
-    const busC = (counts.bus||0) + (counts.coach||0);
-    const busS = (paidSums.bus||0) + (paidSums.coach||0);
-    if(busC > 30) r2 += Math.floor(busS * 0.30);
-    else if(busC >= 11) r2 += Math.floor(busS * 0.15);
+        const traC = mData.counts.tra || 0;
+        const traS = mData.originalSums.tra || 0;
+        if(traC > 40) r1 += Math.floor(traS * 0.20);
+        else if(traC > 20) r1 += Math.floor(traS * 0.15);
+        else if(traC > 10) r1 += Math.floor(traS * 0.10);
+
+        // === Rule 2: TPASS 2.0 (軌道/公車 - 用實付金額算) ===
+        const railC = (mData.counts.mrt||0) + (mData.counts.tra||0) + (mData.counts.tymrt||0) + (mData.counts.lrt||0);
+        const railS = (mData.paidSums.mrt||0) + (mData.paidSums.tra||0) + (mData.paidSums.tymrt||0) + (mData.paidSums.lrt||0);
+        if(railC >= 11) r2 += Math.floor(railS * 0.02);
+
+        const busC = (mData.counts.bus||0) + (mData.counts.coach||0);
+        const busS = (mData.paidSums.bus||0) + (mData.paidSums.coach||0);
+        if(busC > 30) r2 += Math.floor(busS * 0.30);
+        else if(busC >= 11) r2 += Math.floor(busS * 0.15);
+    });
 
     return {
         totalOriginal,
@@ -158,7 +199,6 @@ function calculateProfit(trips, identity) {
         r2,
         finalCost: totalPaid - r1 - r2,
         tripCount: trips.length,
-        // [新增] 回傳明細供顯示
         originalSums,
         paidSums,
         counts
