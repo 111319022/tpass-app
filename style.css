@@ -1003,3 +1003,17 @@ textarea:focus {
     font-weight: normal;
     border: 1px solid rgba(255, 255, 255, 0.3);
 }
+
+/* === [修正] iOS 輸入框自動放大問題  === */
+input, 
+select, 
+textarea {
+    font-size: 16px !important; /* 強制設定 16px，這是 iOS 不縮放的臨界值 */
+    max-height: 100%; /* 防止因為字體變大而撐壞版型 */
+}
+
+/* 針對日期選單特別處理，避免被撐開 */
+input[type="date"],
+input[type="time"] {
+    min-height: 44px; /* 確保手指好點擊 */
+}
