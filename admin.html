@@ -6,7 +6,11 @@
     
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"> <meta name="apple-mobile-web-app-title" content="TPASS監控">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"> 
+    <meta name="apple-mobile-web-app-title" content="TPASS監控">
+    
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" type="image/png" href="icon.png">
     
     <title>TPASS 監控後台 // SYSTEM ADMIN</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -22,14 +26,14 @@
                 <span class="status-badge">ONLINE</span>
             </div>
             <div class="header-right">
-    <span id="systemTime">00:00:00</span>
-    
-    <button id="backBtn" class="cmd-btn" style="border-color: var(--neon-red); color: var(--neon-red);">
-        <i class="fa-solid fa-right-from-bracket"></i> EXIT
-    </button>
-
-    <button id="refreshBtn" class="cmd-btn"><i class="fa-solid fa-rotate"></i> REFRESH_DATA</button>
-</div>
+                <span id="systemTime">00:00:00</span>
+                
+                <button id="backBtn" class="cmd-btn" style="border-color: var(--neon-red); color: var(--neon-red);">
+                    <i class="fa-solid fa-right-from-bracket"></i> EXIT
+                </button>
+            
+                <button id="refreshBtn" class="cmd-btn"><i class="fa-solid fa-rotate"></i> REFRESH_DATA</button>
+            </div>
         </header>
 
         <div class="stats-overview">
