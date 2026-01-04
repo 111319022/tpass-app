@@ -459,3 +459,8 @@ details.price-details[open] summary::after {
         padding-right: 0;
     }
 }
+
+/*防止iOS輸入變大*/
+input, select, textarea {
+    font-size: 16px !important;
+}
