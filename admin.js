@@ -253,7 +253,7 @@ function calculateProfit(trips, identity) {
 function generateBreakdownHtml(sums, counts) {
     let html = '';
     const typeNames = {
-        mrt: 'MRT', bus: 'BUS', coach: 'HIGHWAY BUS', tra: 'TRA', 
+        mrt: 'TPE MRT', bus: 'BUS', coach: 'HIGHWAY BUS', tra: 'TRA', 
         tymrt: 'TYMRT', lrt: 'LRT', bike: 'UBIKE'
     };
 
@@ -416,7 +416,7 @@ window.openLogModal = function(uid, name) {
             if (!routeInfo) routeInfo = '-';
 
             const typeMap = {
-                mrt: 'MRT', bus: 'BUS', coach: 'HIGHWAY BUS', tra: 'TRA', tymrt: 'TYMRT', lrt: 'LRT', bike: 'UBIKE'
+                mrt: 'TPE MRT', bus: 'BUS', coach: 'HIGHWAY BUS', tra: 'TRA', tymrt: 'TYMRT', lrt: 'LRT', bike: 'UBIKE'
             };
             const typeStr = typeMap[t.type] || t.type.toUpperCase();
 
