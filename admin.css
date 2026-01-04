@@ -393,14 +393,21 @@ details.price-details[open] summary::after {
         margin-bottom: 15px;
     }
 
+/* [修改] Header 左側：讓 Icon 與標題靠左緊鄰 */
     .header-left {
         width: 100%;
-        justify-content: space-between;
+        justify-content: flex-start; /* 改為靠左對齊，不再分散 */
+        gap: 10px; /* 設定 Icon 與標題的間距 */
     }
     
     .header-left h1 {
         font-size: 18px; 
         white-space: nowrap; 
+    }
+
+    /* [新增] 把 ONLINE 標籤強制推到最右邊 */
+    .status-badge {
+        margin-left: auto; 
     }
 
     /* [修改] 右側操作區：讓按鈕靠右並排 */
