@@ -93,21 +93,24 @@
 
 如果你也想擁有自己的版本或參與開發：
 
-1. **Clone 專案**
-   ```bash
-   git clone [https://github.com/111319022/tpass-app.git](https://github.com/111319022/tpass-app.git)
+### 1. Clone 專案
+```bash
+git clone https://github.com/111319022/tpass-app.git
+cd tpass-app
+```
 
-設定環境 將 firebase-config.js 替換為你自己的 Firebase Project Config。
+### 2. 設定環境
+將 `firebase-config.js` 替換為你自己的 Firebase Project Config。
 
-2. (可選) 更新票價資料庫 若北捷票價有變動，可執行腳本重新抓取官方資料：
-
- ```Bash
-
+### 3. (可選) 更新票價資料庫
+若北捷票價有變動，可執行腳本重新抓取官方資料：
+```bash
 node fetch_fares_final_v2.js
- ```
-這會自動生成最新的 js/data/fares.js。
+```
+這會自動生成最新的 `js/data/fares.js`。
 
-3. 啟動 直接開啟 index.html 即可運行。
+### 4. 啟動應用
+直接開啟 `index.html` 即可運行。
 
 <div align="center">
 
