@@ -1116,49 +1116,58 @@ input[type="time"] {
     min-height: 44px; /* 確保手指好點擊 */
 }
 
-/* 車站選擇區塊 */
+/* === [修改] 車站選擇區塊 (瘦身版) === */
+
+/* 移除原本的卡片背景與大內距，改回乾淨的佈局 */
 .station-row {
-    background: rgba(255,255,255,0.5);
-    padding: 8px;
-    border-radius: 8px;
-    margin-bottom: 2px;
+    margin-bottom: 5px; /* 每個輸入框之間只留一點點縫隙 */
+    position: relative;
 }
 
+/* 隱藏原本佔空間的「起點/終點」小標題 */
+/* 因為輸入框裡的 placeholder 已經夠清楚了 */
 .station-label-small {
-    font-size: 11px;
-    color: #666;
-    margin-bottom: 4px;
-    font-weight: bold;
+    display: none; 
 }
 
-/* 雙層下拉選單容器 */
+/* 讓捷運的雙層選單保持並排，但不需要額外裝飾 */
 .mrt-selector-group {
     display: flex;
-    gap: 8px;
+    gap: 5px; /* 選單之間的間距縮小 */
 }
 
-/* 讓路線選單窄一點，車站選單寬一點 */
+/* 調整下拉選單樣式，讓它跟文字框高度一致 */
+.line-select, .station-select {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: white;
+    height: 40px; /* 固定高度 */
+}
+
+/* 路線選單稍微窄一點 (約 40%) */
 .line-select {
-    flex: 2;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    background: white;
+    flex: 0.8; 
 }
 
+/* 車站選單寬一點 (約 60%) */
 .station-select {
-    flex: 3;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    background: white;
+    flex: 1.2;
 }
 
-/* 一般文字輸入框樣式 */
+/* 一般文字輸入框 (台鐵/客運用) */
 .station-text-input {
     width: 100%;
     padding: 8px 10px;
     border: 1px solid #ddd;
     border-radius: 6px;
     font-size: 15px;
+    height: 40px; /* 固定高度，跟上面一樣 */
+}
+
+/* 中間的箭頭縮小間距 */
+#group-stations .fa-arrow-down {
+    font-size: 12px;
+    margin: 2px 0;
+    opacity: 0.5;
 }

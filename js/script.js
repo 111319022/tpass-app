@@ -345,10 +345,8 @@ els.transportRadios.forEach(radio => {
     radio.addEventListener('change', (e) => updateFormFields(e.target.value));
 });
 
-// === [修改] 表單欄位切換邏輯 ===
+// === [修改] 表單欄位切換邏輯 (修復客運顯示問題) ===
 function updateFormFields(type) {
-    els.groupRoute.classList.add('hidden');
-    els.groupStations.classList.remove('hidden'); // 預設顯示起訖站區塊
     const priceInput = document.getElementById('price');
     
     // 取得 DOM 元素
@@ -357,29 +355,40 @@ function updateFormFields(type) {
     const textStart = document.getElementById('startStationInput');
     const textEnd = document.getElementById('endStationInput');
 
-    // 確保元素存在再操作 (避免報錯)
+    // 1. 處理「路線號碼」欄位 (Route ID)
+    // 公車(bus) 和 客運(coach) 需要顯示路線輸入框
+    if (type === 'bus' || type === 'coach') {
+        els.groupRoute.classList.remove('hidden');
+    } else {
+        els.groupRoute.classList.add('hidden');
+        els.inputRoute.value = ''; // 隱藏時清空，避免誤存
+    }
+
+    // 2. 處理「起訖站」區塊 (Stations)
+    // 公車(bus) 通常不需要輸入起訖站(只記一段票)，其他都需要
+    if (type === 'bus') {
+        els.groupStations.classList.add('hidden');
+        if (priceInput.value === '') priceInput.value = FARE_CONFIG[currentIdentity].busBase;
+    } else {
+        els.groupStations.classList.remove('hidden');
+        priceInput.value = '';
+    }
+
+    // 3. 處理「起訖站輸入方式」 (下拉選單 vs 文字框)
     if (!mrtStart || !textStart) return;
 
-    if (type === 'bus') {
-        els.groupRoute.classList.remove('hidden');
-        els.groupStations.classList.add('hidden'); // 公車通常不需要起訖站
-        if (priceInput.value === '') priceInput.value = FARE_CONFIG[currentIdentity].busBase;
-        
-    } else if (type === 'mrt') {
-        // === 捷運模式：顯示下拉選單，隱藏文字框 ===
+    if (type === 'mrt') {
+        // === 捷運模式：顯示雙層下拉選單 ===
         mrtStart.classList.remove('hidden');
         mrtEnd.classList.remove('hidden');
         textStart.classList.add('hidden');
         textEnd.classList.add('hidden');
-        priceInput.value = '';
-
     } else {
-        // === 其他模式(客運/台鐵)：顯示文字輸入，隱藏選單 ===
+        // === 其他模式(台鐵/客運/機捷)：顯示一般文字框 ===
         mrtStart.classList.add('hidden');
         mrtEnd.classList.add('hidden');
         textStart.classList.remove('hidden');
         textEnd.classList.remove('hidden');
-        priceInput.value = '';
     }
 }
 
