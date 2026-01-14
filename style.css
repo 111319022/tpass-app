@@ -416,9 +416,58 @@ body { background: var(--bg); color: var(--text); padding-bottom: 90px; }
 .t-option input:checked + .t-box { opacity: 1; filter: grayscale(0); border-color: #333; transform: scale(1.05); }
 
 /* Modal 與按鈕 (與上版相同) */
-.fab-container { position: fixed; bottom: 20px; left: 0; right: 0; display: flex; justify-content: center; pointer-events: none; }
-.fab { pointer-events: auto; background: var(--text); color: white; border: none; padding: 16px 32px; border-radius: 50px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer; display: flex; gap: 8px; align-items: center; }
-.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; display: flex; align-items: flex-end; visibility: hidden; opacity: 0; transition: 0.3s; }
+.fab-container {
+    position: fixed;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    pointer-events: none; /* 讓容器本身可穿透 */
+    z-index: 2000; /* [新增] 確保層級比 Sticky Header (1000) 和清單都高 */
+}
+.fab {
+    pointer-events: auto; /* 按鈕本體要能點 */
+    background: var(--text);
+    color: white;
+    border: none;
+    padding: 16px 32px;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    cursor: pointer;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    position: relative; /* [新增] 為了讓偽元素定位 */
+}
+/* [新增] 擴大點擊熱區 (Hotspot) - 關鍵修正 */
+.fab::after {
+    content: '';
+    position: absolute;
+    top: -15px;    /* 往上擴大 15px */
+    bottom: -15px; /* 往下擴大 15px */
+    left: -15px;   /* 往左擴大 15px */
+    right: -15px;  /* 往右擴大 15px */
+    background: transparent; /* 透明 */
+    border-radius: 60px; /* 跟隨按鈕圓角 */
+    z-index: -1; /* 放在按鈕後面 */
+}
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    z-index: 3000; /* [修改] 原本是 100，改為 3000，確保比 FAB (2000) 還高 */
+    display: flex;
+    align-items: flex-end;
+    visibility: hidden;
+    opacity: 0;
+    transition: 0.3s;
+}
 .modal.hidden { visibility: hidden; opacity: 0; pointer-events: none; }
 .modal:not(.hidden) { visibility: visible; opacity: 1; pointer-events: auto; }
 .modal-content { background: var(--card); width: 100%; max-width: 480px; margin: 0 auto; border-radius: 24px 24px 0 0; padding: 25px; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
