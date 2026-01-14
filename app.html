@@ -23,24 +23,33 @@
 
     <div class="app-container">
         <div class="user-bar">
-            <div id="userInfo" class="hidden">
-                <img id="userPhoto" src="" alt="user">
-                <span id="userName">Loading...</span>
-                
-                <button id="adminBtn" class="auth-btn hidden" style="background:transparent; color:#e74c3c; font-size:18px; padding:5px 10px; margin-right:5px;" title="前往監控後台">
-                <i class="fa-solid fa-gauge-high"></i>
-                </button>
-                
-
-                <button id="settingsBtn" class="auth-btn" style="background:transparent; color:#555; font-size:18px; padding:5px 10px; margin-right:5px;">
-                    <i class="fa-solid fa-gear"></i>
-                </button>
-                <button id="logoutBtn" class="auth-btn">登出</button>
+            <div class="nav-brand">
+                <img src="icon.png" class="nav-logo" alt="Logo">
+                TPASS.calc
             </div>
-            <div id="loginSection">
-                <button id="loginBtn" class="auth-btn google-btn">
-                    <i class="fa-brands fa-google"></i> 登入同步資料
-                </button>
+
+            <div class="nav-actions">
+                <div id="loginSection">
+                    <button id="loginBtn" class="auth-btn google-btn">
+                        <i class="fa-brands fa-google"></i> <span class="mobile-hide">登入同步</span>
+                    </button>
+                </div>
+
+                <div id="userInfo" class="hidden" style="display:flex; align-items:center; gap:8px;">
+                    <button id="adminBtn" class="icon-btn hidden" style="color:#e74c3c;" title="後台管理">
+                        <i class="fa-solid fa-gauge-high"></i>
+                    </button>
+                    
+                    <button id="settingsBtn" class="icon-btn" title="設定">
+                        <i class="fa-solid fa-gear"></i>
+                    </button>
+
+                    <button id="logoutBtn" class="icon-btn" title="登出">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+
+                    <img id="userPhoto" src="" alt="user" class="nav-avatar">
+                </div>
             </div>
         </div>
 

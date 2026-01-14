@@ -1,16 +1,77 @@
-/* User Bar 樣式 */
+/* === [重構] Navbar 導航欄樣式 === */
 .user-bar {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between; /* 關鍵：讓 Logo 靠左，按鈕靠右 */
     align-items: center;
-    padding: 10px 15px;
-    background: #fff; /* 確保背景不透明，才不會透出下面的內容 */
-    
-    /* [新增] 頂部固定效果 */
-    position: sticky;      /* 黏性定位 */
-    top: 0;                /* 距離頂端 0px 時吸住 */
-    z-index: 1000;         /* 層級設高，確保蓋過下面的卡片和標題 */
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* 加一點陰影，讓它跟內容有層次感 */
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.95); /* 稍微帶點透明感 */
+    backdrop-filter: blur(10px); /* 毛玻璃特效 */
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05); /* 更柔和的陰影 */
+    height: 60px; /* 固定高度讓視覺更穩定 */
+}
+
+/* 左側品牌 */
+.nav-brand {
+    font-size: 19px; /*稍微加大一點點，增加份量感*/
+    font-weight: 800; /* 特粗體 */
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 12px; /* 圖片跟字的間距拉開一點 */
+    letter-spacing: -0.5px; /* 讓英文字母緊湊一點，比較好看 */
+}
+
+/* [新增] Logo 圖片樣式 */
+.nav-logo {
+    width: 32px;  /* 設定適合導航欄的大小 */
+    height: 32px;
+    border-radius: 8px; /* 讓圖片四個角稍微圓圓的，像 App icon */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* 加一點點陰影，讓它浮起來 */
+    object-fit: cover;
+}
+
+/* 右側純圖示按鈕 (取代原本的 auth-btn 文字按鈕) */
+.icon-btn {
+    background: transparent;
+    border: none;
+    padding: 8px;
+    font-size: 18px;
+    color: #555;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+}
+
+.icon-btn:hover {
+    background: rgba(0,0,0,0.05);
+    color: var(--primary);
+    transform: scale(1.1);
+}
+
+/* 頭像樣式 */
+.nav-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    margin-left: 5px;
+}
+
+/* 手機版隱藏 "登入同步" 文字，只留 Google Icon，節省空間 */
+@media (max-width: 360px) {
+    .mobile-hide {
+        display: none;
+    }
 }
 
 .auth-btn {
@@ -35,24 +96,6 @@
     display: flex;
     align-items: center;
     gap: 10px;
-}
-
-#userPhoto {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-#userName {
-    font-size: 14px;
-    font-weight: bold;
-    color: var(--text);
-}
-
-#logoutBtn {
-    background: #f1f2f6;
-    color: var(--text);
 }
 
 /* 隱藏工具 */
