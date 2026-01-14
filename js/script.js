@@ -1024,41 +1024,58 @@ function updateStationList(lineCode, selectElementId) {
     }
 }
 
+// === [修改] 自動查價邏輯 (支援全運具歷史紀錄) ===
 function tryAutoFillPrice() {
+    // 1. 確認當前選擇的運具類型
     const typeEl = document.querySelector('input[name="type"]:checked');
-    if (!typeEl || typeEl.value !== 'mrt') return;
+    if (!typeEl) return;
+    const type = typeEl.value;
 
-    // 捷運模式直接抓 select 的 value
-    const startEl = document.getElementById('startStation');
-    const endEl = document.getElementById('endStation');
     const priceEl = document.getElementById('price');
+    
+    // 2. 取得起訖點 (依據模式不同，抓取不同欄位)
+    let s = '', e = '';
 
-    if (!startEl || !endEl || !priceEl) return;
+    if (type === 'mrt') {
+        // [捷運模式]：抓下拉選單 (Select)
+        const sVal = document.getElementById('startStation').value;
+        const eVal = document.getElementById('endStation').value;
+        s = sVal;
+        e = eVal;
+    } else {
+        // [其他模式] (台鐵/機捷/客運)：抓文字輸入框 (Input)
+        const sInput = document.getElementById('startStationInput');
+        const eInput = document.getElementById('endStationInput');
+        if (sInput) s = sInput.value.trim();
+        if (eInput) e = eInput.value.trim();
+    }
 
-    const s = startEl.value;
-    const e = endEl.value;
-
+    // 如果還沒輸入完，就跳出，不執行查價
     if (!s || !e) return;
 
-    // 策略 1: 查歷史紀錄
+    // 3. 策略 A: 優先查「歷史紀錄」 (所有運具都適用！)
+    // 邏輯：只要是「同類型」且「起訖點相同」(A->B 或 B->A)，就自動帶入最近一次的價格
+    // trips 陣列已經是依照時間排序(最新的在前面)，所以 find 到的就是最新的一筆
     const historyTrip = trips.find(t => 
-        t.type === 'mrt' && 
+        t.type === type && 
         ((t.startStation === s && t.endStation === e) || 
          (t.startStation === e && t.endStation === s))
     );
 
     if (historyTrip) {
+        // 找到紀錄 -> 帶入價格 -> 閃爍綠燈
         priceEl.value = historyTrip.originalPrice;
-        flashPriceInput(priceEl, '#d1fae5'); // 綠色：歷史
+        flashPriceInput(priceEl, '#d1fae5'); // 綠色：歷史紀錄
         return;
     }
 
-    // 策略 2: 查官方票價 (fares.js)
-    if (typeof getOfficialFare === 'function') {
+    // 4. 策略 B: 查「官方票價表」 (目前僅支援 MRT)
+    // 只有在歷史紀錄找不到時，且是捷運，才去查官方資料庫
+    if (type === 'mrt' && typeof getOfficialFare === 'function') {
         const officialPrice = getOfficialFare(s, e);
         if (officialPrice !== null) {
             priceEl.value = officialPrice;
-            flashPriceInput(priceEl, '#dbeafe'); // 藍色：官方
+            flashPriceInput(priceEl, '#dbeafe'); // 藍色：官方資料
             return;
         }
     }
