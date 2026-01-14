@@ -10,7 +10,7 @@
 
 <br>
 
-<img src="icon.png" width="300" alt="App Screenshot" style="border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+<img src="/images/icon.png" width="300" alt="App Screenshot" style="border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
 
 <br>
 <br>
