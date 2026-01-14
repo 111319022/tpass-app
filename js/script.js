@@ -1,5 +1,7 @@
 import { db } from "./firebase-config.js";
 import { initAuthListener } from "./auth.js";
+import { STATIONS } from "/js/data/stations.js";
+import { getOfficialFare } from "/js/data//fares.js";
 import { 
     collection, addDoc, deleteDoc, query, orderBy, onSnapshot, 
     doc, setDoc, getDoc, updateDoc 
