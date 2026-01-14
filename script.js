@@ -533,30 +533,48 @@ els.btnDeleteTrip.addEventListener('click', async () => {
 
 // === 核心計算邏輯 ===
 function calculate() {
+    // === 1. 計算「全域」日曆月次數 (用來決定回饋等級) ===
+    // 即使行程不在當前週期，只要是同一個月份的都要算進去次數累積
+    let globalMonthlyCounts = {};
+
+    trips.forEach(t => {
+        const monthKey = t.dateStr.slice(0, 7); // "YYYY/MM"
+        if (!globalMonthlyCounts[monthKey]) {
+            globalMonthlyCounts[monthKey] = {
+                mrt: 0, tra: 0, tymrt: 0, lrt: 0, bus: 0, coach: 0, bike: 0
+            };
+        }
+        globalMonthlyCounts[monthKey][t.type]++;
+    });
+
+    // === 2. 計算「當前週期」的消費統計 (用來顯示與計算回饋金) ===
     let totalStats = {
         totalPaid: 0,
         totalOriginal: 0,
         originalSums: {}, 
         paidSums: {},
-        counts: {} // [新增] 用來存各運具總次數
+        counts: {} 
     };
 
+    // 初始化統計物件
     Object.keys(TRANSPORT_TYPES).forEach(k => {
         totalStats.originalSums[k] = 0;
         totalStats.paidSums[k] = 0;
-        totalStats.counts[k] = 0; // [新增] 初始化
+        totalStats.counts[k] = 0; 
     });
 
-    let monthlyStats = {};
+    // 用來暫存「週期內」各月份的消費額 (計算回饋用)
+    let cycleMonthlyStats = {}; 
 
     const discount = FARE_CONFIG[currentIdentity].transferDiscount;
 
     trips.forEach(t => {
+        // 排除非當前週期的行程
         if (!currentSelectedCycle || t.createdAt < currentSelectedCycle.start || t.createdAt > currentSelectedCycle.end) {
             return;
         }
 
-        // --- A. 累加總體統計 ---
+        // --- A. 累加週期總體統計 (儀表板顯示用) ---
         let op = t.isFree ? 0 : t.originalPrice; 
         let pp = t.isFree ? 0 : t.paidPrice;
         
@@ -568,99 +586,113 @@ function calculate() {
         totalStats.totalOriginal += op;
         totalStats.originalSums[t.type] += op;
         totalStats.paidSums[t.type] += pp;
-        totalStats.counts[t.type]++; // [新增] 累加次數
+        totalStats.counts[t.type]++; 
 
-        // --- B. 累加月份統計 ---
+        // --- B. 累加「週期內」的月份統計 (計算回饋基數用) ---
         const monthKey = t.dateStr.slice(0, 7);
 
-        if (!monthlyStats[monthKey]) {
-            monthlyStats[monthKey] = {
-                counts: {},
+        if (!cycleMonthlyStats[monthKey]) {
+            cycleMonthlyStats[monthKey] = {
                 originalSums: {},
                 paidSums: {}
             };
             Object.keys(TRANSPORT_TYPES).forEach(k => {
-                monthlyStats[monthKey].counts[k] = 0;
-                monthlyStats[monthKey].originalSums[k] = 0;
-                monthlyStats[monthKey].paidSums[k] = 0;
+                cycleMonthlyStats[monthKey].originalSums[k] = 0;
+                cycleMonthlyStats[monthKey].paidSums[k] = 0;
             });
         }
-
-        monthlyStats[monthKey].counts[t.type]++;
-        monthlyStats[monthKey].originalSums[t.type] += op;
-        monthlyStats[monthKey].paidSums[t.type] += pp;
+        cycleMonthlyStats[monthKey].originalSums[t.type] += op;
+        cycleMonthlyStats[monthKey].paidSums[t.type] += pp;
     });
 
-    // --- 計算回饋 ---
+    // === 3. 計算回饋 (邏輯修正版) ===
+    // 邏輯：依據 Global Counts 決定 %, 乘上 Cycle Sums 決定金額
+
     let r1_total_cashback = 0;
     let r1_all_details = [];
 
     let r2_total_cashback = 0;
     let r2_all_details = [];
 
-    const sortedMonths = Object.keys(monthlyStats).sort();
+    // 只計算當前週期有跨到的月份
+    const sortedMonths = Object.keys(cycleMonthlyStats).sort();
 
     sortedMonths.forEach(month => {
-        const mData = monthlyStats[month];
         const monthLabel = `${month.split('/')[1]}月`;
+        
+        // 取得該月份的「全域次數」(決定資格)
+        const gCounts = globalMonthlyCounts[month] || { mrt:0, tra:0, bus:0, coach:0, tymrt:0, lrt:0 };
+        
+        // 取得該月份在「週期內」的消費額 (計算回饋)
+        const cSums = cycleMonthlyStats[month];
 
         // === Rule 1: 常客優惠 ===
-        const mrtCount = mData.counts.mrt;
-        const mrtSum = mData.originalSums.mrt;
+        
+        // 北捷：看全域次數，回饋週期內原價總和
+        const mrtCountGlobal = gCounts.mrt;
+        const mrtSumCycle = cSums.originalSums.mrt;
+        
         let mrtRate = 0;
-        if (mrtCount > 40) mrtRate = 0.15;
-        else if (mrtCount > 20) mrtRate = 0.10;
-        else if (mrtCount > 10) mrtRate = 0.05;
+        // 維持你的原始規則
+        if (mrtCountGlobal > 40) mrtRate = 0.15;
+        else if (mrtCountGlobal > 20) mrtRate = 0.10;
+        else if (mrtCountGlobal > 10) mrtRate = 0.05;
 
-        if (mrtRate > 0) {
-            const amt = Math.floor(mrtSum * mrtRate);
+        if (mrtRate > 0 && mrtSumCycle > 0) {
+            const amt = Math.floor(mrtSumCycle * mrtRate);
             r1_total_cashback += amt;
             r1_all_details.push({ 
-                text: `<span class="month-badge">${monthLabel}</span>北捷 ${mrtCount} 趟，回饋 ${Math.round(mrtRate*100)}%`, 
+                text: `<span class="month-badge">${monthLabel}</span>北捷累計 ${mrtCountGlobal} 趟 (${Math.round(mrtRate*100)}%)`, 
                 amount: `-$${amt}` 
             });
         }
 
-        const traCount = mData.counts.tra;
-        const traSum = mData.originalSums.tra;
+        // 台鐵
+        const traCountGlobal = gCounts.tra;
+        const traSumCycle = cSums.originalSums.tra;
+        
         let traRate = 0;
-        if (traCount > 40) traRate = 0.20;
-        else if (traCount > 20) traRate = 0.15;
-        else if (traCount > 10) traRate = 0.10;
+        if (traCountGlobal > 40) traRate = 0.20;
+        else if (traCountGlobal > 20) traRate = 0.15;
+        else if (traCountGlobal > 10) traRate = 0.10;
         
-        if (traRate > 0) {
-            const amt = Math.floor(traSum * traRate);
+        if (traRate > 0 && traSumCycle > 0) {
+            const amt = Math.floor(traSumCycle * traRate);
             r1_total_cashback += amt;
             r1_all_details.push({ 
-                text: `<span class="month-badge">${monthLabel}</span>台鐵 ${traCount} 趟，回饋 ${Math.round(traRate*100)}%`, 
+                text: `<span class="month-badge">${monthLabel}</span>台鐵累計 ${traCountGlobal} 趟 (${Math.round(traRate*100)}%)`, 
                 amount: `-$${amt}` 
             });
         }
 
-        // === Rule 2: TPASS 2.0 ===
-        const railCount = mData.counts.mrt + mData.counts.tra + mData.counts.tymrt + mData.counts.lrt;
-        const railPaidSum = mData.paidSums.mrt + mData.paidSums.tra + mData.paidSums.tymrt + mData.paidSums.lrt;
+        // === Rule 2: TPASS 2.0 (或其他加碼) ===
         
-        if (railCount >= 11) { 
-            const amt = Math.floor(railPaidSum * 0.02); 
+        // 軌道運輸加碼
+        const railCountGlobal = gCounts.mrt + gCounts.tra + gCounts.tymrt + gCounts.lrt;
+        const railPaidSumCycle = cSums.paidSums.mrt + cSums.paidSums.tra + cSums.paidSums.tymrt + cSums.paidSums.lrt;
+        
+        if (railCountGlobal >= 11 && railPaidSumCycle > 0) { 
+            const amt = Math.floor(railPaidSumCycle * 0.02); 
             r2_total_cashback += amt;
             r2_all_details.push({ 
-                text: `<span class="month-badge">${monthLabel}</span>軌道 ${railCount} 趟，回饋 2%`, 
+                text: `<span class="month-badge">${monthLabel}</span>軌道累計 ${railCountGlobal} 趟 (2%)`, 
                 amount: `-$${amt}` 
             });
         }
 
-        const busCount = mData.counts.bus + mData.counts.coach;
-        const busPaidSum = mData.paidSums.bus + mData.paidSums.coach;
+        // 公車客運加碼
+        const busCountGlobal = gCounts.bus + gCounts.coach;
+        const busPaidSumCycle = cSums.paidSums.bus + cSums.paidSums.coach;
+        
         let busRate = 0;
-        if (busCount > 30) busRate = 0.30;       
-        else if (busCount >= 11) busRate = 0.15; 
+        if (busCountGlobal > 30) busRate = 0.30;       
+        else if (busCountGlobal >= 11) busRate = 0.15; 
         
-        if (busRate > 0) {
-            const amt = Math.floor(busPaidSum * busRate);
+        if (busRate > 0 && busPaidSumCycle > 0) {
+            const amt = Math.floor(busPaidSumCycle * busRate);
             r2_total_cashback += amt;
             r2_all_details.push({ 
-                text: `<span class="month-badge">${monthLabel}</span>公車客運 ${busCount} 趟，回饋 ${Math.round(busRate*100)}%`, 
+                text: `<span class="month-badge">${monthLabel}</span>公車累計 ${busCountGlobal} 趟 (${Math.round(busRate*100)}%)`, 
                 amount: `-$${amt}` 
             });
         }
@@ -671,7 +703,7 @@ function calculate() {
         totalOriginal: totalStats.totalOriginal,
         originalSums: totalStats.originalSums,
         paidSums: totalStats.paidSums,
-        counts: totalStats.counts, // [新增] 回傳次數統計
+        counts: totalStats.counts, 
         r1: { amount: r1_total_cashback, details: r1_all_details },
         r2: { amount: r2_total_cashback, details: r2_all_details },
         finalCost: totalStats.totalPaid - r1_total_cashback - r2_total_cashback
