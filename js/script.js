@@ -1,11 +1,12 @@
 import { db } from "./firebase-config.js";
 import { initAuthListener } from "./auth.js";
-import { STATIONS } from "/js/data/stations.js";
-import { getOfficialFare } from "/js/data//fares.js";
+import { STATIONS, MRT_LINES } from "./data/stations.js";      // [修改] 引入 MRT_LINES
+import { getOfficialFare } from "./data/fares.js";
 import { 
     collection, addDoc, deleteDoc, query, orderBy, onSnapshot, 
     doc, setDoc, getDoc, updateDoc 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
 const ADMIN_EMAIL = "rayhsu63@gmail.com";
 
 // === 狀態變數 ===
@@ -39,8 +40,7 @@ const TRANSPORT_TYPES = {
 const els = {
     // 儀表板與統計
     finalCost: document.getElementById('finalCost'),
-
-    adminBtn: document.getElementById('adminBtn'), // [新增]
+    adminBtn: document.getElementById('adminBtn'),
 
     // 明細折疊區塊
     displayOriginalTotal: document.getElementById('displayOriginalTotal'),
@@ -79,7 +79,8 @@ const els = {
     groupRoute: document.getElementById('group-route'),
     groupStations: document.getElementById('group-stations'),
     inputRoute: document.getElementById('routeId'),
-    inputStart: document.getElementById('startStation'),
+    // inputStart/End 在這裡主要用於舊邏輯引用，新邏輯我們會動態抓取
+    inputStart: document.getElementById('startStation'), 
     inputEnd: document.getElementById('endStation'),
     transferLabel: document.getElementById('transferLabel'),
     isFree: document.getElementById('isFree'),
@@ -109,12 +110,12 @@ const els = {
 initAuthListener(async (user) => {
     currentUser = user; 
     if (user) {
-        // ... 原本的載入邏輯 ...
         await loadUserSettings(user.uid);
         setupRealtimeListener(user.uid);
 
-        // [新增] 檢查是否為管理員
-        // 只有 Email 吻合時，才顯示後台按鈕並綁定跳轉事件
+        // [修改] 初始化雙層下拉選單
+        initStationSelectors();
+
         if (user.email === ADMIN_EMAIL) {
             if (els.adminBtn) {
                 els.adminBtn.classList.remove('hidden');
@@ -123,15 +124,11 @@ initAuthListener(async (user) => {
                 };
             }
         } else {
-            // 非管理員確保隱藏
             if (els.adminBtn) els.adminBtn.classList.add('hidden');
         }
 
     } else {
-        // [修改] 如果在 app.html 發現沒登入，直接踢回首頁 (index.html)
         window.location.href = "index.html";
-        
-        // (原本的 UI 清空邏輯）
         trips = [];
         cycles = [];
         currentSelectedCycle = null;
@@ -348,26 +345,45 @@ els.transportRadios.forEach(radio => {
     radio.addEventListener('change', (e) => updateFormFields(e.target.value));
 });
 
+// === [修改] 表單欄位切換邏輯 ===
 function updateFormFields(type) {
     els.groupRoute.classList.add('hidden');
-    els.groupStations.classList.add('hidden');
+    els.groupStations.classList.remove('hidden'); // 預設顯示起訖站區塊
     const priceInput = document.getElementById('price');
     
+    // 取得 DOM 元素
+    const mrtStart = document.getElementById('mrt-selector-start');
+    const mrtEnd = document.getElementById('mrt-selector-end');
+    const textStart = document.getElementById('startStationInput');
+    const textEnd = document.getElementById('endStationInput');
+
+    // 確保元素存在再操作 (避免報錯)
+    if (!mrtStart || !textStart) return;
+
     if (type === 'bus') {
         els.groupRoute.classList.remove('hidden');
-        if (priceInput.value === '') {
-            priceInput.value = FARE_CONFIG[currentIdentity].busBase;
-        }
-    } else if (type === 'coach') {
-        els.groupRoute.classList.remove('hidden');
-        els.groupStations.classList.remove('hidden');
+        els.groupStations.classList.add('hidden'); // 公車通常不需要起訖站
+        if (priceInput.value === '') priceInput.value = FARE_CONFIG[currentIdentity].busBase;
+        
+    } else if (type === 'mrt') {
+        // === 捷運模式：顯示下拉選單，隱藏文字框 ===
+        mrtStart.classList.remove('hidden');
+        mrtEnd.classList.remove('hidden');
+        textStart.classList.add('hidden');
+        textEnd.classList.add('hidden');
         priceInput.value = '';
+
     } else {
-        els.groupStations.classList.remove('hidden');
+        // === 其他模式(客運/台鐵)：顯示文字輸入，隱藏選單 ===
+        mrtStart.classList.add('hidden');
+        mrtEnd.classList.add('hidden');
+        textStart.classList.remove('hidden');
+        textEnd.classList.remove('hidden');
         priceInput.value = '';
     }
 }
 
+// === [修改] 表單送出 ===
 els.form.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!currentUser) return alert("請先登入！");
@@ -382,13 +398,25 @@ els.form.addEventListener('submit', async (e) => {
 
     if (!dateInputVal || !timeInputVal) return alert("請選擇日期時間");
 
-    const selectedDate = new Date(`${dateInputVal}T${timeInputVal}`);
-    const dateStr = dateInputVal.replace(/-/g, '/');
-    const timeStr = timeInputVal;
-
+    // === [關鍵修改] 根據類型決定去哪裡抓「起點/終點」的值 ===
+    let startStation = '';
+    let endStation = '';
     const routeId = !els.groupRoute.classList.contains('hidden') ? els.inputRoute.value.trim() : '';
-    const startStation = !els.groupStations.classList.contains('hidden') ? els.inputStart.value.trim() : '';
-    const endStation = !els.groupStations.classList.contains('hidden') ? els.inputEnd.value.trim() : '';
+
+    if (type === 'mrt') {
+        // 捷運模式：抓下拉選單的值 (els.inputStart 指向的是 #startStation 即 select)
+        startStation = document.getElementById('startStation').value;
+        endStation = document.getElementById('endStation').value;
+        if (!startStation || !endStation) return alert("請選擇起訖車站");
+    } else {
+        // 其他模式：抓文字框的值
+        if (!els.groupStations.classList.contains('hidden')) {
+            const sInput = document.getElementById('startStationInput');
+            const eInput = document.getElementById('endStationInput');
+            if (sInput) startStation = sInput.value.trim();
+            if (eInput) endStation = eInput.value.trim();
+        }
+    }
 
     if (!price && price !== 0) return;
 
@@ -397,6 +425,10 @@ els.form.addEventListener('submit', async (e) => {
     submitBtn.innerText = "儲存中...";
 
     const discount = FARE_CONFIG[currentIdentity].transferDiscount;
+
+    const selectedDate = new Date(`${dateInputVal}T${timeInputVal}`);
+    const dateStr = dateInputVal.replace(/-/g, '/');
+    const timeStr = timeInputVal;
 
     try {
         await addDoc(collection(db, "users", currentUser.uid, "trips"), {
@@ -412,9 +444,22 @@ els.form.addEventListener('submit', async (e) => {
             startStation,
             endStation
         });
+        
         els.form.reset();
+        
+        // 重設為捷運模式
         document.querySelector('input[value="mrt"]').checked = true;
         updateFormFields('mrt');
+        
+        // 重設選單
+        const startLineSelect = document.getElementById('startLine');
+        const endLineSelect = document.getElementById('endLine');
+        if(startLineSelect) startLineSelect.selectedIndex = 0;
+        if(endLineSelect) endLineSelect.selectedIndex = 0;
+        // 觸發一下 change 來清空車站選單
+        if(startLineSelect) startLineSelect.dispatchEvent(new Event('change'));
+        if(endLineSelect) endLineSelect.dispatchEvent(new Event('change'));
+
         window.toggleModal();
     } catch (e) {
         console.error(e);
@@ -439,8 +484,19 @@ window.openEditModal = function(tripId) {
     els.editNote.value = trip.note || ''; 
     
     els.editRouteId.value = trip.routeId || '';
-    els.editStart.value = trip.startStation || '';
-    els.editEnd.value = trip.endStation || '';
+    
+    // 注意：編輯 Modal 目前尚未實作雙層下拉，這裡先維持簡單的填入
+    // 若要支援編輯時也是雙層下拉，需要額外寫很多邏輯 (反查路線)
+    // 建議編輯時先顯示純文字即可，或是只在新增時用雙層選單
+    if (trip.type === 'mrt') {
+        // 如果您希望編輯時也能看到文字，需要確保 editModal 裡有對應的 input
+        // 這裡維持原樣，假設 editModal 只有文字框
+        els.editStart.value = trip.startStation || '';
+        els.editEnd.value = trip.endStation || '';
+    } else {
+        els.editStart.value = trip.startStation || '';
+        els.editEnd.value = trip.endStation || '';
+    }
 
     const radio = document.querySelector(`input[name="editType"][value="${trip.type}"]`);
     if (radio) radio.checked = true;
@@ -535,12 +591,10 @@ els.btnDeleteTrip.addEventListener('click', async () => {
 
 // === 核心計算邏輯 ===
 function calculate() {
-    // === 1. 計算「全域」日曆月次數 (用來決定回饋等級) ===
-    // 即使行程不在當前週期，只要是同一個月份的都要算進去次數累積
     let globalMonthlyCounts = {};
 
     trips.forEach(t => {
-        const monthKey = t.dateStr.slice(0, 7); // "YYYY/MM"
+        const monthKey = t.dateStr.slice(0, 7);
         if (!globalMonthlyCounts[monthKey]) {
             globalMonthlyCounts[monthKey] = {
                 mrt: 0, tra: 0, tymrt: 0, lrt: 0, bus: 0, coach: 0, bike: 0
@@ -549,7 +603,6 @@ function calculate() {
         globalMonthlyCounts[monthKey][t.type]++;
     });
 
-    // === 2. 計算「當前週期」的消費統計 (用來顯示與計算回饋金) ===
     let totalStats = {
         totalPaid: 0,
         totalOriginal: 0,
@@ -558,25 +611,20 @@ function calculate() {
         counts: {} 
     };
 
-    // 初始化統計物件
     Object.keys(TRANSPORT_TYPES).forEach(k => {
         totalStats.originalSums[k] = 0;
         totalStats.paidSums[k] = 0;
         totalStats.counts[k] = 0; 
     });
 
-    // 用來暫存「週期內」各月份的消費額 (計算回饋用)
     let cycleMonthlyStats = {}; 
-
     const discount = FARE_CONFIG[currentIdentity].transferDiscount;
 
     trips.forEach(t => {
-        // 排除非當前週期的行程
         if (!currentSelectedCycle || t.createdAt < currentSelectedCycle.start || t.createdAt > currentSelectedCycle.end) {
             return;
         }
 
-        // --- A. 累加週期總體統計 (儀表板顯示用) ---
         let op = t.isFree ? 0 : t.originalPrice; 
         let pp = t.isFree ? 0 : t.paidPrice;
         
@@ -590,7 +638,6 @@ function calculate() {
         totalStats.paidSums[t.type] += pp;
         totalStats.counts[t.type]++; 
 
-        // --- B. 累加「週期內」的月份統計 (計算回饋基數用) ---
         const monthKey = t.dateStr.slice(0, 7);
 
         if (!cycleMonthlyStats[monthKey]) {
@@ -607,35 +654,23 @@ function calculate() {
         cycleMonthlyStats[monthKey].paidSums[t.type] += pp;
     });
 
-    // === 3. 計算回饋 (邏輯修正版) ===
-    // 邏輯：依據 Global Counts 決定 %, 乘上 Cycle Sums 決定金額
-
     let r1_total_cashback = 0;
     let r1_all_details = [];
-
     let r2_total_cashback = 0;
     let r2_all_details = [];
 
-    // 只計算當前週期有跨到的月份
     const sortedMonths = Object.keys(cycleMonthlyStats).sort();
 
     sortedMonths.forEach(month => {
         const monthLabel = `${month.split('/')[1]}月`;
         
-        // 取得該月份的「全域次數」(決定資格)
         const gCounts = globalMonthlyCounts[month] || { mrt:0, tra:0, bus:0, coach:0, tymrt:0, lrt:0 };
-        
-        // 取得該月份在「週期內」的消費額 (計算回饋)
         const cSums = cycleMonthlyStats[month];
 
-        // === Rule 1: 常客優惠 ===
-        
-        // 北捷：看全域次數，回饋週期內原價總和
         const mrtCountGlobal = gCounts.mrt;
         const mrtSumCycle = cSums.originalSums.mrt;
         
         let mrtRate = 0;
-        // 維持你的原始規則
         if (mrtCountGlobal > 40) mrtRate = 0.15;
         else if (mrtCountGlobal > 20) mrtRate = 0.10;
         else if (mrtCountGlobal > 10) mrtRate = 0.05;
@@ -649,7 +684,6 @@ function calculate() {
             });
         }
 
-        // 台鐵
         const traCountGlobal = gCounts.tra;
         const traSumCycle = cSums.originalSums.tra;
         
@@ -667,9 +701,6 @@ function calculate() {
             });
         }
 
-        // === Rule 2: TPASS 2.0 (或其他加碼) ===
-        
-        // 軌道運輸加碼
         const railCountGlobal = gCounts.mrt + gCounts.tra + gCounts.tymrt + gCounts.lrt;
         const railPaidSumCycle = cSums.paidSums.mrt + cSums.paidSums.tra + cSums.paidSums.tymrt + cSums.paidSums.lrt;
         
@@ -682,7 +713,6 @@ function calculate() {
             });
         }
 
-        // 公車客運加碼
         const busCountGlobal = gCounts.bus + gCounts.coach;
         const busPaidSumCycle = cSums.paidSums.bus + cSums.paidSums.coach;
         
@@ -720,7 +750,6 @@ function renderUI() {
 
     els.finalCost.innerText = `$${finalVal}`;
 
-    // [修改] 傳入 counts 資訊
     els.displayOriginalTotal.innerText = `$${Math.floor(data.totalOriginal)}`;
     els.listOriginalDetails.innerHTML = generateDetailHtml(data.originalSums, data.counts);
     els.displayPaidTotal.innerText = `$${Math.floor(data.totalPaid)}`;
@@ -872,7 +901,6 @@ function renderUI() {
     }
 }
 
-// [修改] 增加 countsObj 參數
 function generateDetailHtml(sumsObj, countsObj) {
     let html = '';
     let hasData = false;
@@ -881,7 +909,7 @@ function generateDetailHtml(sumsObj, countsObj) {
         if (sum > 0) {
             hasData = true;
             const name = TRANSPORT_TYPES[type].name;
-            const count = countsObj[type] || 0; // 取得該運具的次數
+            const count = countsObj[type] || 0; 
             
             html += `
                 <div class="detail-row">
@@ -934,4 +962,112 @@ window.addEventListener('load', () => {
     setTimeout(checkPWAStatus, 2000);
 });
 
+// === [新增] 車站自動完成與查價功能 (Line-First 雙層下拉版) ===
 
+function initStationSelectors() {
+    // 1. 填入「路線」選單 (起點 & 終點)
+    const lineSelects = ['startLine', 'endLine'];
+    
+    lineSelects.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        
+        // 確保不會重複添加
+        if (el.options.length > 1) return;
+
+        el.innerHTML = '<option value="" disabled selected>選擇路線</option>';
+        if (typeof MRT_LINES !== 'undefined') {
+            for (const [code, info] of Object.entries(MRT_LINES)) {
+                const opt = document.createElement('option');
+                opt.value = code;
+                opt.textContent = info.name;
+                el.appendChild(opt);
+            }
+        }
+
+        // 綁定事件：選路線 -> 更新車站
+        el.addEventListener('change', (e) => {
+            const targetStationSelectId = id.replace('Line', 'Station'); // startLine -> startStation
+            updateStationList(e.target.value, targetStationSelectId);
+        });
+    });
+
+    // 綁定查價事件 (當車站改變時)
+    // 注意：原本 #startStation 是 input text，現在是 select，change 事件依然適用
+    const inputs = ['startStation', 'endStation', 'startStationInput', 'endStationInput'];
+    inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) {
+            el.addEventListener('change', tryAutoFillPrice);
+            if (id.includes('Input')) {
+                el.addEventListener('input', tryAutoFillPrice); // 文字框打字時也觸發
+            }
+        }
+    });
+}
+
+function updateStationList(lineCode, selectElementId) {
+    const stationSelect = document.getElementById(selectElementId);
+    if (!stationSelect) return;
+
+    const lineData = MRT_LINES[lineCode];
+    
+    stationSelect.innerHTML = '<option value="">選擇車站</option>';
+    
+    if (lineData) {
+        lineData.stations.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s;
+            opt.textContent = s;
+            stationSelect.appendChild(opt);
+        });
+    }
+}
+
+function tryAutoFillPrice() {
+    const typeEl = document.querySelector('input[name="type"]:checked');
+    if (!typeEl || typeEl.value !== 'mrt') return;
+
+    // 捷運模式直接抓 select 的 value
+    const startEl = document.getElementById('startStation');
+    const endEl = document.getElementById('endStation');
+    const priceEl = document.getElementById('price');
+
+    if (!startEl || !endEl || !priceEl) return;
+
+    const s = startEl.value;
+    const e = endEl.value;
+
+    if (!s || !e) return;
+
+    // 策略 1: 查歷史紀錄
+    const historyTrip = trips.find(t => 
+        t.type === 'mrt' && 
+        ((t.startStation === s && t.endStation === e) || 
+         (t.startStation === e && t.endStation === s))
+    );
+
+    if (historyTrip) {
+        priceEl.value = historyTrip.originalPrice;
+        flashPriceInput(priceEl, '#d1fae5'); // 綠色：歷史
+        return;
+    }
+
+    // 策略 2: 查官方票價 (fares.js)
+    if (typeof getOfficialFare === 'function') {
+        const officialPrice = getOfficialFare(s, e);
+        if (officialPrice !== null) {
+            priceEl.value = officialPrice;
+            flashPriceInput(priceEl, '#dbeafe'); // 藍色：官方
+            return;
+        }
+    }
+}
+
+function flashPriceInput(el, color) {
+    el.style.transition = "background-color 0.3s";
+    el.style.backgroundColor = color;
+    setTimeout(() => {
+        el.style.backgroundColor = "";
+    }, 800);
+}

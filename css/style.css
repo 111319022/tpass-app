@@ -1115,3 +1115,50 @@ input[type="date"],
 input[type="time"] {
     min-height: 44px; /* 確保手指好點擊 */
 }
+
+/* 車站選擇區塊 */
+.station-row {
+    background: rgba(255,255,255,0.5);
+    padding: 8px;
+    border-radius: 8px;
+    margin-bottom: 2px;
+}
+
+.station-label-small {
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 4px;
+    font-weight: bold;
+}
+
+/* 雙層下拉選單容器 */
+.mrt-selector-group {
+    display: flex;
+    gap: 8px;
+}
+
+/* 讓路線選單窄一點，車站選單寬一點 */
+.line-select {
+    flex: 2;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: white;
+}
+
+.station-select {
+    flex: 3;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: white;
+}
+
+/* 一般文字輸入框樣式 */
+.station-text-input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 15px;
+}
