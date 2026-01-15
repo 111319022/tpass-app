@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>通勤數據分析 - TPASS.calc</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/analysis.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="page-header">
+            <a href="app.html" class="back-btn">
+                <i class="fa-solid fa-chevron-left"></i> 返回
+            </a>
+            <h2>通勤數據深度分析</h2>
+            <div style="width: 20px;"></div>
+        </div>
+
+        <div class="analysis-content">
+            
+            <div class="period-filter">
+                <i class="fa-regular fa-calendar-days"></i>
+                <select id="cycleSelector">
+                    <option value="">載入中...</option>
+                </select>
+            </div>
+
+            <div class="dna-section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <small style="margin:0;">YOUR COMMUTER DNA</small>
+                    <button onclick="toggleDnaModal()" style="background:rgba(255,255,255,0.2); border:none; color:white; width:24px; height:24px; border-radius:50%; cursor:pointer; font-size:12px;">
+                        <i class="fa-solid fa-question"></i>
+                    </button>
+                </div>
+                <div id="dnaTags" class="dna-tags-container">
+                    <span class="dna-tag loading">分析中...</span>
+                </div>
+            </div>
+
+            <div class="summary-cards">
+                <div class="s-card">
+                    <small>總行程數</small>
+                    <span id="totalTrips">0</span> <small>趟</small>
+                </div>
+                <div class="s-card">
+                    <small>平均回本天數</small>
+                    <span id="daysToBreakEven" style="color:#27ae60;">--</span> <small>天</small>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3><i class="fa-solid fa-flag-checkered"></i> TPASS 回本競速</h3>
+                <p class="chart-desc">觀察您的累積消費曲線何時超越 $1200 月票門檻。</p>
+                <div class="canvas-wrapper">
+                    <canvas id="roiChart"></canvas>
+                </div>
+            </div>
+
+            <h3 class="section-title"><i class="fa-solid fa-layer-group"></i> 運具深度透視</h3>
+            <div id="transportGrid" class="transport-grid">
+                </div>
+
+            <div class="chart-container">
+                <h3><i class="fa-solid fa-chart-radar"></i> 通勤生活型態</h3>
+                <div class="canvas-wrapper">
+                    <canvas id="radarChart"></canvas>
+                </div>
+                <div class="radar-legend">
+                    <small>平日/假日頻率 • 早晚時段分佈</small>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <h3><i class="fa-solid fa-route"></i> Top 5 熱門路線</h3>
+                <div id="routeRanking" class="route-list">
+                    </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="dnaModal" class="modal hidden" style="z-index: 9999;">
+        <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-medal"></i> 獎章圖鑑</h3>
+                <button class="close-btn" onclick="toggleDnaModal()">&times;</button>
+            </div>
+            
+            <div class="badge-list">
+                <h4 class="badge-category">主力運具</h4>
+                <div class="badge-item"><span class="dna-tag" style="border:1px solid #0070BD">🚇 北捷成癮者</span> <small>搭乘捷運次數最多</small></div>
+                <div class="badge-item"><span class="dna-tag" style="border:1px solid #2ECC71">🚌 公車達人</span> <small>搭乘公車次數最多</small></div>
+                <div class="badge-item"><span class="dna-tag" style="border:1px solid #2C3E50">🚆 鐵道迷</span> <small>搭乘台鐵次數最多</small></div>
+                <div class="badge-item"><span class="dna-tag" style="border:1px solid #8E44AD">✈️ 國門飛人</span> <small>搭乘機捷次數最多</small></div>
+                
+                <h4 class="badge-category">通勤習慣</h4>
+                <div class="badge-item"><span class="dna-tag" style="border:1px solid #e74c3c">🔥 狂熱通勤</span> <small>累積行程超過 50 趟</small></div>
+                <div class="badge-item"><span class="dna-tag" style="border:1px solid #f1c40f">📅 規律生活</span> <small>累積行程超過 30 趟</small></div>
+                <div class="badge-item"><span class="dna-tag" style="border:1px solid #3498db">☀️ 早鳥部隊</span> <small>08:00 前行程佔比 > 30%</small></div>
+                <div class="badge-item"><span class="dna-tag" style="border:1px solid #9b59b6">🌙 深夜旅人</span> <small>21:00 後行程佔比 > 20%</small></div>
+                
+                <h4 class="badge-category">特殊成就</h4>
+                <div class="badge-item"><span class="dna-tag" style="border:1px solid #27ae60">💰 回本大師</span> <small>累積票價總值超過 $2000</small></div>
+            </div>
+
+            <button onclick="toggleDnaModal()" class="submit-btn" style="margin-top:20px;">了解</button>
+        </div>
+    </div>
+
+    <script type="module" src="/js/analysis.js"></script>
+    <script>
+        // Modal 切換邏輯
+        window.toggleDnaModal = function() {
+            const m = document.getElementById('dnaModal');
+            if(m.classList.contains('hidden')) m.classList.remove('hidden');
+            else m.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

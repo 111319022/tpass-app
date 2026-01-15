@@ -38,17 +38,15 @@ const TRANSPORT_TYPES = {
 
 // === DOM 元素對應 ===
 const els = {
-    // 儀表板與統計
     finalCost: document.getElementById('finalCost'),
+    analysisBtn: document.getElementById('analysisBtn'), // 新增：分析按鈕
     adminBtn: document.getElementById('adminBtn'),
 
-    // 明細折疊區塊
     displayOriginalTotal: document.getElementById('displayOriginalTotal'),
     listOriginalDetails: document.getElementById('listOriginalDetails'),
     displayPaidTotal: document.getElementById('displayPaidTotal'),
     listPaidDetails: document.getElementById('listPaidDetails'),
 
-    // 優惠規則區塊
     rule1Discount: document.getElementById('rule1Discount'),
     rule1Detail: document.getElementById('rule1Detail'),
     rule2Discount: document.getElementById('rule2Discount'),
@@ -58,11 +56,8 @@ const els = {
     diffText: document.getElementById('diffText'),
     historyList: document.getElementById('historyList'),
     tripCount: document.getElementById('tripCount'),
-    
-    // 週期選擇
     cycleSelector: document.getElementById('cycleSelector'),
 
-    // 設定 Modal
     settingsBtn: document.getElementById('settingsBtn'),
     settingsModal: document.getElementById('settingsModal'),
     settingsForm: document.getElementById('settingsForm'),
@@ -70,7 +65,6 @@ const els = {
     btnAddCycle: document.getElementById('btnAddCycle'),
     cycleList: document.getElementById('cycleList'),
 
-    // 新增行程 Modal
     modal: document.getElementById('entryModal'),
     form: document.getElementById('tripForm'),
     tripDate: document.getElementById('tripDate'),
@@ -84,7 +78,6 @@ const els = {
     transferLabel: document.getElementById('transferLabel'),
     isFree: document.getElementById('isFree'),
 
-    // 編輯 Modal
     editModal: document.getElementById('editModal'),
     editForm: document.getElementById('editForm'),
     editTripId: document.getElementById('editTripId'),
@@ -96,7 +89,7 @@ const els = {
     editNote: document.getElementById('editNote'),
     editRouteId: document.getElementById('editRouteId'),
     
-    // 注意：編輯視窗現在有兩套輸入介面，需動態抓取
+    // 編輯視窗動態抓取 (部分可能為 null，會在 logic 中檢查)
     editGroupRoute: document.getElementById('edit-group-route'),
     editGroupStations: document.getElementById('edit-group-stations'),
     editTransferLabel: document.getElementById('editTransferLabel'),
@@ -111,39 +104,35 @@ initAuthListener(async (user) => {
     console.log("Auth State Changed:", user ? "Logged In" : "Logged Out");
 
     if (user) {
-        // 先讀取設定，再啟動監聽，順序很重要
         await loadUserSettings(user.uid);
         setupRealtimeListener(user.uid);
-
-        // 初始化雙層下拉選單
         initStationSelectors();
 
         if (user.email === ADMIN_EMAIL) {
             if (els.adminBtn) {
                 els.adminBtn.classList.remove('hidden');
-                els.adminBtn.onclick = () => {
-                    window.location.href = "admin.html";
-                };
+                els.adminBtn.onclick = () => { window.location.href = "admin.html"; };
             }
         } else {
             if (els.adminBtn) els.adminBtn.classList.add('hidden');
         }
-
     } else {
-        // 未登入狀態
         trips = [];
         cycles = [];
         currentSelectedCycle = null;
-        renderUI(); // 確保介面清空
-        
-        // 如果是在 login 頁面以外的地方，可以考慮導回
-        // window.location.href = "index.html"; 
-        
+        renderUI();
         if (els.historyList) {
             els.historyList.innerHTML = '<li style="text-align:center; padding:20px; color:#aaa;">請點擊右上方登入以開始使用</li>';
         }
     }
 });
+
+// [修復] 綁定分析按鈕事件 (增加 null check 防止報錯)
+if (els.analysisBtn) {
+    els.analysisBtn.addEventListener('click', () => {
+        window.location.href = "analysis.html";
+    });
+}
 
 // === 讀取設定 ===
 async function loadUserSettings(uid) {
@@ -153,23 +142,16 @@ async function loadUserSettings(uid) {
         
         if (docSnap.exists()) {
             const data = docSnap.data();
-            
             if (data.cycles && Array.isArray(data.cycles)) {
                 cycles = data.cycles.sort((a, b) => b.start - a.start);
             } else if (data.period) {
-                // 相容舊資料
                 cycles = [data.period];
             }
-
-            if (data.identity) {
-                currentIdentity = data.identity;
-            }
+            if (data.identity) currentIdentity = data.identity;
         }
-        
         renderCycleSelector(); 
         updateSettingsUI();    
         updateTransferLabel(); 
-        
     } catch (e) {
         console.error("讀取設定失敗", e);
     }
@@ -193,7 +175,6 @@ function renderCycleSelector() {
         const start = new Date(cycle.start);
         const end = new Date(cycle.end);
         const fmt = d => `${d.getMonth()+1}/${d.getDate()}`;
-        
         opt.value = index; 
         opt.text = `${fmt(start)} ~ ${fmt(end)} ${index === 0 ? '(最新)' : ''}`;
         els.cycleSelector.appendChild(opt);
@@ -213,8 +194,6 @@ if (els.cycleSelector) {
     });
 }
 
-// ... (中間週期管理程式碼省略，這部分沒變) ...
-// 為了確保不缺漏，這裡補上 btnAddCycle 等邏輯
 if (els.btnAddCycle) {
     els.btnAddCycle.addEventListener('click', async () => {
         const dateVal = els.newCycleDate.value;
@@ -226,17 +205,11 @@ if (els.btnAddCycle) {
         endDate.setDate(startDate.getDate() + 29);
         endDate.setHours(23, 59, 59, 999);
 
-        const newCycle = {
-            id: Date.now(), 
-            start: startDate.getTime(),
-            end: endDate.getTime()
-        };
-
+        const newCycle = { id: Date.now(), start: startDate.getTime(), end: endDate.getTime() };
         cycles.push(newCycle);
         cycles.sort((a, b) => b.start - a.start);
 
         await saveAllSettings();
-        
         els.newCycleDate.value = '';
         renderCycleList();     
         renderCycleSelector(); 
@@ -260,20 +233,13 @@ function renderCycleList() {
         els.cycleList.innerHTML = '<li style="color:#999; text-align:center; padding:10px;">尚無資料</li>';
         return;
     }
-
     cycles.forEach(cycle => {
         const li = document.createElement('li');
         li.className = 'cycle-manage-item';
         const start = new Date(cycle.start);
         const end = new Date(cycle.end);
         const fmt = d => `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
-        
-        li.innerHTML = `
-            <div>${fmt(start)} ~ ${fmt(end)}</div>
-            <button class="btn-delete-cycle" onclick="deleteCycle(${cycle.id})">
-                <i class="fa-solid fa-trash"></i>
-            </button>
-        `;
+        li.innerHTML = `<div>${fmt(start)} ~ ${fmt(end)}</div><button class="btn-delete-cycle" onclick="deleteCycle(${cycle.id})"><i class="fa-solid fa-trash"></i></button>`;
         els.cycleList.appendChild(li);
     });
 }
@@ -283,15 +249,9 @@ async function saveAllSettings() {
     try {
         const userDocRef = doc(db, "users", currentUser.uid);
         const selectedIdentity = document.querySelector('input[name="settingsIdentity"]:checked').value;
-        
-        await setDoc(userDocRef, { 
-            cycles: cycles,
-            identity: selectedIdentity
-        }, { merge: true });
-        
+        await setDoc(userDocRef, { cycles: cycles, identity: selectedIdentity }, { merge: true });
         currentIdentity = selectedIdentity;
         updateTransferLabel();
-        
     } catch (e) {
         console.error(e);
         alert("儲存失敗");
@@ -317,9 +277,7 @@ if (els.settingsBtn) {
     });
 }
 
-window.toggleSettingsModal = function() {
-    els.settingsModal.classList.toggle('hidden');
-}
+window.toggleSettingsModal = function() { els.settingsModal.classList.toggle('hidden'); }
 
 if (els.settingsForm) {
     els.settingsForm.addEventListener('submit', async (e) => {
@@ -330,40 +288,30 @@ if (els.settingsForm) {
     });
 }
 
-// === Firestore 監聽 (關鍵資料來源) ===
+// === Firestore 監聽 ===
 function setupRealtimeListener(uid) {
     console.log("Setting up Firestore listener for:", uid);
-    
-    // 如果之前有監聽，先取消，避免重複
-    if (unsubscribeTrips) {
-        unsubscribeTrips();
-    }
+    if (unsubscribeTrips) unsubscribeTrips();
 
     const q = query(collection(db, "users", uid, "trips"), orderBy("createdAt", "desc"));
-    
     unsubscribeTrips = onSnapshot(q, (snapshot) => {
         trips = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        console.log(`Loaded ${trips.length} trips.`);
         renderUI();
     }, (error) => {
         console.error("Firestore 監聽錯誤:", error);
     });
 }
 
-// === 初始化車站選單 (新增 + 編輯) ===
+// === 初始化車站選單 ===
 function initStationSelectors() {
-    // 定義所有需要初始化的路線選單 ID
     const lineSelects = ['startLine', 'endLine', 'editStartLine', 'editEndLine'];
-    
     lineSelects.forEach(id => {
         const el = document.getElementById(id);
-        if (!el) return;
-        
-        // 避免重複添加
+        if (!el) return; // 沒找到元素就跳過 (防呆)
         if (el.options.length > 1) return;
 
         el.innerHTML = '<option value="" disabled selected>選擇路線</option>';
-        if (typeof MRT_LINES !== 'undefined') {
+        if (typeof MRT_LINES !== 'undefined' && MRT_LINES) {
             for (const [code, info] of Object.entries(MRT_LINES)) {
                 const opt = document.createElement('option');
                 opt.value = code;
@@ -371,33 +319,24 @@ function initStationSelectors() {
                 el.appendChild(opt);
             }
         }
-
-        // 綁定事件：選路線 -> 更新對應的車站選單
         el.addEventListener('change', (e) => {
-            // startLine -> startStation, editStartLine -> editStartStation
             const targetStationSelectId = id.replace('Line', 'Station'); 
             updateStationList(e.target.value, targetStationSelectId);
         });
     });
 
-    // 綁定查價事件 (新增 + 編輯 的所有車站輸入欄位)
-    const inputs = [
-        'startStation', 'endStation', 'startStationInput', 'endStationInput',
-        'editStartStation', 'editEndStation', 'editStartStationInput', 'editEndStationInput'
-    ];
+    const inputs = ['startStation', 'endStation', 'startStationInput', 'endStationInput',
+                    'editStartStation', 'editEndStation', 'editStartStationInput', 'editEndStationInput'];
     inputs.forEach(id => {
         const el = document.getElementById(id);
         if(el) {
-            // 下拉選單用 change, 文字框用 input (即時)
             if (id.includes('Input')) {
                 el.addEventListener('input', () => {
-                    if (id.includes('edit')) tryAutoFillEditPrice();
-                    else tryAutoFillPrice();
+                    if (id.includes('edit')) tryAutoFillEditPrice(); else tryAutoFillPrice();
                 });
             } else {
                 el.addEventListener('change', () => {
-                    if (id.includes('edit')) tryAutoFillEditPrice();
-                    else tryAutoFillPrice();
+                    if (id.includes('edit')) tryAutoFillEditPrice(); else tryAutoFillPrice();
                 });
             }
         }
@@ -420,13 +359,10 @@ function updateStationList(lineCode, selectElementId) {
     }
 }
 
-// 輔助：根據站名找路線代碼 (用於編輯時回填)
 function findLineCodeByStation(stationName) {
     if (typeof MRT_LINES === 'undefined') return '';
     for (const [code, info] of Object.entries(MRT_LINES)) {
-        if (info.stations.includes(stationName)) {
-            return code;
-        }
+        if (info.stations.includes(stationName)) return code;
     }
     return '';
 }
@@ -465,7 +401,6 @@ function updateFormFields(type) {
     const textStart = document.getElementById('startStationInput');
     const textEnd = document.getElementById('endStationInput');
 
-    // 1. 路線編號
     if (type === 'bus' || type === 'coach') {
         els.groupRoute.classList.remove('hidden');
     } else {
@@ -473,32 +408,29 @@ function updateFormFields(type) {
         if (els.inputRoute) els.inputRoute.value = ''; 
     }
 
-    // 2. 起訖站區塊
     if (type === 'bus') {
         els.groupStations.classList.add('hidden');
-        // 如果是公車，預設自動帶入基本票價
         if (priceInput.value === '') priceInput.value = FARE_CONFIG[currentIdentity].busBase;
     } else {
         els.groupStations.classList.remove('hidden');
         priceInput.value = '';
     }
 
-    // 3. 輸入方式切換 (下拉 vs 文字)
-    if (!mrtStart || !textStart) return;
-    if (type === 'mrt') {
-        mrtStart.classList.remove('hidden');
-        mrtEnd.classList.remove('hidden');
-        textStart.classList.add('hidden');
-        textEnd.classList.add('hidden');
-    } else {
-        mrtStart.classList.add('hidden');
-        mrtEnd.classList.add('hidden');
-        textStart.classList.remove('hidden');
-        textEnd.classList.remove('hidden');
+    if (mrtStart && textStart) {
+        if (type === 'mrt') {
+            mrtStart.classList.remove('hidden');
+            mrtEnd.classList.remove('hidden');
+            textStart.classList.add('hidden');
+            textEnd.classList.add('hidden');
+        } else {
+            mrtStart.classList.add('hidden');
+            mrtEnd.classList.add('hidden');
+            textStart.classList.remove('hidden');
+            textEnd.classList.remove('hidden');
+        }
     }
 }
 
-// === 新增儲存 ===
 els.form.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!currentUser) return alert("請先登入！");
@@ -508,14 +440,15 @@ els.form.addEventListener('submit', async (e) => {
     const isTransfer = document.getElementById('transfer').checked;
     const isFree = els.isFree.checked;
     
-    // 取值邏輯
     let startStation = '';
     let endStation = '';
     const routeId = !els.groupRoute.classList.contains('hidden') ? els.inputRoute.value.trim() : '';
 
     if (type === 'mrt') {
-        startStation = document.getElementById('startStation').value;
-        endStation = document.getElementById('endStation').value;
+        const sEl = document.getElementById('startStation');
+        const eEl = document.getElementById('endStation');
+        if(sEl) startStation = sEl.value;
+        if(eEl) endStation = eEl.value;
         if (!startStation || !endStation) return alert("請選擇起訖車站");
     } else {
         if (!els.groupStations.classList.contains('hidden')) {
@@ -554,15 +487,13 @@ els.form.addEventListener('submit', async (e) => {
         els.form.reset();
         document.querySelector('input[value="mrt"]').checked = true;
         updateFormFields('mrt');
-        // 重設選單
         const startLineSelect = document.getElementById('startLine');
         if(startLineSelect) {
             startLineSelect.selectedIndex = 0;
-            startLineSelect.dispatchEvent(new Event('change')); // 重置車站
+            startLineSelect.dispatchEvent(new Event('change'));
         }
         document.getElementById('endLine').selectedIndex = 0;
         document.getElementById('endLine').dispatchEvent(new Event('change'));
-
         window.toggleModal();
     } catch (e) {
         console.error(e);
@@ -573,7 +504,7 @@ els.form.addEventListener('submit', async (e) => {
     }
 });
 
-// === [修改] 編輯視窗邏輯 ===
+// === [修改] 編輯視窗邏輯 (相容舊版 HTML) ===
 window.openEditModal = function(tripId) {
     const trip = trips.find(t => t.id === tripId);
     if (!trip) return;
@@ -587,41 +518,49 @@ window.openEditModal = function(tripId) {
     els.editNote.value = trip.note || ''; 
     els.editRouteId.value = trip.routeId || '';
 
-    // 設定運具類型
     const radio = document.querySelector(`input[name="editType"][value="${trip.type}"]`);
     if (radio) radio.checked = true;
 
-    // 更新表單顯示狀態
     updateEditFormFields(trip.type);
 
-    // 回填車站資料
+    // 回填車站資料 (偵測是否為新版介面)
     if (trip.type === 'mrt') {
-        // [編輯捷運] 需要反查路線並設定下拉選單
-        const startLineCode = findLineCodeByStation(trip.startStation);
-        const endLineCode = findLineCodeByStation(trip.endStation);
-
-        // 設定起點
         const startLineSelect = document.getElementById('editStartLine');
         if (startLineSelect) {
+            // [新版] 雙層選單
+            const startLineCode = findLineCodeByStation(trip.startStation);
+            const endLineCode = findLineCodeByStation(trip.endStation);
+            
             startLineSelect.value = startLineCode;
-            updateStationList(startLineCode, 'editStartStation'); // 手動觸發更新清單
+            updateStationList(startLineCode, 'editStartStation'); 
             document.getElementById('editStartStation').value = trip.startStation;
-        }
 
-        // 設定終點
-        const endLineSelect = document.getElementById('editEndLine');
-        if (endLineSelect) {
+            const endLineSelect = document.getElementById('editEndLine');
             endLineSelect.value = endLineCode;
-            updateStationList(endLineCode, 'editEndStation'); // 手動觸發更新清單
+            updateStationList(endLineCode, 'editEndStation'); 
             document.getElementById('editEndStation').value = trip.endStation;
+        } else {
+            // [舊版] 簡單文字框
+            const oldStart = document.getElementById('editStart');
+            const oldEnd = document.getElementById('editEnd');
+            if(oldStart) oldStart.value = trip.startStation || '';
+            if(oldEnd) oldEnd.value = trip.endStation || '';
         }
-
     } else {
-        // [編輯其他] 直接填入文字框
+        // 非捷運
         const es = document.getElementById('editStartStationInput');
         const ee = document.getElementById('editEndStationInput');
-        if(es) es.value = trip.startStation || '';
-        if(ee) ee.value = trip.endStation || '';
+        if(es && ee) {
+            // 新版
+            es.value = trip.startStation || '';
+            ee.value = trip.endStation || '';
+        } else {
+            // 舊版
+            const oldStart = document.getElementById('editStart');
+            const oldEnd = document.getElementById('editEnd');
+            if(oldStart) oldStart.value = trip.startStation || '';
+            if(oldEnd) oldEnd.value = trip.endStation || '';
+        }
     }
 
     const discount = FARE_CONFIG[currentIdentity].transferDiscount;
@@ -630,51 +569,45 @@ window.openEditModal = function(tripId) {
     els.editModal.classList.remove('hidden');
 }
 
-window.closeEditModal = function() {
-    els.editModal.classList.add('hidden');
-}
+window.closeEditModal = function() { els.editModal.classList.add('hidden'); }
 
 els.editTransportRadios.forEach(radio => {
     radio.addEventListener('change', (e) => updateEditFormFields(e.target.value));
 });
 
-// [新增] 編輯視窗的表單切換 (邏輯同 updateFormFields)
 function updateEditFormFields(type) {
     const mrtStart = document.getElementById('edit-mrt-selector-start');
     const mrtEnd = document.getElementById('edit-mrt-selector-end');
     const textStart = document.getElementById('editStartStationInput');
     const textEnd = document.getElementById('editEndStationInput');
 
-    // 1. 路線編號
-    if (type === 'bus' || type === 'coach') {
-        els.editGroupRoute.classList.remove('hidden');
-    } else {
-        els.editGroupRoute.classList.add('hidden');
+    if (els.editGroupRoute) {
+        if (type === 'bus' || type === 'coach') els.editGroupRoute.classList.remove('hidden');
+        else els.editGroupRoute.classList.add('hidden');
     }
 
-    // 2. 起訖站區塊
-    if (type === 'bus') {
-        els.editGroupStations.classList.add('hidden');
-    } else {
-        els.editGroupStations.classList.remove('hidden');
+    if (els.editGroupStations) {
+        if (type === 'bus') els.editGroupStations.classList.add('hidden');
+        else els.editGroupStations.classList.remove('hidden');
     }
 
-    // 3. 輸入方式切換
-    if (!mrtStart || !textStart) return;
-    if (type === 'mrt') {
-        mrtStart.classList.remove('hidden');
-        mrtEnd.classList.remove('hidden');
-        textStart.classList.add('hidden');
-        textEnd.classList.add('hidden');
-    } else {
-        mrtStart.classList.add('hidden');
-        mrtEnd.classList.add('hidden');
-        textStart.classList.remove('hidden');
-        textEnd.classList.remove('hidden');
+    // 只有在新版介面存在時才執行切換
+    if (mrtStart && textStart) {
+        if (type === 'mrt') {
+            mrtStart.classList.remove('hidden');
+            mrtEnd.classList.remove('hidden');
+            textStart.classList.add('hidden');
+            textEnd.classList.add('hidden');
+        } else {
+            mrtStart.classList.add('hidden');
+            mrtEnd.classList.add('hidden');
+            textStart.classList.remove('hidden');
+            textEnd.classList.remove('hidden');
+        }
     }
 }
 
-// [修改] 編輯儲存
+// 編輯儲存
 els.editForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!currentUser) return;
@@ -690,19 +623,30 @@ els.editForm.addEventListener('submit', async (e) => {
 
     if (!dateInputVal || !timeInputVal) return alert("日期時間錯誤");
 
-    // 取值邏輯
     let startStation = '';
     let endStation = '';
-    const routeId = !els.editGroupRoute.classList.contains('hidden') ? els.editRouteId.value.trim() : '';
+    const routeId = (els.editGroupRoute && !els.editGroupRoute.classList.contains('hidden')) ? els.editRouteId.value.trim() : '';
+
+    // 取值 (相容新舊版)
+    const newStart = document.getElementById('editStartStation');
+    const oldStart = document.getElementById('editStart');
+    const newTextInput = document.getElementById('editStartStationInput');
 
     if (type === 'mrt') {
-        startStation = document.getElementById('editStartStation').value;
-        endStation = document.getElementById('editEndStation').value;
-        if (!startStation || !endStation) return alert("請選擇起訖車站");
+        if (newStart) {
+            startStation = newStart.value;
+            endStation = document.getElementById('editEndStation').value;
+        } else if (oldStart) {
+            startStation = oldStart.value;
+            endStation = document.getElementById('editEnd').value;
+        }
     } else {
-        if (!els.editGroupStations.classList.contains('hidden')) {
-            startStation = document.getElementById('editStartStationInput').value.trim();
+        if (newTextInput && !els.editGroupStations.classList.contains('hidden')) {
+            startStation = newTextInput.value.trim();
             endStation = document.getElementById('editEndStationInput').value.trim();
+        } else if (oldStart) {
+            startStation = oldStart.value;
+            endStation = document.getElementById('editEnd').value;
         }
     }
 
@@ -744,19 +688,14 @@ els.btnDeleteTrip.addEventListener('click', async () => {
     }
 });
 
-// === 自動查價函式 ===
-
-// 1. 新增視窗用
 function tryAutoFillPrice() {
     performAutoFill('type', 'price', 'startStation', 'endStation', 'startStationInput', 'endStationInput');
 }
 
-// 2. 編輯視窗用
 function tryAutoFillEditPrice() {
     performAutoFill('editType', 'editPrice', 'editStartStation', 'editEndStation', 'editStartStationInput', 'editEndStationInput');
 }
 
-// 核心查價邏輯
 function performAutoFill(typeName, priceId, mrtStartId, mrtEndId, textStartId, textEndId) {
     const typeEl = document.querySelector(`input[name="${typeName}"]:checked`);
     if (!typeEl) return;
@@ -778,7 +717,6 @@ function performAutoFill(typeName, priceId, mrtStartId, mrtEndId, textStartId, t
 
     if (!s || !e) return;
 
-    // A. 查歷史紀錄
     const historyTrip = trips.find(t => 
         t.type === type && 
         ((t.startStation === s && t.endStation === e) || 
@@ -791,7 +729,6 @@ function performAutoFill(typeName, priceId, mrtStartId, mrtEndId, textStartId, t
         return;
     }
 
-    // B. 查官方票價 (僅限 MRT)
     if (type === 'mrt' && typeof getOfficialFare === 'function') {
         const officialPrice = getOfficialFare(s, e);
         if (officialPrice !== null) {
@@ -803,53 +740,34 @@ function performAutoFill(typeName, priceId, mrtStartId, mrtEndId, textStartId, t
 }
 
 function flashPriceInput(el, color) {
+    if (!el) return;
     el.style.transition = "background-color 0.3s";
     el.style.backgroundColor = color;
     setTimeout(() => { el.style.backgroundColor = ""; }, 800);
 }
 
-// === 核心計算邏輯 ===
 function calculate() {
     let globalMonthlyCounts = {};
-
     trips.forEach(t => {
         const monthKey = t.dateStr.slice(0, 7);
-        if (!globalMonthlyCounts[monthKey]) {
-            globalMonthlyCounts[monthKey] = {
-                mrt: 0, tra: 0, tymrt: 0, lrt: 0, bus: 0, coach: 0, bike: 0
-            };
-        }
+        if (!globalMonthlyCounts[monthKey]) globalMonthlyCounts[monthKey] = { mrt: 0, tra: 0, tymrt: 0, lrt: 0, bus: 0, coach: 0, bike: 0 };
         globalMonthlyCounts[monthKey][t.type]++;
     });
 
-    let totalStats = {
-        totalPaid: 0,
-        totalOriginal: 0,
-        originalSums: {}, 
-        paidSums: {},
-        counts: {} 
-    };
-
+    let totalStats = { totalPaid: 0, totalOriginal: 0, originalSums: {}, paidSums: {}, counts: {} };
     Object.keys(TRANSPORT_TYPES).forEach(k => {
-        totalStats.originalSums[k] = 0;
-        totalStats.paidSums[k] = 0;
-        totalStats.counts[k] = 0; 
+        totalStats.originalSums[k] = 0; totalStats.paidSums[k] = 0; totalStats.counts[k] = 0; 
     });
 
     let cycleMonthlyStats = {}; 
     const discount = FARE_CONFIG[currentIdentity].transferDiscount;
 
     trips.forEach(t => {
-        if (!currentSelectedCycle || t.createdAt < currentSelectedCycle.start || t.createdAt > currentSelectedCycle.end) {
-            return;
-        }
-
+        if (!currentSelectedCycle || t.createdAt < currentSelectedCycle.start || t.createdAt > currentSelectedCycle.end) return;
+        
         let op = t.isFree ? 0 : t.originalPrice; 
         let pp = t.isFree ? 0 : t.paidPrice;
-        
-        if (pp === undefined) {
-             pp = t.isTransfer ? Math.max(0, t.originalPrice - discount) : t.originalPrice;
-        }
+        if (pp === undefined) pp = t.isTransfer ? Math.max(0, t.originalPrice - discount) : t.originalPrice;
 
         totalStats.totalPaid += pp;
         totalStats.totalOriginal += op;
@@ -858,132 +776,84 @@ function calculate() {
         totalStats.counts[t.type]++; 
 
         const monthKey = t.dateStr.slice(0, 7);
-
         if (!cycleMonthlyStats[monthKey]) {
-            cycleMonthlyStats[monthKey] = {
-                originalSums: {},
-                paidSums: {}
-            };
-            Object.keys(TRANSPORT_TYPES).forEach(k => {
-                cycleMonthlyStats[monthKey].originalSums[k] = 0;
-                cycleMonthlyStats[monthKey].paidSums[k] = 0;
-            });
+            cycleMonthlyStats[monthKey] = { originalSums: {}, paidSums: {} };
+            Object.keys(TRANSPORT_TYPES).forEach(k => { cycleMonthlyStats[monthKey].originalSums[k] = 0; cycleMonthlyStats[monthKey].paidSums[k] = 0; });
         }
         cycleMonthlyStats[monthKey].originalSums[t.type] += op;
         cycleMonthlyStats[monthKey].paidSums[t.type] += pp;
     });
 
-    let r1_total_cashback = 0;
-    let r1_all_details = [];
-    let r2_total_cashback = 0;
-    let r2_all_details = [];
-
+    let r1_total_cashback = 0; let r1_all_details = [];
+    let r2_total_cashback = 0; let r2_all_details = [];
     const sortedMonths = Object.keys(cycleMonthlyStats).sort();
 
     sortedMonths.forEach(month => {
         const monthLabel = `${month.split('/')[1]}月`;
-        
         const gCounts = globalMonthlyCounts[month] || { mrt:0, tra:0, bus:0, coach:0, tymrt:0, lrt:0 };
         const cSums = cycleMonthlyStats[month];
 
         const mrtCountGlobal = gCounts.mrt;
         const mrtSumCycle = cSums.originalSums.mrt;
-        
         let mrtRate = 0;
-        if (mrtCountGlobal > 40) mrtRate = 0.15;
-        else if (mrtCountGlobal > 20) mrtRate = 0.10;
-        else if (mrtCountGlobal > 10) mrtRate = 0.05;
-
+        if (mrtCountGlobal > 40) mrtRate = 0.15; else if (mrtCountGlobal > 20) mrtRate = 0.10; else if (mrtCountGlobal > 10) mrtRate = 0.05;
         if (mrtRate > 0 && mrtSumCycle > 0) {
             const amt = Math.floor(mrtSumCycle * mrtRate);
             r1_total_cashback += amt;
-            r1_all_details.push({ 
-                text: `<span class="month-badge">${monthLabel}</span>北捷累計 ${mrtCountGlobal} 趟 (${Math.round(mrtRate*100)}%)`, 
-                amount: `-$${amt}` 
-            });
+            r1_all_details.push({ text: `<span class="month-badge">${monthLabel}</span>北捷累計 ${mrtCountGlobal} 趟 (${Math.round(mrtRate*100)}%)`, amount: `-$${amt}` });
         }
 
         const traCountGlobal = gCounts.tra;
         const traSumCycle = cSums.originalSums.tra;
-        
         let traRate = 0;
-        if (traCountGlobal > 40) traRate = 0.20;
-        else if (traCountGlobal > 20) traRate = 0.15;
-        else if (traCountGlobal > 10) traRate = 0.10;
-        
+        if (traCountGlobal > 40) traRate = 0.20; else if (traCountGlobal > 20) traRate = 0.15; else if (traCountGlobal > 10) traRate = 0.10;
         if (traRate > 0 && traSumCycle > 0) {
             const amt = Math.floor(traSumCycle * traRate);
             r1_total_cashback += amt;
-            r1_all_details.push({ 
-                text: `<span class="month-badge">${monthLabel}</span>台鐵累計 ${traCountGlobal} 趟 (${Math.round(traRate*100)}%)`, 
-                amount: `-$${amt}` 
-            });
+            r1_all_details.push({ text: `<span class="month-badge">${monthLabel}</span>台鐵累計 ${traCountGlobal} 趟 (${Math.round(traRate*100)}%)`, amount: `-$${amt}` });
         }
 
         const railCountGlobal = gCounts.mrt + gCounts.tra + gCounts.tymrt + gCounts.lrt;
         const railPaidSumCycle = cSums.paidSums.mrt + cSums.paidSums.tra + cSums.paidSums.tymrt + cSums.paidSums.lrt;
-        
         if (railCountGlobal >= 11 && railPaidSumCycle > 0) { 
             const amt = Math.floor(railPaidSumCycle * 0.02); 
             r2_total_cashback += amt;
-            r2_all_details.push({ 
-                text: `<span class="month-badge">${monthLabel}</span>軌道累計 ${railCountGlobal} 趟 (2%)`, 
-                amount: `-$${amt}` 
-            });
+            r2_all_details.push({ text: `<span class="month-badge">${monthLabel}</span>軌道累計 ${railCountGlobal} 趟 (2%)`, amount: `-$${amt}` });
         }
 
         const busCountGlobal = gCounts.bus + gCounts.coach;
         const busPaidSumCycle = cSums.paidSums.bus + cSums.paidSums.coach;
-        
         let busRate = 0;
-        if (busCountGlobal > 30) busRate = 0.30;       
-        else if (busCountGlobal >= 11) busRate = 0.15; 
-        
+        if (busCountGlobal > 30) busRate = 0.30; else if (busCountGlobal >= 11) busRate = 0.15; 
         if (busRate > 0 && busPaidSumCycle > 0) {
             const amt = Math.floor(busPaidSumCycle * busRate);
             r2_total_cashback += amt;
-            r2_all_details.push({ 
-                text: `<span class="month-badge">${monthLabel}</span>公車累計 ${busCountGlobal} 趟 (${Math.round(busRate*100)}%)`, 
-                amount: `-$${amt}` 
-            });
+            r2_all_details.push({ text: `<span class="month-badge">${monthLabel}</span>公車累計 ${busCountGlobal} 趟 (${Math.round(busRate*100)}%)`, amount: `-$${amt}` });
         }
     });
 
     return {
-        totalPaid: totalStats.totalPaid,
-        totalOriginal: totalStats.totalOriginal,
-        originalSums: totalStats.originalSums,
-        paidSums: totalStats.paidSums,
-        counts: totalStats.counts, 
-        r1: { amount: r1_total_cashback, details: r1_all_details },
-        r2: { amount: r2_total_cashback, details: r2_all_details },
+        totalPaid: totalStats.totalPaid, totalOriginal: totalStats.totalOriginal, originalSums: totalStats.originalSums, paidSums: totalStats.paidSums, counts: totalStats.counts, 
+        r1: { amount: r1_total_cashback, details: r1_all_details }, r2: { amount: r2_total_cashback, details: r2_all_details },
         finalCost: totalStats.totalPaid - r1_total_cashback - r2_total_cashback
     };
 }
 
-// === 顯示與工具 ===
 function renderUI() {
     if (!currentUser) return;
-
     const data = calculate();
     const finalVal = Math.floor(data.finalCost);
 
     els.finalCost.innerText = `$${finalVal}`;
-
     els.displayOriginalTotal.innerText = `$${Math.floor(data.totalOriginal)}`;
     els.listOriginalDetails.innerHTML = generateDetailHtml(data.originalSums, data.counts);
     els.displayPaidTotal.innerText = `$${Math.floor(data.totalPaid)}`;
     els.listPaidDetails.innerHTML = generateDetailHtml(data.paidSums, data.counts);
 
     els.rule1Discount.innerText = `-$${Math.floor(data.r1.amount)}`;
-    els.rule1Detail.innerHTML = data.r1.details.length 
-        ? data.r1.details.map(d => `<div class="rule-detail-row"><span>${d.text}</span><span>${d.amount}</span></div>`).join('') 
-        : '';
-
+    els.rule1Detail.innerHTML = data.r1.details.length ? data.r1.details.map(d => `<div class="rule-detail-row"><span>${d.text}</span><span>${d.amount}</span></div>`).join('') : '';
     els.rule2Discount.innerText = `-$${Math.floor(data.r2.amount)}`;
-    els.rule2Detail.innerHTML = data.r2.details.length 
-        ? data.r2.details.map(d => `<div class="rule-detail-row"><span>${d.text}</span><span>${d.amount}</span></div>`).join('') 
-        : '';
+    els.rule2Detail.innerHTML = data.r2.details.length ? data.r2.details.map(d => `<div class="rule-detail-row"><span>${d.text}</span><span>${d.amount}</span></div>`).join('') : '';
     
     const diff = TPASS_PRICE - finalVal;
     if (diff < 0) {
@@ -997,18 +867,10 @@ function renderUI() {
     }
 
     els.historyList.innerHTML = '';
-
     if (!currentSelectedCycle) {
-        const li = document.createElement('li');
-        li.style.background = '#fff3cd';
-        li.style.padding = '10px';
-        li.style.borderRadius = '8px';
-        li.style.textAlign = 'center';
-        li.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> 請點擊右上角設定新增第一筆月票週期';
-        els.historyList.appendChild(li);
+        els.historyList.innerHTML = '<li style="background:#fff3cd; padding:10px; border-radius:8px; text-align:center;"><i class="fa-solid fa-triangle-exclamation"></i> 請點擊右上角設定新增第一筆月票週期</li>';
         return;
     }
-    
     if (trips.length === 0) {
         els.historyList.innerHTML = '<li style="text-align:center; padding:20px; color:#aaa;">尚無行程紀錄</li>';
         return;
@@ -1016,50 +878,29 @@ function renderUI() {
 
     const dailyTotals = {};
     const discount = FARE_CONFIG[currentIdentity].transferDiscount;
-
     trips.forEach(t => {
-        if (!currentSelectedCycle || t.createdAt < currentSelectedCycle.start || t.createdAt > currentSelectedCycle.end) {
-            return;
-        }
-        
+        if (!currentSelectedCycle || t.createdAt < currentSelectedCycle.start || t.createdAt > currentSelectedCycle.end) return;
         let cost = 0;
-        if (t.isFree) cost = 0;
-        else if (t.paidPrice !== undefined) cost = t.paidPrice;
-        else cost = t.isTransfer ? Math.max(0, t.originalPrice - discount) : t.originalPrice;
-        
+        if (t.isFree) cost = 0; else if (t.paidPrice !== undefined) cost = t.paidPrice; else cost = t.isTransfer ? Math.max(0, t.originalPrice - discount) : t.originalPrice;
         if (!dailyTotals[t.dateStr]) dailyTotals[t.dateStr] = 0;
         dailyTotals[t.dateStr] += cost;
     });
 
     let lastDateStr = null;
     let currentCycleTripCount = 0; 
-
     trips.forEach(trip => {
-        if (!currentSelectedCycle || trip.createdAt < currentSelectedCycle.start || trip.createdAt > currentSelectedCycle.end) {
-            return;
-        }
-
+        if (!currentSelectedCycle || trip.createdAt < currentSelectedCycle.start || trip.createdAt > currentSelectedCycle.end) return;
         currentCycleTripCount++;
 
         if (trip.dateStr !== lastDateStr) {
             const separator = document.createElement('li');
             separator.className = 'date-separator';
-            
             const tripD = new Date(trip.dateStr);
             const today = new Date();
             const isToday = tripD.toDateString() === today.toDateString();
             const dateText = isToday ? `今天 (${trip.dateStr})` : trip.dateStr;
             const daySum = dailyTotals[trip.dateStr] || 0;
-
-            separator.innerHTML = `
-                <span style="display:flex; align-items:center; gap:8px;">
-                    <span>${dateText}</span>
-                    <span style="font-size:11px; background:rgba(0,0,0,0.08); color:#666; padding:2px 8px; border-radius:12px; font-weight:normal;">
-                        $${daySum}
-                    </span>
-                </span>
-            `;
-            
+            separator.innerHTML = `<span style="display:flex; align-items:center; gap:8px;"><span>${dateText}</span><span style="font-size:11px; background:rgba(0,0,0,0.08); color:#666; padding:2px 8px; border-radius:12px; font-weight:normal;">$${daySum}</span></span>`;
             els.historyList.appendChild(separator);
             lastDateStr = trip.dateStr;
         }
@@ -1069,85 +910,47 @@ function renderUI() {
         li.className = 'history-item';
         
         let titleDesc = tDef.name;
-        if (trip.type === 'bus') {
-            titleDesc = trip.routeId ? `${trip.routeId}路公車` : '公車';
-        } else if (trip.type === 'coach') {
+        if (trip.type === 'bus') titleDesc = trip.routeId ? `${trip.routeId}路公車` : '公車';
+        else if (trip.type === 'coach') {
             const route = trip.routeId || '';
             const path = (trip.startStation && trip.endStation) ? ` (${trip.startStation}→${trip.endStation})` : '';
             titleDesc = `客運 ${route}${path}`;
-        } else {
-            if (trip.startStation && trip.endStation) {
-                titleDesc = `${trip.startStation} <i class="fa-solid fa-arrow-right" style="font-size:10px; opacity:0.5;"></i> ${trip.endStation}`;
-            }
+        } else if (trip.startStation && trip.endStation) {
+            titleDesc = `${trip.startStation} <i class="fa-solid fa-arrow-right" style="font-size:10px; opacity:0.5;"></i> ${trip.endStation}`;
         }
 
         let priceHtml = '';
-        if (trip.isFree) {
-            priceHtml = `<div class="item-right"><div class="price-display" style="color:#e17055;"><i class="fa-solid fa-gift"></i> $0</div></div>`;
-        } else {
+        if (trip.isFree) priceHtml = `<div class="item-right"><div class="price-display" style="color:#e17055;"><i class="fa-solid fa-gift"></i> $0</div></div>`;
+        else {
             const displayPaid = trip.isTransfer ? Math.max(0, trip.originalPrice - discount) : trip.originalPrice;
-            if (trip.isTransfer) {
-                priceHtml = `<div class="item-right"><span class="price-original">$${trip.originalPrice}</span><span class="price-display">$${displayPaid}</span></div>`;
-            } else {
-                priceHtml = `<div class="item-right"><div class="price-display">$${displayPaid}</div></div>`;
-            }
+            if (trip.isTransfer) priceHtml = `<div class="item-right"><span class="price-original">$${trip.originalPrice}</span><span class="price-display">$${displayPaid}</span></div>`;
+            else priceHtml = `<div class="item-right"><div class="price-display">$${displayPaid}</div></div>`;
         }
 
         li.setAttribute('onclick', `openEditModal('${trip.id}')`);
-        
         const noteIcon = trip.note ? `<i class="fa-solid fa-note-sticky" style="color:#f1c40f; margin-left:5px;"></i>` : '';
         const transferIcon = trip.isTransfer ? '<i class="fa-solid fa-link" style="color:#27ae60; font-size:12px;"></i>' : '';
 
-        li.innerHTML = `
-            <div class="item-left">
-                <div class="t-icon ${tDef.class}">
-                    <i class="fa-solid ${getIconClass(trip.type)}"></i>
-                </div>
-                <div class="item-info">
-                    <h4>${titleDesc} ${transferIcon} ${noteIcon}</h4>
-                    <small>${tDef.name}</small>
-                </div>
-            </div>
-            ${priceHtml}
-            <div style="color:#ccc; font-size:12px; margin-left:10px;"><i class="fa-solid fa-chevron-right"></i></div>
-        `;
+        li.innerHTML = `<div class="item-left"><div class="t-icon ${tDef.class}"><i class="fa-solid ${getIconClass(trip.type)}"></i></div><div class="item-info"><h4>${titleDesc} ${transferIcon} ${noteIcon}</h4><small>${tDef.name}</small></div></div>${priceHtml}<div style="color:#ccc; font-size:12px; margin-left:10px;"><i class="fa-solid fa-chevron-right"></i></div>`;
         els.historyList.appendChild(li);
     });
 
     els.tripCount.innerText = currentCycleTripCount;
-
-    if (currentCycleTripCount === 0) {
-        els.historyList.innerHTML = '<li style="text-align:center; padding:30px; color:#aaa;">本週期尚無行程紀錄<br><small>點擊右下角 + 新增第一筆</small></li>';
-    }
+    if (currentCycleTripCount === 0) els.historyList.innerHTML = '<li style="text-align:center; padding:30px; color:#aaa;">本週期尚無行程紀錄<br><small>點擊右下角 + 新增第一筆</small></li>';
 }
 
 function generateDetailHtml(sumsObj, countsObj) {
     let html = '';
     let hasData = false;
-
     for (const [type, sum] of Object.entries(sumsObj)) {
         if (sum > 0) {
             hasData = true;
             const name = TRANSPORT_TYPES[type].name;
             const count = countsObj[type] || 0; 
-            
-            html += `
-                <div class="detail-row">
-                    <span>
-                        <i class="fa-solid fa-circle" style="font-size:8px; margin-right:5px; opacity:0.7;"></i>
-                        ${name}
-                        <small style="opacity:0.7; margin-left:5px;">(${count} 趟)</small>
-                    </span>
-                    <span>$${Math.floor(sum)}</span>
-                </div>
-            `;
+            html += `<div class="detail-row"><span><i class="fa-solid fa-circle" style="font-size:8px; margin-right:5px; opacity:0.7;"></i>${name}<small style="opacity:0.7; margin-left:5px;">(${count} 趟)</small></span><span>$${Math.floor(sum)}</span></div>`;
         }
     }
-
-    if (!hasData) {
-        return '<div style="text-align:center; opacity:0.5;">尚無資料</div>';
-    }
-    return html;
+    return hasData ? html : '<div style="text-align:center; opacity:0.5;">尚無資料</div>';
 }
 
 function getIconClass(type) {
@@ -1164,20 +967,17 @@ function getIconClass(type) {
 window.checkPWAStatus = function() {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-
     if (isIOS && !isStandalone) {
         const hasSeenGuide = localStorage.getItem('hasSeenIOSGuide');
-        if (!hasSeenGuide) {
+        if (!hasSeenGuide && document.getElementById('ios-guide')) {
             document.getElementById('ios-guide').classList.remove('hidden');
         }
     }
 }
 
 window.closeGuide = function() {
-    document.getElementById('ios-guide').classList.add('hidden');
+    if(document.getElementById('ios-guide')) document.getElementById('ios-guide').classList.add('hidden');
     localStorage.setItem('hasSeenIOSGuide', 'true');
 }
 
-window.addEventListener('load', () => {
-    setTimeout(checkPWAStatus, 2000);
-});
+window.addEventListener('load', () => { setTimeout(checkPWAStatus, 2000); });

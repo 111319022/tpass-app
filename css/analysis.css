@@ -1,0 +1,379 @@
+/* css/analysis.css */
+
+.analysis-content {
+    padding: 20px 15px;
+    padding-bottom: 80px;
+}
+
+.section-title {
+    font-size: 14px;
+    color: var(--text-sub);
+    margin: 25px 0 10px 5px;
+    font-weight: 600;
+}
+
+/* DNA 標籤區 */
+.dna-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+    color: white;
+    box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3);
+}
+
+.dna-section small {
+    display: block;
+    font-size: 10px;
+    opacity: 0.8;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.dna-tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.dna-tag {
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(5px);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* 總結卡片 */
+.summary-cards {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.s-card {
+    flex: 1;
+    background: white;
+    padding: 15px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.s-card small {
+    color: var(--text-sub);
+    font-size: 12px;
+}
+
+.s-card span {
+    display: block;
+    font-size: 22px;
+    font-weight: 800;
+    margin: 5px 0;
+    color: var(--text);
+}
+
+/* 圖表通用容器 */
+.chart-container {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+.chart-container h3 {
+    margin-bottom: 5px;
+    font-size: 16px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chart-desc {
+    font-size: 12px;
+    color: var(--text-sub);
+    margin-bottom: 15px;
+}
+
+.canvas-wrapper {
+    position: relative;
+    height: 220px;
+    width: 100%;
+}
+
+/* 運具深度網格 */
+.transport-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.t-card {
+    background: white;
+    padding: 15px;
+    border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    border-left: 4px solid #ddd;
+}
+
+.t-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.t-name {
+    font-weight: bold;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.t-count {
+    font-size: 11px;
+    background: #f0f2f5;
+    padding: 2px 6px;
+    border-radius: 8px;
+    color: #666;
+}
+
+.t-stat {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--text);
+}
+
+.t-stat sub {
+    font-size: 10px;
+    color: #999;
+    font-weight: normal;
+}
+
+/* 路線排行榜 */
+.route-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.route-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-radius: 10px;
+    background: #f8f9fa;
+    transition: transform 0.2s;
+}
+
+.route-rank {
+    width: 24px;
+    height: 24px;
+    background: #e0e0e0;
+    color: #555;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.route-rank.top-1 { background: #FFD700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+.route-rank.top-2 { background: #C0C0C0; color: #fff; }
+.route-rank.top-3 { background: #CD7F32; color: #fff; }
+
+.route-info {
+    flex: 1;
+}
+
+.route-name {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--text);
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.route-detail {
+    font-size: 11px;
+    color: var(--text-sub);
+}
+
+.route-total {
+    text-align: right;
+    font-weight: bold;
+    color: var(--primary);
+    font-size: 14px;
+}
+
+.radar-legend {
+    text-align: center;
+    margin-top: 10px;
+    color: var(--text-sub);
+}
+
+/* 獎章說明列表樣式 */
+.badge-category {
+    color: var(--text);
+    margin-top: 20px;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 5px;
+    font-size: 15px;
+}
+
+.badge-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.badge-item .dna-tag {
+    font-size: 12px;
+    padding: 4px 8px;
+    min-width: 100px; /* 固定寬度讓排版整齊 */
+    justify-content: center;
+}
+
+.badge-item small {
+    color: var(--text-sub);
+    font-size: 13px;
+}
+/* 週期選擇器樣式 */
+.period-filter {
+    background: white;
+    padding: 10px 15px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    border: 1px solid #eee;
+}
+
+.period-filter i {
+    color: var(--primary);
+}
+
+.period-filter select {
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    font-weight: bold;
+    color: var(--text);
+    outline: none;
+    cursor: pointer;
+    text-align: center;
+    width: 100%;
+}
+
+/* 運具深度網格 - 新版卡片樣式 */
+.t-card {
+    background: white;
+    padding: 15px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05); /* 陰影加深一點點 */
+    border-left: 5px solid #ddd; /* 邊框加粗 */
+    display: flex;
+    flex-direction: column;
+}
+
+.t-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.t-name {
+    font-weight: 800;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.t-count {
+    font-size: 11px;
+    background: #f0f2f5;
+    padding: 3px 8px;
+    border-radius: 10px;
+    color: #666;
+    font-weight: 600;
+}
+
+.t-stat-main {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 8px;
+}
+
+.t-stat-main small {
+    font-size: 11px;
+    color: #999;
+    font-weight: normal;
+    margin-left: 2px;
+}
+
+/* 進度條樣式 */
+.t-progress-bg {
+    width: 100%;
+    height: 6px;
+    background: #eee;
+    border-radius: 3px;
+    margin-bottom: 4px;
+    overflow: hidden;
+}
+
+.t-progress-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease-out;
+}
+
+/* 底部詳細數據網格 */
+.t-detail-grid {
+    display: flex;
+    border-top: 1px dashed #eee;
+    padding-top: 8px;
+    margin-top: 5px;
+}
+
+.t-detail-grid div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.t-detail-grid div:last-child {
+    align-items: flex-end; /* 右邊的靠右對齊 */
+}
+
+.t-detail-grid span {
+    font-size: 10px;
+    color: #999;
+    margin-bottom: 2px;
+}
+
+.t-detail-grid b {
+    font-size: 13px;
+    color: #555;
+}
