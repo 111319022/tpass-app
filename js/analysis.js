@@ -279,7 +279,7 @@ function renderSavingsAndRewards(trips) {
                 cycleMonthlyStats[monthKey].paidSums[k] = 0;
             });
         }
-        cycleMonthlyStats[monthKey].originalSums[t.type] += op;
+        cycleMonthlyStats[monthKey].originalSums[t.type] += (t.isFree ? 0 : op);
         cycleMonthlyStats[monthKey].paidSums[t.type] += pp;
     });
 
