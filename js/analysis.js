@@ -463,49 +463,117 @@ function renderRouteRanking(trips) {
     });
 }
 
-// === 6. 圖表 (不變) ===
+// === 6. 圖表 (修正日期排序錯亂問題) ===
 function renderROIChart(trips) {
     const ctx = document.getElementById('roiChart').getContext('2d');
-    if (chartInstances.roi) chartInstances.roi.destroy();
+    
+    if (chartInstances.roi) {
+        chartInstances.roi.destroy();
+    }
+
+    // 使用 YYYY/MM/DD 作為 Key，確保跨年時排序正確
     const dailyData = {};
     let minTime, maxTime;
-    if (currentSelectedCycle) { minTime = currentSelectedCycle.start; maxTime = currentSelectedCycle.end; } 
-    else { const times = trips.map(t => t.createdAt); minTime = Math.min(...times); maxTime = Math.max(...times); }
+
+    // 1. 決定時間範圍
+    if (currentSelectedCycle) {
+        minTime = currentSelectedCycle.start;
+        maxTime = currentSelectedCycle.end;
+    } else {
+        if (trips.length > 0) {
+            const times = trips.map(t => t.createdAt);
+            minTime = Math.min(...times);
+            maxTime = Math.max(...times);
+        } else {
+            // 無資料時預設顯示本月
+            const now = new Date();
+            minTime = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+            maxTime = now.getTime();
+        }
+    }
+
+    // 2. 初始化每一天 (填入 0)
     for (let d = minTime; d <= maxTime; d += 86400000) {
         const dateObj = new Date(d);
+        const yyyy = dateObj.getFullYear();
         const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
         const dd = String(dateObj.getDate()).padStart(2, '0');
-        const key = `${mm}/${dd}`;
+        
+        // [關鍵修正] Key 包含年份：YYYY/MM/DD
+        const key = `${yyyy}/${mm}/${dd}`;
         dailyData[key] = 0;
     }
+
+    // 3. 填入數據
     trips.forEach(t => {
-        const d = new Date(t.dateStr); 
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        const key = `${mm}/${dd}`;
-        if (dailyData[key] !== undefined) dailyData[key] += (t.originalPrice || 0);
+        // t.dateStr 格式通常為 YYYY/MM/DD，直接匹配即可
+        // 如果格式不一致，這裡會自動忽略，確保數據安全
+        if (dailyData[t.dateStr] !== undefined) {
+            dailyData[t.dateStr] += (t.originalPrice || 0);
+        }
     });
-    const labels = Object.keys(dailyData).sort(); 
+
+    // 4. 排序 Key (因為有年份，所以 2025/12 會排在 2026/01 前面)
+    const sortedKeys = Object.keys(dailyData).sort();
+    
+    // 5. 產生圖表用的 Labels (這時候再把年份切掉，只顯示 MM/DD)
+    const labels = sortedKeys.map(k => k.slice(5)); // 切掉前5字元 (YYYY/)
+    
+    // 6. 計算累積金額
     const cumulativeData = [];
     let sum = 0;
-    labels.forEach(dateKey => { sum += dailyData[dateKey]; cumulativeData.push(sum); });
+    sortedKeys.forEach(key => {
+        sum += dailyData[key];
+        cumulativeData.push(sum);
+    });
+
     const thresholdData = new Array(labels.length).fill(1200);
+
     chartInstances.roi = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
             datasets: [
-                { label: '累積價值', data: cumulativeData, borderColor: '#6c5ce7', backgroundColor: 'rgba(108, 92, 231, 0.1)', fill: true, tension: 0.4, pointRadius: 2 },
-                { label: '回本門檻 ($1200)', data: thresholdData, borderColor: '#ff7675', borderDash: [5, 5], pointRadius: 0, borderWidth: 2 }
+                {
+                    label: '累積價值',
+                    data: cumulativeData,
+                    borderColor: '#6c5ce7',
+                    backgroundColor: 'rgba(108, 92, 231, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 2
+                },
+                {
+                    label: '回本門檻 ($1200)',
+                    data: thresholdData,
+                    borderColor: '#ff7675',
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    borderWidth: 2
+                }
             ]
         },
         options: {
-            responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-            plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': $' + context.raw; } } } },
-            scales: { y: { beginAtZero: true } }
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': $' + context.raw;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
         }
     });
 }
+
 
 function renderRadarChart(trips) {
     const ctx = document.getElementById('radarChart').getContext('2d');
