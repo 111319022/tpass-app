@@ -392,10 +392,35 @@
 
                 <div class="form-group hidden" id="edit-group-stations">
                     <label>起訖站點</label>
-                    <div class="station-inputs">
-                        <input type="text" id="editStart" placeholder="起點">
-                        <i class="fa-solid fa-arrow-right station-arrow"></i>
-                        <input type="text" id="editEnd" placeholder="終點">
+                    
+                    <div class="station-row">
+                        <div class="station-label-small">起點</div>
+                        
+                        <input type="text" id="editStartStationInput" class="station-text-input" placeholder="輸入起點" list="mrt-station-list">
+                        
+                        <div id="edit-mrt-selector-start" class="mrt-selector-group hidden">
+                            <select id="editStartLine" class="line-select"></select>
+                            <select id="editStartStation" class="station-select">
+                                <option value="">選擇車站</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="text-align:center; color:#ccc; margin: 4px 0;">
+                        <i class="fa-solid fa-arrow-down"></i>
+                    </div>
+
+                    <div class="station-row">
+                        <div class="station-label-small">終點</div>
+                        
+                        <input type="text" id="editEndStationInput" class="station-text-input" placeholder="輸入終點" list="mrt-station-list">
+                        
+                        <div id="edit-mrt-selector-end" class="mrt-selector-group hidden">
+                            <select id="editEndLine" class="line-select"></select>
+                            <select id="editEndStation" class="station-select">
+                                <option value="">選擇車站</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
