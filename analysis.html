@@ -63,6 +63,10 @@
             </div>
 
             <h3 class="section-title"><i class="fa-solid fa-layer-group"></i> 運具深度透視</h3>
+            
+            <div id="savingsGrid" class="savings-grid">
+                </div>
+            <div class="grid-separator"></div>
             <div id="transportGrid" class="transport-grid">
                 </div>
 
@@ -91,7 +95,6 @@
                 <h3><i class="fa-solid fa-medal"></i> 獎章圖鑑</h3>
                 <button class="close-btn" onclick="toggleDnaModal()">&times;</button>
             </div>
-            
             <div class="badge-list">
                 <h4 class="badge-category">主力運具</h4>
                 <div class="badge-item"><span class="dna-tag" style="border:1px solid #0070BD">🚇 北捷成癮者</span> <small>搭乘捷運次數最多</small></div>
@@ -108,14 +111,12 @@
                 <h4 class="badge-category">特殊成就</h4>
                 <div class="badge-item"><span class="dna-tag" style="border:1px solid #27ae60">💰 回本大師</span> <small>累積票價總值超過 $2000</small></div>
             </div>
-
             <button onclick="toggleDnaModal()" class="submit-btn" style="margin-top:20px;">了解</button>
         </div>
     </div>
 
     <script type="module" src="/js/analysis.js"></script>
     <script>
-        // Modal 切換邏輯
         window.toggleDnaModal = function() {
             const m = document.getElementById('dnaModal');
             if(m.classList.contains('hidden')) m.classList.remove('hidden');

@@ -12,6 +12,51 @@
     font-weight: 600;
 }
 
+/* [新增] 優惠分析網格 */
+.savings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.saving-card {
+    background: white;
+    padding: 12px 15px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border-left: 4px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.saving-card h4 {
+    margin: 0 0 5px 0;
+    font-size: 13px;
+    color: var(--text-sub);
+    font-weight: normal;
+}
+
+.saving-card .amount {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text);
+}
+
+.saving-card .detail {
+    font-size: 10px;
+    color: #999;
+    margin-top: 4px;
+    line-height: 1.3;
+}
+
+/* 顏色定義 */
+.saving-card.transfer { border-left-color: #f39c12; }
+.saving-card.free { border-left-color: #e74c3c; }
+.saving-card.r1 { border-left-color: #9b59b6; }
+.saving-card.r2 { border-left-color: #3498db; }
+
 /* DNA 標籤區 */
 .dna-section {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -66,16 +111,16 @@
 }
 
 .s-card small {
+    display: block;
     color: var(--text-sub);
     font-size: 12px;
+    margin-bottom: 5px;
 }
 
 .s-card span {
-    display: block;
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 800;
-    margin: 5px 0;
-    color: var(--text);
+    color: var(--primary);
 }
 
 /* 圖表通用容器 */
@@ -116,47 +161,98 @@
     margin-bottom: 20px;
 }
 
+/* [修改] 運具卡片樣式 - 更豐富 */
 .t-card {
     background: white;
     padding: 15px;
     border-radius: 16px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-    border-left: 4px solid #ddd;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border-left: 5px solid #ddd;
+    display: flex;
+    flex-direction: column;
 }
 
 .t-card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .t-name {
-    font-weight: bold;
-    font-size: 14px;
+    font-weight: 800;
+    font-size: 15px;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
 }
 
 .t-count {
     font-size: 11px;
     background: #f0f2f5;
-    padding: 2px 6px;
-    border-radius: 8px;
+    padding: 3px 8px;
+    border-radius: 10px;
     color: #666;
+    font-weight: 600;
 }
 
-.t-stat {
-    font-size: 18px;
-    font-weight: bold;
+.t-stat-main {
+    font-size: 20px;
+    font-weight: 800;
     color: var(--text);
+    margin-bottom: 8px;
 }
 
-.t-stat sub {
-    font-size: 10px;
+.t-stat-main small {
+    font-size: 11px;
     color: #999;
     font-weight: normal;
+    margin-left: 2px;
+}
+
+/* 進度條樣式 */
+.t-progress-bg {
+    width: 100%;
+    height: 6px;
+    background: #eee;
+    border-radius: 3px;
+    margin-bottom: 4px;
+    overflow: hidden;
+}
+
+.t-progress-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease-out;
+}
+
+/* 底部詳細數據網格 */
+.t-detail-grid {
+    display: flex;
+    border-top: 1px dashed #eee;
+    padding-top: 8px;
+    margin-top: 5px;
+}
+
+.t-detail-grid div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.t-detail-grid div:last-child {
+    align-items: flex-end;
+}
+
+.t-detail-grid span {
+    font-size: 10px;
+    color: #999;
+    margin-bottom: 2px;
+}
+
+.t-detail-grid b {
+    font-size: 13px;
+    color: #555;
 }
 
 /* 路線排行榜 */
@@ -246,7 +342,7 @@
 .badge-item .dna-tag {
     font-size: 12px;
     padding: 4px 8px;
-    min-width: 100px; /* 固定寬度讓排版整齊 */
+    min-width: 100px;
     justify-content: center;
 }
 
@@ -254,6 +350,7 @@
     color: var(--text-sub);
     font-size: 13px;
 }
+
 /* 週期選擇器樣式 */
 .period-filter {
     background: white;
@@ -284,96 +381,47 @@
     width: 100%;
 }
 
-/* 運具深度網格 - 新版卡片樣式 */
-.t-card {
-    background: white;
-    padding: 15px;
-    border-radius: 16px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05); /* 陰影加深一點點 */
-    border-left: 5px solid #ddd; /* 邊框加粗 */
-    display: flex;
-    flex-direction: column;
-}
+/* css/analysis.css */
 
-.t-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-}
-
-.t-name {
-    font-weight: 800;
-    font-size: 15px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.t-count {
-    font-size: 11px;
-    background: #f0f2f5;
-    padding: 3px 8px;
-    border-radius: 10px;
-    color: #666;
-    font-weight: 600;
-}
-
-.t-stat-main {
-    font-size: 20px;
-    font-weight: 800;
-    color: var(--text);
-    margin-bottom: 8px;
-}
-
-.t-stat-main small {
-    font-size: 11px;
-    color: #999;
-    font-weight: normal;
-    margin-left: 2px;
-}
-
-/* 進度條樣式 */
-.t-progress-bg {
+/* [新增] 分隔線樣式 */
+.grid-separator {
     width: 100%;
-    height: 6px;
-    background: #eee;
-    border-radius: 3px;
-    margin-bottom: 4px;
-    overflow: hidden;
+    margin: 20px 0;
+    border-bottom: 2px dashed #eee; /* 虛線風格 */
+    position: relative;
 }
 
-.t-progress-bar {
-    height: 100%;
-    border-radius: 3px;
-    transition: width 0.5s ease-out;
-}
-
-/* 底部詳細數據網格 */
-.t-detail-grid {
-    display: flex;
-    border-top: 1px dashed #eee;
-    padding-top: 8px;
-    margin-top: 5px;
-}
-
-.t-detail-grid div {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.t-detail-grid div:last-child {
-    align-items: flex-end; /* 右邊的靠右對齊 */
-}
-
-.t-detail-grid span {
+/* 為了美觀，可以在線中間加個小圖示或文字 (選用) */
+.grid-separator::after {
+    content: "▼";
+    position: absolute;
+    left: 50%;
+    top: -10px;
+    transform: translateX(-50%);
+    background: #f5f7fa; /* 與背景色相同 */
+    padding: 0 10px;
+    color: #ccc;
     font-size: 10px;
-    color: #999;
-    margin-bottom: 2px;
 }
 
-.t-detail-grid b {
-    font-size: 13px;
-    color: #555;
+/* [修改] 優惠卡片顏色定義 - 改用不與運具衝突的「財務色系」 */
+
+/* 轉乘 (銀灰色 - 代表省下的零錢) */
+.saving-card.transfer { 
+    border-left-color: #7f8c8d; 
+}
+
+/* 免單 (緋紅色 - 醒目提示免費) */
+.saving-card.free { 
+    border-left-color: #ff7675; 
+}
+
+/* R1 常客回饋 (金色 - 代表獎勵) */
+.saving-card.r1 { 
+    border-left-color: #f1c40f; 
+}
+
+/* R2 TPASS 回饋 (青綠色 - 代表加碼/綠色運輸) */
+.saving-card.r2 { 
+    border-left-color: #038369; 
 }
