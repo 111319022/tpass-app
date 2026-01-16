@@ -2,7 +2,7 @@
 
 // [重要] 每次發布新版時，請務必修改這裡的版本號 (例如: v3.0 -> v3.1)
 // 這樣使用者的手機才會知道有新檔案要下載
-const CACHE_NAME = 'tpass-app-v3.1'; 
+const CACHE_NAME = 'tpass-app-v3.2'; 
 
 // 完整的快取清單
 const ASSETS_TO_CACHE = [
