@@ -425,3 +425,128 @@
 .saving-card.r2 { 
     border-left-color: #038369; 
 }
+
+/* css/analysis.css 新增樣式 */
+
+/* [新增 1] 極限紀錄卡片 */
+.records-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.record-card {
+    background: white;
+    padding: 10px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.rec-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 5px;
+    font-size: 14px;
+}
+
+.rec-info small {
+    display: block;
+    color: #999;
+    font-size: 10px;
+    margin-bottom: 2px;
+}
+
+.rec-val {
+    font-weight: 800;
+    font-size: 14px;
+    color: var(--text);
+}
+
+.rec-sub {
+    font-size: 9px;
+    color: #bbb;
+}
+
+/* [新增 2] 通勤熱力圖 */
+.heatmap-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(25px, 1fr));
+    gap: 4px;
+    margin-top: 10px;
+    padding: 5px;
+}
+
+.heatmap-cell {
+    aspect-ratio: 1;
+    border-radius: 4px;
+    background-color: #ebedf0; /* Level 0 */
+    transition: transform 0.1s;
+    cursor: default;
+}
+
+.heatmap-cell:hover {
+    transform: scale(1.2);
+    border: 1px solid #999;
+}
+
+/* GitHub 風格綠色 */
+.heatmap-cell.level-1 { background-color: #9be9a8; }
+.heatmap-cell.level-2 { background-color: #40c463; }
+.heatmap-cell.level-3 { background-color: #30a14e; }
+.heatmap-cell.level-4 { background-color: #216e39; }
+
+/* [新增 3] 平日 vs 假日 */
+.week-stat-bar {
+    height: 24px;
+    background: #eee;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    margin-bottom: 12px;
+}
+
+.ws-segment {
+    height: 100%;
+    transition: width 0.8s ease-in-out;
+}
+
+.ws-segment.weekday { background: #3498db; } /* 藍色 */
+.ws-segment.weekend { background: #e74c3c; } /* 紅色 */
+
+.week-stat-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text);
+}
+
+.ws-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.dot.weekday { background: #3498db; }
+.dot.weekend { background: #e74c3c; }
+
+.week-insight {
+    margin-top: 10px;
+    background: #f8f9fa;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    color: var(--text-sub);
+    text-align: center;
+    border: 1px dashed #ddd;
+}
