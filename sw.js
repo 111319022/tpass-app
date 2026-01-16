@@ -1,7 +1,7 @@
 // sw.js
 
 // [重要] 每次發布新版時，請修改這裡的版本號 (例如: v1 -> v2)
-const CACHE_NAME = 'tpass-app-v2.6';
+const CACHE_NAME = 'tpass-app-v2.7';
 
 const ASSETS_TO_CACHE = [
     './',
