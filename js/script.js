@@ -39,7 +39,7 @@ const TRANSPORT_TYPES = {
 // === DOM 元素對應 ===
 const els = {
     finalCost: document.getElementById('finalCost'),
-    analysisBtn: document.getElementById('analysisBtn'), // 新增：分析按鈕
+    analysisBtn: document.getElementById('analysisBtn'),
     adminBtn: document.getElementById('adminBtn'),
 
     displayOriginalTotal: document.getElementById('displayOriginalTotal'),
@@ -89,7 +89,6 @@ const els = {
     editNote: document.getElementById('editNote'),
     editRouteId: document.getElementById('editRouteId'),
     
-    // 編輯視窗動態抓取 (部分可能為 null，會在 logic 中檢查)
     editGroupRoute: document.getElementById('edit-group-route'),
     editGroupStations: document.getElementById('edit-group-stations'),
     editTransferLabel: document.getElementById('editTransferLabel'),
@@ -127,7 +126,6 @@ initAuthListener(async (user) => {
     }
 });
 
-// [修復] 綁定分析按鈕事件 (增加 null check 防止報錯)
 if (els.analysisBtn) {
     els.analysisBtn.addEventListener('click', () => {
         window.location.href = "analysis.html";
@@ -307,7 +305,7 @@ function initStationSelectors() {
     const lineSelects = ['startLine', 'endLine', 'editStartLine', 'editEndLine'];
     lineSelects.forEach(id => {
         const el = document.getElementById(id);
-        if (!el) return; // 沒找到元素就跳過 (防呆)
+        if (!el) return; 
         if (el.options.length > 1) return;
 
         el.innerHTML = '<option value="" disabled selected>選擇路線</option>';
@@ -504,7 +502,7 @@ els.form.addEventListener('submit', async (e) => {
     }
 });
 
-// === [修改] 編輯視窗邏輯 (相容舊版 HTML) ===
+// === 編輯視窗邏輯 ===
 window.openEditModal = function(tripId) {
     const trip = trips.find(t => t.id === tripId);
     if (!trip) return;
@@ -523,11 +521,9 @@ window.openEditModal = function(tripId) {
 
     updateEditFormFields(trip.type);
 
-    // 回填車站資料 (偵測是否為新版介面)
     if (trip.type === 'mrt') {
         const startLineSelect = document.getElementById('editStartLine');
         if (startLineSelect) {
-            // [新版] 雙層選單
             const startLineCode = findLineCodeByStation(trip.startStation);
             const endLineCode = findLineCodeByStation(trip.endStation);
             
@@ -540,22 +536,18 @@ window.openEditModal = function(tripId) {
             updateStationList(endLineCode, 'editEndStation'); 
             document.getElementById('editEndStation').value = trip.endStation;
         } else {
-            // [舊版] 簡單文字框
             const oldStart = document.getElementById('editStart');
             const oldEnd = document.getElementById('editEnd');
             if(oldStart) oldStart.value = trip.startStation || '';
             if(oldEnd) oldEnd.value = trip.endStation || '';
         }
     } else {
-        // 非捷運
         const es = document.getElementById('editStartStationInput');
         const ee = document.getElementById('editEndStationInput');
         if(es && ee) {
-            // 新版
             es.value = trip.startStation || '';
             ee.value = trip.endStation || '';
         } else {
-            // 舊版
             const oldStart = document.getElementById('editStart');
             const oldEnd = document.getElementById('editEnd');
             if(oldStart) oldStart.value = trip.startStation || '';
@@ -591,7 +583,6 @@ function updateEditFormFields(type) {
         else els.editGroupStations.classList.remove('hidden');
     }
 
-    // 只有在新版介面存在時才執行切換
     if (mrtStart && textStart) {
         if (type === 'mrt') {
             mrtStart.classList.remove('hidden');
@@ -607,7 +598,6 @@ function updateEditFormFields(type) {
     }
 }
 
-// 編輯儲存
 els.editForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!currentUser) return;
@@ -627,7 +617,6 @@ els.editForm.addEventListener('submit', async (e) => {
     let endStation = '';
     const routeId = (els.editGroupRoute && !els.editGroupRoute.classList.contains('hidden')) ? els.editRouteId.value.trim() : '';
 
-    // 取值 (相容新舊版)
     const newStart = document.getElementById('editStartStation');
     const oldStart = document.getElementById('editStart');
     const newTextInput = document.getElementById('editStartStationInput');
@@ -746,6 +735,7 @@ function flashPriceInput(el, color) {
     setTimeout(() => { el.style.backgroundColor = ""; }, 800);
 }
 
+// === [修正] 計算函式：統一原始票價邏輯 ===
 function calculate() {
     let globalMonthlyCounts = {};
     trips.forEach(t => {
@@ -765,13 +755,19 @@ function calculate() {
     trips.forEach(t => {
         if (!currentSelectedCycle || t.createdAt < currentSelectedCycle.start || t.createdAt > currentSelectedCycle.end) return;
         
-        let op = t.isFree ? 0 : t.originalPrice; 
+        // [修正] 原始金額變數分離
+        // rawOriginal: 包含免費行程的原始票價 (用於顯示「原始票價總額」)
+        // rebateOriginal: 排除免費行程 (用於計算 R1 回饋金)
+        let rawOriginal = t.originalPrice || 0; 
+        let rebateOriginal = t.isFree ? 0 : rawOriginal; 
+
         let pp = t.isFree ? 0 : t.paidPrice;
         if (pp === undefined) pp = t.isTransfer ? Math.max(0, t.originalPrice - discount) : t.originalPrice;
 
         totalStats.totalPaid += pp;
-        totalStats.totalOriginal += op;
-        totalStats.originalSums[t.type] += op;
+        totalStats.totalOriginal += rawOriginal; // 使用 rawOriginal (含免費)
+        
+        totalStats.originalSums[t.type] += rawOriginal; // 使用 rawOriginal (含免費)
         totalStats.paidSums[t.type] += pp;
         totalStats.counts[t.type]++; 
 
@@ -780,7 +776,9 @@ function calculate() {
             cycleMonthlyStats[monthKey] = { originalSums: {}, paidSums: {} };
             Object.keys(TRANSPORT_TYPES).forEach(k => { cycleMonthlyStats[monthKey].originalSums[k] = 0; cycleMonthlyStats[monthKey].paidSums[k] = 0; });
         }
-        cycleMonthlyStats[monthKey].originalSums[t.type] += op;
+        
+        // [重要] 回饋計算基礎必須使用 rebateOriginal (排除免費)
+        cycleMonthlyStats[monthKey].originalSums[t.type] += rebateOriginal; 
         cycleMonthlyStats[monthKey].paidSums[t.type] += pp;
     });
 
