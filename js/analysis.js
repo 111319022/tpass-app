@@ -314,7 +314,7 @@ function renderSummary(trips) {
     }
 }
 
-// === 2. DNA 獎章 ===
+// === 2. DNA 獎章 (修正後) ===
 function renderDNA(trips, financeData) {
     const container = document.getElementById('dnaTags');
     if (!container) return;
@@ -331,22 +331,28 @@ function renderDNA(trips, financeData) {
     });
 
     const totalTrips = trips.length;
-    const topMode = Object.keys(counts).reduce((a, b) => (counts[a] || 0) > (counts[b] || 0) ? a : b);
+    // 避免沒有行程時 reduce 出錯
+    const topMode = Object.keys(counts).length > 0 
+        ? Object.keys(counts).reduce((a, b) => (counts[a] || 0) > (counts[b] || 0) ? a : b)
+        : '';
+        
     const tags = [];
 
     if (topMode === 'mrt') tags.push({ text: '🚇 北捷成癮者', color: '#00d2ff' });
     else if (topMode === 'bus') tags.push({ text: '🚌 公車達人', color: '#2ecc71' });
     else if (topMode === 'tra') tags.push({ text: '🚆 鐵道迷', color: '#bdc3c7' });
     else if (topMode === 'tymrt') tags.push({ text: '✈️ 國門飛人', color: '#9b59b6' });
-    else tags.push({ text: '🚀 混合動力', color: '#f1c40f' });
+    else if (topMode) tags.push({ text: '🚀 混合動力', color: '#f1c40f' });
 
     if (totalTrips > 100) tags.push({ text: '🔥 狂熱通勤', color: '#ff7675' });
     else if (totalTrips > 50) tags.push({ text: '📅 規律生活', color: '#55efc4' });
 
-    const netValue = financeData.totalOriginal - (financeData.totalPaid - financeData.r1_total - financeData.r2_total);
+    // [修正重點]：不再計算「省下多少錢」，而是計算「超過月票門檻多少錢」
+    // 邏輯：原始總價值 - 1200 (月票成本) = 倒賺金額
+    const profit = financeData.totalOriginal - 1200;
 
-    if (netValue > 1200) tags.push({ text: '💸 倒賺省長', color: '#ffeaa7' }); 
-    else if (netValue > 1) tags.push({ text: '💰 回本大師', color: '#55efc4' });
+    if (profit > 1200) tags.push({ text: '💸 倒賺省長', color: '#ffeaa7' }); 
+    else if (profit > 0) tags.push({ text: '💰 回本大師', color: '#55efc4' });
 
     const earlyCount = hours.filter(h => h < 8).length;
     const lateCount = hours.filter(h => h > 21).length;
