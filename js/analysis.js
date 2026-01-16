@@ -2,7 +2,7 @@ import { db } from "./firebase-config.js";
 import { initAuthListener } from "./auth.js";
 import { collection, query, orderBy, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 定義票價配置
+// === 定義票價與設定 ===
 const FARE_CONFIG = {
     adult: { busBase: 15, transferDiscount: 8 },
     student: { busBase: 12, transferDiscount: 6 }
@@ -18,17 +18,25 @@ const LABELS = {
     tymrt: '機捷', lrt: '輕軌', bike: 'Ubike'
 };
 
+// 確保有完整的 Transport Types Key (用於遍歷)
+const TRANSPORT_TYPES = {
+    mrt: 'mrt', bus: 'bus', coach: 'coach',
+    tra: 'tra', tymrt: 'tymrt', lrt: 'lrt', bike: 'bike'
+};
+
 const ICONS = {
     mrt: 'fa-train-subway', bus: 'fa-bus', coach: 'fa-bus-simple',
     tra: 'fa-train', tymrt: 'fa-plane-departure', lrt: 'fa-train-tram', bike: 'fa-bicycle'
 };
 
+// === 全域變數 ===
 let chartInstances = {};
 let allTrips = []; 
 let cycles = [];   
 let currentSelectedCycle = null; 
 let currentIdentity = 'adult'; 
 
+// === 初始化 ===
 initAuthListener(async (user) => {
     if (!user) { window.location.href = "index.html"; return; }
     await loadUserSettings(user.uid);
@@ -36,6 +44,7 @@ initAuthListener(async (user) => {
     renderAnalysis();
 });
 
+// === 讀取設定與資料 ===
 async function loadUserSettings(uid) {
     try {
         const userDoc = await getDoc(doc(db, "users", uid));
@@ -81,23 +90,35 @@ function renderCycleSelector() {
     });
 }
 
-// === 核心：共用財務計算函式 (集中管理 R1/R2 與金額邏輯) ===
+// === 核心：財務計算函式 (整合詳細清單邏輯) ===
 function calculateFinancials(trips) {
     let totalOriginal = 0;
     let totalPaid = 0;
     let freeSavings = 0;
     let transferSavings = 0;
+    
+    // 用於計算分類加總 (Actual Paid Breakdown)
+    let typePaidSums = {};
+    let typeCounts = {};
+    Object.keys(TRANSPORT_TYPES).forEach(k => { typePaidSums[k] = 0; typeCounts[k] = 0; });
+
     let cycleMonthlyStats = {}; 
     const discount = FARE_CONFIG[currentIdentity].transferDiscount;
 
+    // 1. 遍歷目前週期的行程
     trips.forEach(t => {
         const op = t.originalPrice || 0;
         let pp = t.isFree ? 0 : t.paidPrice;
-        // 若無 paidPrice 資料則手動補算
         if (pp === undefined) pp = t.isTransfer ? Math.max(0, op - discount) : op;
 
         totalOriginal += op;
         totalPaid += pp;
+
+        // 分類統計
+        if (typePaidSums[t.type] !== undefined) {
+            typePaidSums[t.type] += pp;
+            typeCounts[t.type]++;
+        }
 
         if (t.isFree) freeSavings += op;
         else if (t.isTransfer) transferSavings += (op - pp);
@@ -110,12 +131,11 @@ function calculateFinancials(trips) {
                 cycleMonthlyStats[monthKey].paidSums[k] = 0;
             });
         }
-        // R1 計算基數：免費行程不計入
         cycleMonthlyStats[monthKey].originalSums[t.type] += (t.isFree ? 0 : op);
         cycleMonthlyStats[monthKey].paidSums[t.type] += pp;
     });
 
-    // 計算 R1/R2 (需要用到 Global 次數來決定 % 數)
+    // 2. 計算全域月份次數 (用於決定回饋 %)
     let globalMonthlyCounts = {};
     allTrips.forEach(t => {
         const monthKey = t.dateStr.slice(0, 7);
@@ -123,33 +143,78 @@ function calculateFinancials(trips) {
         globalMonthlyCounts[monthKey][t.type]++;
     });
 
+    // 3. 計算 R1/R2 詳細數據
     let r1_mrt_total = 0, r1_tra_total = 0, r2_rail_total = 0, r2_bus_total = 0;
+    let r1_details = [];
+    let r2_details = [];
 
-    Object.keys(cycleMonthlyStats).forEach(month => {
+    // 為了讓月份排序正確
+    const sortedMonths = Object.keys(cycleMonthlyStats).sort();
+
+    sortedMonths.forEach(month => {
+        const monthLabel = `${month.split('/')[1]}月`;
         const gCounts = globalMonthlyCounts[month] || { mrt:0, tra:0, bus:0, coach:0, tymrt:0, lrt:0 };
         const cSums = cycleMonthlyStats[month];
 
-        // R1: MRT
-        const mrtCount = gCounts.mrt; let mrtRate = 0;
+        // --- R1 計算 ---
+        // MRT
+        const mrtCount = gCounts.mrt;
+        const mrtSum = cSums.originalSums.mrt;
+        let mrtRate = 0;
         if (mrtCount > 40) mrtRate = 0.15; else if (mrtCount > 20) mrtRate = 0.10; else if (mrtCount > 10) mrtRate = 0.05;
-        r1_mrt_total += Math.floor(cSums.originalSums.mrt * mrtRate);
+        const mrtRebate = Math.floor(mrtSum * mrtRate);
+        r1_mrt_total += mrtRebate;
+        if (mrtRebate > 0) {
+            r1_details.push({ text: `<span class="m-badge">${monthLabel}</span> 北捷累計 ${mrtCount} 趟 (${Math.round(mrtRate*100)}%)`, amount: `-$${mrtRebate}` });
+        }
 
-        // R1: TRA
-        const traCount = gCounts.tra; let traRate = 0;
+        // TRA
+        const traCount = gCounts.tra;
+        const traSum = cSums.originalSums.tra;
+        let traRate = 0;
         if (traCount > 40) traRate = 0.20; else if (traCount > 20) traRate = 0.15; else if (traCount > 10) traRate = 0.10;
-        r1_tra_total += Math.floor(cSums.originalSums.tra * traRate);
+        const traRebate = Math.floor(traSum * traRate);
+        r1_tra_total += traRebate;
+        if (traRebate > 0) {
+            r1_details.push({ text: `<span class="m-badge">${monthLabel}</span> 台鐵累計 ${traCount} 趟 (${Math.round(traRate*100)}%)`, amount: `-$${traRebate}` });
+        }
 
-        // R2: Rail
+        // --- R2 計算 ---
+        // Rail (MRT+TRA+TYMRT+LRT)
         const railCount = gCounts.mrt + gCounts.tra + gCounts.tymrt + gCounts.lrt;
         const railPaidSum = cSums.paidSums.mrt + cSums.paidSums.tra + cSums.paidSums.tymrt + cSums.paidSums.lrt;
-        if (railCount >= 11) r2_rail_total += Math.floor(railPaidSum * 0.02);
+        if (railCount >= 11) {
+            const railRebate = Math.floor(railPaidSum * 0.02);
+            r2_rail_total += railRebate;
+            if (railRebate > 0) {
+                r2_details.push({ text: `<span class="m-badge">${monthLabel}</span> 軌道累計 ${railCount} 趟 (2%)`, amount: `-$${railRebate}` });
+            }
+        }
 
-        // R2: Bus
+        // Bus
         const busCount = gCounts.bus + gCounts.coach;
         const busPaidSum = cSums.paidSums.bus + cSums.paidSums.coach;
         let busRate = 0;
         if (busCount > 30) busRate = 0.30; else if (busCount >= 11) busRate = 0.15;
-        r2_bus_total += Math.floor(busPaidSum * busRate);
+        const busRebate = Math.floor(busPaidSum * busRate);
+        r2_bus_total += busRebate;
+        if (busRebate > 0) {
+            r2_details.push({ text: `<span class="m-badge">${monthLabel}</span> 公車累計 ${busCount} 趟 (${Math.round(busRate*100)}%)`, amount: `-$${busRebate}` });
+        }
+    });
+
+    const r1_total = r1_mrt_total + r1_tra_total;
+    const r2_total = r2_rail_total + r2_bus_total;
+
+    // 準備 "實際扣款" 的詳細清單
+    let paid_details = [];
+    Object.keys(typePaidSums).sort((a,b) => typePaidSums[b] - typePaidSums[a]).forEach(type => {
+        if (typePaidSums[type] > 0) {
+            paid_details.push({
+                text: `${LABELS[type]} (${typeCounts[type]} 趟)`,
+                amount: `$${typePaidSums[type]}`
+            });
+        }
     });
 
     return {
@@ -157,13 +222,17 @@ function calculateFinancials(trips) {
         totalPaid,
         freeSavings,
         transferSavings,
-        r1_total: r1_mrt_total + r1_tra_total,
-        r2_total: r2_rail_total + r2_bus_total,
+        r1_total,
+        r2_total,
         r1_desc: `北捷 $${r1_mrt_total} · 台鐵 $${r1_tra_total}`,
-        r2_desc: `軌道 $${r2_rail_total} · 公車 $${r2_bus_total}`
+        r2_desc: `軌道 $${r2_rail_total} · 公車 $${r2_bus_total}`,
+        r1_details,
+        r2_details,
+        paid_details
     };
 }
 
+// === 主渲染函式 ===
 function renderAnalysis() {
     let tripsToAnalyze = [];
     if (currentSelectedCycle) {
@@ -172,12 +241,13 @@ function renderAnalysis() {
         tripsToAnalyze = allTrips;
     }
 
-    // 防呆：無資料時清空畫面
+    // 防呆處理
     if (tripsToAnalyze.length === 0) {
         const setHtml = (id, val) => { if(document.getElementById(id)) document.getElementById(id).innerHTML = val; };
         setHtml('totalTrips', '0');
         setHtml('daysToBreakEven', '--');
         setHtml('dnaTags', '<span class="dna-tag" style="background:#eee;color:#888;">此週期無資料</span>');
+        setHtml('financialBreakdown', ''); 
         setHtml('transportGrid', '');
         setHtml('savingsGrid', '');
         setHtml('recordsGrid', '');
@@ -188,15 +258,18 @@ function renderAnalysis() {
         return;
     }
 
-    // [新增] 統一計算財務數據
     const financeData = calculateFinancials(tripsToAnalyze);
 
     renderSummary(tripsToAnalyze);
-    renderDNA(tripsToAnalyze, financeData); // 傳入財務數據供獎章判定
-    renderSavingsAndRewards(financeData);   // 傳入財務數據供顯示
+    renderDNA(tripsToAnalyze, financeData);
+    
+    // [新功能] 渲染財務細項折疊選單
+    renderFinancialBreakdown(financeData);
+    
+    renderSavingsAndRewards(financeData);
     renderTransportGrid(tripsToAnalyze);     
     renderRouteRanking(tripsToAnalyze);
-    renderROIChart(tripsToAnalyze);
+    renderROIChart(tripsToAnalyze); // [已修正圖表邏輯]
     renderRadarChart(tripsToAnalyze);
     renderRecords(tripsToAnalyze);
     renderHeatmap(tripsToAnalyze);
@@ -238,7 +311,7 @@ function renderSummary(trips) {
     }
 }
 
-// === 2. DNA 獎章 (邏輯修正與視覺優化) ===
+// === 2. DNA 獎章 (新版邏輯 & 半透明視覺) ===
 function renderDNA(trips, financeData) {
     const container = document.getElementById('dnaTags');
     if (!container) return;
@@ -258,7 +331,6 @@ function renderDNA(trips, financeData) {
     const topMode = Object.keys(counts).reduce((a, b) => (counts[a] || 0) > (counts[b] || 0) ? a : b);
     const tags = [];
 
-    // --- 獎章判定邏輯 ---
     if (topMode === 'mrt') tags.push({ text: '🚇 北捷成癮者', color: '#00d2ff' });
     else if (topMode === 'bus') tags.push({ text: '🚌 公車達人', color: '#2ecc71' });
     else if (topMode === 'tra') tags.push({ text: '🚆 鐵道迷', color: '#bdc3c7' });
@@ -268,6 +340,7 @@ function renderDNA(trips, financeData) {
     if (totalTrips > 100) tags.push({ text: '🔥 狂熱通勤', color: '#ff7675' });
     else if (totalTrips > 50) tags.push({ text: '📅 規律生活', color: '#55efc4' });
 
+    // [新規則] 淨收益 > 1200 倒賺，> 1 回本
     const netValue = financeData.totalOriginal - (financeData.totalPaid - financeData.r1_total - financeData.r2_total);
 
     if (netValue > 1200) tags.push({ text: '💸 倒賺省長', color: '#ffeaa7' }); 
@@ -284,13 +357,12 @@ function renderDNA(trips, financeData) {
     const railCount = (counts.mrt || 0) + (counts.tra || 0) + (counts.tymrt || 0) + (counts.lrt || 0);
     if (railCount > totalTrips * 0.8) tags.push({ text: '🚉 軌道之友', color: '#81ecec' });
     
-    if (counts.bike > 10) tags.push({ text: '🚴腳動力先鋒', color: '#55efc4' });
+    if (counts.bike > 10) tags.push({ text: '🚴 綠能先鋒', color: '#55efc4' });
     if (counts.coach > 5) tags.push({ text: '🏙️ 跨區移動者', color: '#fab1a0' });
 
     const maxDaily = Math.max(...Object.values(dailyCounts));
     if (maxDaily >= 6) tags.push({ text: '🔋 能量滿點', color: '#fd79e4' });
 
-    // 渲染 HTML
     tags.forEach(tag => {
         const span = document.createElement('span');
         span.className = 'dna-tag';
@@ -304,7 +376,76 @@ function renderDNA(trips, financeData) {
     });
 }
 
-// === 3. 優惠與回饋 (改為接收計算好的數據) ===
+// === [新功能] 渲染財務細項 (折疊選單) ===
+function renderFinancialBreakdown(data) {
+    const container = document.getElementById('financialBreakdown');
+    if (!container) return;
+
+    const sections = [
+        {
+            id: 'paid',
+            title: '實際扣款總額',
+            sub: '(扣轉乘)',
+            amount: `$${data.totalPaid}`,
+            color: '#333',
+            items: data.paid_details
+        },
+        {
+            id: 'r1',
+            title: '常客優惠回饋 (R1)',
+            sub: '',
+            amount: `-$${data.r1_total}`,
+            color: '#e67e22',
+            items: data.r1_details
+        },
+        {
+            id: 'r2',
+            title: 'TPASS 2.0 回饋 (R2)',
+            sub: '',
+            amount: `-$${data.r2_total}`,
+            color: '#e67e22',
+            items: data.r2_details
+        }
+    ];
+
+    let html = '';
+    sections.forEach(sec => {
+        const hasItems = sec.items && sec.items.length > 0;
+        const pointerClass = hasItems ? 'cursor-pointer' : '';
+        const iconHtml = hasItems ? `<i class="fa-solid fa-chevron-down arrow-icon"></i>` : '';
+        
+        let listHtml = '';
+        if (hasItems) {
+            listHtml = `<div class="finance-detail hidden">`;
+            sec.items.forEach(item => {
+                listHtml += `
+                    <div class="finance-row">
+                        <span>${item.text}</span>
+                        <span style="font-family:monospace;">${item.amount}</span>
+                    </div>`;
+            });
+            listHtml += `</div>`;
+        }
+
+        html += `
+            <div class="finance-item ${pointerClass}" onclick="toggleFinanceItem(this)">
+                <div class="finance-header">
+                    <div class="fh-left">
+                        <span class="fh-title">${sec.title} <small>${sec.sub}</small></span>
+                    </div>
+                    <div class="fh-right">
+                        <span class="fh-amount" style="color:${sec.color}">${sec.amount}</span>
+                        ${iconHtml}
+                    </div>
+                </div>
+                ${listHtml}
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+// === 3. 優惠與回饋 ===
 function renderSavingsAndRewards(data) {
     const grid = document.getElementById('savingsGrid');
     if (!grid) return; grid.innerHTML = '';
@@ -323,7 +464,7 @@ function renderSavingsAndRewards(data) {
     });
 }
 
-// === 4. 運具深度透視 (實付金額) ===
+// === 4. 運具深度透視 ===
 function renderTransportGrid(trips) {
     const grid = document.getElementById('transportGrid');
     if (!grid) return; grid.innerHTML = '';
@@ -348,7 +489,7 @@ function renderTransportGrid(trips) {
     });
 }
 
-// === 5. 熱門路線 (整合) ===
+// === 5. 熱門路線 ===
 function renderRouteRanking(trips) {
     const list = document.getElementById('routeRanking');
     if (!list) return; list.innerHTML = '';
@@ -375,39 +516,154 @@ function renderRouteRanking(trips) {
     });
 }
 
-// === 6. ROI 圖表 (修正日期排序) ===
+// === 6. ROI 圖表 (使用「累積實際花費」+ 最後行程日扣款 + Tooltip) ===
 function renderROIChart(trips) {
     const ctx = document.getElementById('roiChart').getContext('2d');
     if (chartInstances.roi) chartInstances.roi.destroy();
-    const dailyData = {}; let minTime, maxTime;
+    
+    // 1. 準備資料結構
+    const dailyData = {}; 
+    const monthlyStats = {}; 
+    const rebateEvents = {}; // 用來儲存哪一天扣了多少回饋 (供 Tooltip 使用)
+
+    let minTime, maxTime;
     if (currentSelectedCycle) { minTime = currentSelectedCycle.start; maxTime = currentSelectedCycle.end; } 
     else { 
         if(trips.length > 0) { const times = trips.map(t => t.createdAt); minTime = Math.min(...times); maxTime = Math.max(...times); }
         else { const now = new Date(); minTime = new Date(now.getFullYear(), now.getMonth(), 1).getTime(); maxTime = now.getTime(); }
     }
+
+    // 初始化每天為 0
     for (let d = minTime; d <= maxTime; d += 86400000) {
-        const dateObj = new Date(d); const yyyy = dateObj.getFullYear();
-        const mm = String(dateObj.getMonth() + 1).padStart(2, '0'); const dd = String(dateObj.getDate()).padStart(2, '0');
-        const key = `${yyyy}/${mm}/${dd}`; dailyData[key] = 0;
+        const dateObj = new Date(d); 
+        const yyyy = dateObj.getFullYear();
+        const mm = String(dateObj.getMonth() + 1).padStart(2, '0'); 
+        const dd = String(dateObj.getDate()).padStart(2, '0');
+        const key = `${yyyy}/${mm}/${dd}`; 
+        dailyData[key] = 0;
     }
-    trips.forEach(t => { if (dailyData[t.dateStr] !== undefined) dailyData[t.dateStr] += (t.originalPrice || 0); });
+
+    // 2. 統計每日「實付金額」並收集月度數據
+    const discount = FARE_CONFIG[currentIdentity].transferDiscount;
+    let globalMonthlyCounts = {}; 
+
+    allTrips.forEach(t => {
+        const monthKey = t.dateStr.slice(0, 7);
+        if (!globalMonthlyCounts[monthKey]) globalMonthlyCounts[monthKey] = { mrt: 0, tra: 0, tymrt: 0, lrt: 0, bus: 0, coach: 0, bike: 0 };
+        globalMonthlyCounts[monthKey][t.type]++;
+    });
+
+    trips.forEach(t => {
+        let pp = t.isFree ? 0 : t.paidPrice;
+        if (pp === undefined) pp = t.isTransfer ? Math.max(0, (t.originalPrice||0) - discount) : (t.originalPrice||0);
+        if (dailyData[t.dateStr] !== undefined) dailyData[t.dateStr] += pp;
+
+        const monthKey = t.dateStr.slice(0, 7);
+        if (!monthlyStats[monthKey]) {
+            monthlyStats[monthKey] = { originalSums: {}, paidSums: {} };
+            ['mrt', 'bus', 'coach', 'tra', 'tymrt', 'lrt', 'bike'].forEach(k => {
+                monthlyStats[monthKey].originalSums[k] = 0; 
+                monthlyStats[monthKey].paidSums[k] = 0;
+            });
+        }
+        monthlyStats[monthKey].originalSums[t.type] += (t.isFree ? 0 : (t.originalPrice||0));
+        monthlyStats[monthKey].paidSums[t.type] += pp;
+    });
+
+    // 3. 計算並扣除每月回饋
+    Object.keys(monthlyStats).forEach(month => {
+        const cSums = monthlyStats[month];
+        const gCounts = globalMonthlyCounts[month] || { mrt:0, tra:0, bus:0, coach:0 };
+        
+        let r1 = 0, r2 = 0;
+
+        // R1
+        let mrtRate = 0;
+        if (gCounts.mrt > 40) mrtRate = 0.15; else if (gCounts.mrt > 20) mrtRate = 0.10; else if (gCounts.mrt > 10) mrtRate = 0.05;
+        r1 += Math.floor(cSums.originalSums.mrt * mrtRate);
+
+        let traRate = 0;
+        if (gCounts.tra > 40) traRate = 0.20; else if (gCounts.tra > 20) traRate = 0.15; else if (gCounts.tra > 10) traRate = 0.10;
+        r1 += Math.floor(cSums.originalSums.tra * traRate);
+
+        // R2
+        const railCount = gCounts.mrt + gCounts.tra + gCounts.tymrt + gCounts.lrt;
+        const railPaidSum = cSums.paidSums.mrt + cSums.paidSums.tra + cSums.paidSums.tymrt + cSums.paidSums.lrt;
+        if (railCount >= 11) r2 += Math.floor(railPaidSum * 0.02);
+
+        const busCount = gCounts.bus + gCounts.coach;
+        const busPaidSum = cSums.paidSums.bus + cSums.paidSums.coach;
+        let busRate = 0;
+        if (busCount > 30) busRate = 0.30; else if (busCount >= 11) busRate = 0.15;
+        r2 += Math.floor(busPaidSum * busRate);
+
+        const totalRebate = r1 + r2;
+
+        const tripsInMonth = trips.filter(t => t.dateStr.startsWith(month));
+        let targetDate;
+
+        if (tripsInMonth.length > 0) {
+            tripsInMonth.sort((a, b) => a.dateStr.localeCompare(b.dateStr));
+            targetDate = tripsInMonth[tripsInMonth.length - 1].dateStr;
+        } else {
+            const datesInCycle = Object.keys(dailyData).filter(d => d.startsWith(month)).sort();
+            if (datesInCycle.length > 0) {
+                targetDate = datesInCycle[datesInCycle.length - 1];
+            }
+        }
+
+        if (targetDate && dailyData[targetDate] !== undefined) {
+            dailyData[targetDate] -= totalRebate;
+            // 紀錄回饋事件
+            rebateEvents[targetDate] = { r1: r1, r2: r2, total: totalRebate };
+        }
+    });
+
+    // 4. 產生圖表數據
     const sortedKeys = Object.keys(dailyData).sort();
     const labels = sortedKeys.map(k => k.slice(5)); 
     const cumulativeData = []; let sum = 0;
     sortedKeys.forEach(key => { sum += dailyData[key]; cumulativeData.push(sum); });
     const thresholdData = new Array(labels.length).fill(1200);
+
     chartInstances.roi = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
             datasets: [
-                { label: '累積價值', data: cumulativeData, borderColor: '#6c5ce7', backgroundColor: 'rgba(108, 92, 231, 0.1)', fill: true, tension: 0.4, pointRadius: 2 },
+                { label: '累積實際花費', data: cumulativeData, borderColor: '#6c5ce7', backgroundColor: 'rgba(108, 92, 231, 0.1)', fill: true, tension: 0.4, pointRadius: 2 },
                 { label: '回本門檻 ($1200)', data: thresholdData, borderColor: '#ff7675', borderDash: [5, 5], pointRadius: 0, borderWidth: 2 }
             ]
         },
         options: {
-            responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-            plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': $' + context.raw; } } } },
+            responsive: true, maintainAspectRatio: false, 
+            interaction: { mode: 'index', intersect: false },
+            plugins: { 
+                legend: { position: 'bottom' }, 
+                tooltip: { 
+                    callbacks: { 
+                        label: function(context) { 
+                            return context.dataset.label + ': $' + context.raw; 
+                        },
+                        // Footer Callback
+                        footer: function(tooltipItems) {
+                            const index = tooltipItems[0].dataIndex;
+                            const dateKey = sortedKeys[index]; 
+                            
+                            if (rebateEvents[dateKey]) {
+                                const evt = rebateEvents[dateKey];
+                                return [
+                                    '', 
+                                    `🎁 本日扣除回饋: -$${evt.total}`,
+                                    `   • R1 常客: -$${evt.r1}`,
+                                    `   • R2 TPASS: -$${evt.r2}`
+                                ];
+                            }
+                            return [];
+                        }
+                    } 
+                } 
+            },
             scales: { y: { beginAtZero: true } }
         }
     });
@@ -434,7 +690,6 @@ function renderRadarChart(trips) {
     });
 }
 
-// === 紀錄卡片 ===
 function renderRecords(trips) {
     const container = document.getElementById('recordsGrid');
     if (!container) return; container.innerHTML = '';
@@ -461,7 +716,6 @@ function renderRecords(trips) {
     });
 }
 
-// === 熱力圖 ===
 function renderHeatmap(trips) {
     const container = document.getElementById('heatmapContainer');
     if (!container) return; container.innerHTML = '';
@@ -480,7 +734,6 @@ function renderHeatmap(trips) {
     }
 }
 
-// === 平日 vs 假日 ===
 function renderWeekStats(trips) {
     const container = document.getElementById('weekStatsContainer');
     if (!container) return; container.innerHTML = '';
@@ -500,4 +753,20 @@ function getWeekInsight(wdPct, weekendVal) {
     if (wdPct > 90) return "💼 您是標準的上班通勤族，假日都在休息嗎？";
     if (wdPct > 60) return "⚖️ 工作與生活平衡，假日偶爾也會出門晃晃。";
     return "🚀 數據分析中...";
+}
+
+// 供 HTML onclick 呼叫
+window.toggleFinanceItem = function(el) {
+    const detail = el.querySelector('.finance-detail');
+    const arrow = el.querySelector('.arrow-icon');
+    if (detail) {
+        detail.classList.toggle('hidden');
+        if (arrow) {
+            if (detail.classList.contains('hidden')) {
+                arrow.style.transform = 'rotate(0deg)';
+            } else {
+                arrow.style.transform = 'rotate(180deg)';
+            }
+        }
+    }
 }
