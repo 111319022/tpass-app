@@ -104,7 +104,7 @@
 
 | **儀表板 (Dashboard)** | **數據分析 (Analysis)** | **智慧輸入 (Smart Input)** |
 |:---:|:---:|:---:|
-| <img src="screenshot/screenshot_1.PNG" alt="儀表板" width="250" /> | <img src="screenshot/screenshot_analysis.PNG" alt="分析頁面" width="250" /> | <img src="screenshot/screenshot_3.PNG" alt="輸入畫面" width="250" /> |
+| <img src="screenshot/screenshot_1.PNG" alt="儀表板" width="250" /> | <img src="screenshot/screenshot_2.PNG" alt="分析頁面" width="250" /> | <img src="screenshot/screenshot_3.PNG" alt="輸入畫面" width="250" /> |
 | *直觀顯示回本進度與金額* | *DNA獎章、ROI曲線與財務細項* | *支援路線篩選與自動查價* |
 
 > *註：截圖為開發版本，實際介面可能隨更新優化。*
