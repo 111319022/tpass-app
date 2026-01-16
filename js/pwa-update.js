@@ -1,70 +1,66 @@
-// js/pwa-update.js (除錯版)
+// js/pwa-update.js
 
-if ('serviceWorker' in navigator) {
-    console.log('[PWA] 準備註冊 Service Worker...');
+document.addEventListener('DOMContentLoaded', () => {
+    if ('serviceWorker' in navigator) {
+        // 1. 註冊 Service Worker
+        navigator.serviceWorker.register('./sw.js').then((registration) => {
+            console.log('[PWA] Service Worker 註冊成功');
 
-    navigator.serviceWorker.register('./sw.js').then((registration) => {
-        console.log('[PWA] 註冊成功，Scope:', registration.scope);
+            // [關鍵] 強制瀏覽器立刻去檢查有沒有新版 sw.js
+            // 這行是解決手機 PWA "無感" 的最重要指令
+            registration.update();
 
-        // 1. 檢查是否有正在等待的新版本 (Waiting)
-        if (registration.waiting) {
-            console.log('[PWA] 發現已存在 waiting 的 SW，跳出提示框！');
-            showUpdateNotification(registration.waiting);
-            return;
-        }
+            // 2. 檢查是否已經有等待中的新版本 (上次下載好但沒更新的)
+            if (registration.waiting) {
+                console.log('[PWA] 發現已下載好的新版 (Waiting)');
+                showUpdateNotification(registration.waiting);
+                return;
+            }
 
-        // 2. 監聽是否有新版本 (Installing)
-        registration.onupdatefound = () => {
-            console.log('[PWA] 發現新版本正在下載中 (onupdatefound)...');
-            const newWorker = registration.installing;
-            
-            newWorker.onstatechange = () => {
-                console.log('[PWA] 新版本狀態改變:', newWorker.state);
-
-                if (newWorker.state === 'installed') {
-                    if (navigator.serviceWorker.controller) {
-                        console.log('[PWA] 新版本安裝完成，且有舊版存在 -> 跳出提示框！');
+            // 3. 監聽是否有新版本正在下載
+            registration.onupdatefound = () => {
+                const newWorker = registration.installing;
+                console.log('[PWA] 發現新版本，正在下載中...');
+                
+                newWorker.onstatechange = () => {
+                    // 當新版本狀態變為 'installed'，且原本就有舊版在運作
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        console.log('[PWA] 新版本下載完成，準備跳出提示');
                         showUpdateNotification(newWorker);
-                    } else {
-                        console.log('[PWA] 新版本安裝完成，但這是「第一次」安裝，不跳提示框。');
                     }
-                }
+                };
             };
-        };
-    }).catch((err) => {
-        console.error('[PWA] Service Worker 註冊失敗:', err);
-    });
+        }).catch((err) => {
+            console.error('[PWA] 註冊失敗:', err);
+        });
 
-    // 3. 監聽更新完成後的重整
-    let refreshing = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-        console.log('[PWA] Controller 已變更 (controllerchange)');
-        if (!refreshing) {
-            console.log('[PWA] 準備重整頁面...');
-            window.location.reload();
-            refreshing = true;
-        }
-    });
-} else {
-    console.log('[PWA] 此瀏覽器不支援 Service Worker');
-}
+        // 4. 當使用者按下更新，新版接管後，自動重整頁面
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!refreshing) {
+                window.location.reload();
+                refreshing = true;
+            }
+        });
+    }
+});
 
-// 顯示更新提示框
+// 顯示 UI 的函式
 function showUpdateNotification(worker) {
     const notification = document.getElementById('update-notification');
     const btn = document.getElementById('reload-btn');
     
     if (notification && btn) {
-        console.log('[PWA] UI 顯示函式被呼叫');
-        notification.style.display = 'flex'; // 顯示提示框
+        notification.style.display = 'flex'; // 顯示視窗
         
-        btn.addEventListener('click', () => {
-            console.log('[PWA] 使用者點擊更新');
+        // 綁定按鈕點擊事件
+        btn.onclick = () => {
+            // 發送 skipWaiting 指令讓新版 SW 立刻接管
             worker.postMessage({ action: 'skipWaiting' });
             btn.disabled = true;
             btn.innerText = "更新中...";
-        });
+        };
     } else {
-        console.error('[PWA] 找不到 UI 元素 (update-notification 或 reload-btn)');
+        console.error('[PWA] 錯誤：找不到更新提示框的 UI 元素');
     }
 }
