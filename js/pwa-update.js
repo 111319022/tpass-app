@@ -2,39 +2,63 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     if ('serviceWorker' in navigator) {
-        // 1. 註冊 Service Worker
+        
+        // 註冊 SW
         navigator.serviceWorker.register('./sw.js').then((registration) => {
             console.log('[PWA] Service Worker 註冊成功');
 
-            // [關鍵] 強制瀏覽器立刻去檢查有沒有新版 sw.js
-            // 這行是解決手機 PWA "無感" 的最重要指令
+            // ==========================================
+            // 策略 1: 啟動時，強制立刻檢查
+            // ==========================================
             registration.update();
 
-            // 2. 檢查是否已經有等待中的新版本 (上次下載好但沒更新的)
+            // ==========================================
+            // 策略 2: 偵測「等待中」的 SW (上次下載好但沒更新的)
+            // ==========================================
             if (registration.waiting) {
                 console.log('[PWA] 發現已下載好的新版 (Waiting)');
                 showUpdateNotification(registration.waiting);
-                return;
             }
 
-            // 3. 監聽是否有新版本正在下載
+            // ==========================================
+            // 策略 3: 監聽是否有新版本正在下載
+            // ==========================================
             registration.onupdatefound = () => {
                 const newWorker = registration.installing;
-                console.log('[PWA] 發現新版本，正在下載中...');
                 
                 newWorker.onstatechange = () => {
                     // 當新版本狀態變為 'installed'，且原本就有舊版在運作
                     if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        console.log('[PWA] 新版本下載完成，準備跳出提示');
+                        console.log('[PWA] 新版本下載完成，跳出提示');
                         showUpdateNotification(newWorker);
                     }
                 };
             };
+
+            // ==========================================
+            // 策略 4: [新功能] 當使用者切換回 APP 時，再次檢查
+            // (解決手機瀏覽器偷懶不檢查的問題)
+            // ==========================================
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    console.log('[PWA] APP回到前台，再次觸發更新檢查...');
+                    registration.update();
+                }
+            });
+
+            // ==========================================
+            // 策略 5: [新功能] 每小時自動檢查一次
+            // ==========================================
+            setInterval(() => {
+                console.log('[PWA] 定時檢查更新...');
+                registration.update();
+            }, 60 * 60 * 1000); // 60分鐘
+
         }).catch((err) => {
             console.error('[PWA] 註冊失敗:', err);
         });
 
-        // 4. 當使用者按下更新，新版接管後，自動重整頁面
+        // 當新版接管後，自動重整頁面
         let refreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             if (!refreshing) {
@@ -51,6 +75,9 @@ function showUpdateNotification(worker) {
     const btn = document.getElementById('reload-btn');
     
     if (notification && btn) {
+        // 避免重複顯示
+        if (notification.style.display === 'flex') return;
+
         notification.style.display = 'flex'; // 顯示視窗
         
         // 綁定按鈕點擊事件
@@ -60,7 +87,5 @@ function showUpdateNotification(worker) {
             btn.disabled = true;
             btn.innerText = "更新中...";
         };
-    } else {
-        console.error('[PWA] 錯誤：找不到更新提示框的 UI 元素');
     }
 }
