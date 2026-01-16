@@ -1,38 +1,52 @@
-// js/pwa-update.js
+// js/pwa-update.js (除錯版)
 
 if ('serviceWorker' in navigator) {
-    // 註冊 Service Worker
+    console.log('[PWA] 準備註冊 Service Worker...');
+
     navigator.serviceWorker.register('./sw.js').then((registration) => {
-        
-        // 1. 檢查是否已經有等待中的新 Service Worker (這發生在使用者打開 APP 但沒重整時)
+        console.log('[PWA] 註冊成功，Scope:', registration.scope);
+
+        // 1. 檢查是否有正在等待的新版本 (Waiting)
         if (registration.waiting) {
+            console.log('[PWA] 發現已存在 waiting 的 SW，跳出提示框！');
             showUpdateNotification(registration.waiting);
             return;
         }
 
-        // 2. 監聽是否有新版本被發現
+        // 2. 監聽是否有新版本 (Installing)
         registration.onupdatefound = () => {
+            console.log('[PWA] 發現新版本正在下載中 (onupdatefound)...');
             const newWorker = registration.installing;
             
             newWorker.onstatechange = () => {
-                // 當新版本狀態變為 'installed'，且原本就有舊版在運作 (navigator.serviceWorker.controller)
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    showUpdateNotification(newWorker);
+                console.log('[PWA] 新版本狀態改變:', newWorker.state);
+
+                if (newWorker.state === 'installed') {
+                    if (navigator.serviceWorker.controller) {
+                        console.log('[PWA] 新版本安裝完成，且有舊版存在 -> 跳出提示框！');
+                        showUpdateNotification(newWorker);
+                    } else {
+                        console.log('[PWA] 新版本安裝完成，但這是「第一次」安裝，不跳提示框。');
+                    }
                 }
             };
         };
     }).catch((err) => {
-        console.error('Service Worker 註冊失敗:', err);
+        console.error('[PWA] Service Worker 註冊失敗:', err);
     });
 
-    // 3. 監聽 controllerchange 事件：當新 Service Worker 接管後，重整頁面
+    // 3. 監聽更新完成後的重整
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
+        console.log('[PWA] Controller 已變更 (controllerchange)');
         if (!refreshing) {
+            console.log('[PWA] 準備重整頁面...');
             window.location.reload();
             refreshing = true;
         }
     });
+} else {
+    console.log('[PWA] 此瀏覽器不支援 Service Worker');
 }
 
 // 顯示更新提示框
@@ -41,13 +55,16 @@ function showUpdateNotification(worker) {
     const btn = document.getElementById('reload-btn');
     
     if (notification && btn) {
-        notification.style.display = 'flex';
+        console.log('[PWA] UI 顯示函式被呼叫');
+        notification.style.display = 'flex'; // 顯示提示框
         
         btn.addEventListener('click', () => {
-            // 發送指令給新的 Service Worker，叫它跳過等待，立刻接管
+            console.log('[PWA] 使用者點擊更新');
             worker.postMessage({ action: 'skipWaiting' });
             btn.disabled = true;
             btn.innerText = "更新中...";
         });
+    } else {
+        console.error('[PWA] 找不到 UI 元素 (update-notification 或 reload-btn)');
     }
 }
