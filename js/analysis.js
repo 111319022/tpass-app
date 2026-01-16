@@ -434,31 +434,83 @@ function renderTransportGrid(trips) {
     });
 }
 
-// === 5. 熱門路線 (不變) ===
+// // === 5. 熱門路線排行榜 (整合起訖站與路線編號) ===
 function renderRouteRanking(trips) {
     const list = document.getElementById('routeRanking');
     if (!list) return;
     list.innerHTML = '';
+
     const routes = {};
+
     trips.forEach(t => {
-        if (!t.startStation || !t.endStation) return;
-        const key = [t.startStation, t.endStation].sort().join(' ↔ ');
-        if (!routes[key]) routes[key] = { count: 0, totalCost: 0 };
+        let key = '';
+        let displayName = '';
+        let typeIcon = '';
+
+        // 邏輯 A: 公車/客運 -> 優先使用 Route ID
+        if ((t.type === 'bus' || t.type === 'coach') && t.routeId) {
+            key = `${t.type}_${t.routeId}`;
+            displayName = `${t.routeId} 路${t.type === 'coach' ? '客運' : '公車'}`;
+            typeIcon = t.type === 'coach' ? 'fa-bus-simple' : 'fa-bus';
+        } 
+        // 邏輯 B: 軌道運輸 (捷運/台鐵) -> 使用 起訖站
+        else if (t.startStation && t.endStation) {
+            // 自動排序起訖站，讓 A->B 和 B->A 視為同一條
+            const stations = [t.startStation, t.endStation].sort();
+            key = `stations_${stations.join('_')}`;
+            displayName = `${stations[0]} ↔ ${stations[1]}`;
+            typeIcon = ICONS[t.type] || 'fa-train'; // 使用對應運具 icon
+        }
+        // 邏輯 C: 其他 (Ubike 或資料不全) -> 使用運具名稱
+        else {
+            key = `type_${t.type}`;
+            displayName = LABELS[t.type] || t.type;
+            typeIcon = ICONS[t.type] || 'fa-circle';
+        }
+
+        if (!routes[key]) {
+            routes[key] = { 
+                name: displayName, 
+                count: 0, 
+                totalCost: 0,
+                icon: typeIcon,
+                color: COLORS[t.type] || '#666'
+            };
+        }
+        
         routes[key].count++;
-        routes[key].totalCost += (t.originalPrice || 0);
+        // 累加實際花費 (paidPrice)，如果沒有則用原價
+        const cost = (t.paidPrice !== undefined) ? t.paidPrice : t.originalPrice;
+        routes[key].totalCost += (cost || 0);
     });
-    const sortedRoutes = Object.entries(routes).sort((a, b) => b[1].count - a[1].count).slice(0, 5); 
+
+    // 排序：依照搭乘次數 (高 -> 低)
+    const sortedRoutes = Object.values(routes)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5); // 取前五名
+
     if (sortedRoutes.length === 0) {
-        list.innerHTML = '<div style="text-align:center;color:#ccc;">尚無足夠資料分析路線</div>';
+        list.innerHTML = '<div style="text-align:center;color:#ccc;padding:10px;">尚無足夠資料分析路線</div>';
         return;
     }
+
     sortedRoutes.forEach((item, index) => {
-        const name = item[0];
-        const data = item[1];
         const rank = index + 1;
         const div = document.createElement('div');
         div.className = 'route-item';
-        div.innerHTML = `<div class="route-rank top-${rank}">${rank}</div><div class="route-info"><div class="route-name">${name}</div><div class="route-detail">累計 ${data.count} 趟</div></div><div class="route-total">$${data.totalCost}</div>`;
+        
+        // 增加 Icon 顯示，讓列表更直觀
+        div.innerHTML = `
+            <div class="route-rank top-${rank}">${rank}</div>
+            <div class="route-icon" style="color:${item.color}; margin-right:10px; width:20px; text-align:center;">
+                <i class="fa-solid ${item.icon}"></i>
+            </div>
+            <div class="route-info">
+                <div class="route-name">${item.name}</div>
+                <div class="route-detail">累計 ${item.count} 趟</div>
+            </div>
+            <div class="route-total">$${item.totalCost}</div>
+        `;
         list.appendChild(div);
     });
 }
