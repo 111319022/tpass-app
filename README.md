@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🚌 基北北桃 TPASS 回本計算機 v2.0
+# 🚌 基北北桃 TPASS 回本計算機 v2.1
 
-**專為基北北桃通勤族打造 · 具備「自動查價」功能的智慧精算師**
+**專為基北北桃通勤族打造 · 具備「自動查價」與「深度分析」的智慧精算師**
 
 [ **🚀 立即啟動 Web App** ](https://111319022.github.io/tpass-app/)
 ·
@@ -10,7 +10,7 @@
 
 <br>
 
-<img src="/images/icon.png" width="300" alt="App Screenshot" style="border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+<img src="/images/icon.png" width="120" alt="App Icon" style="border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
 
 <br>
 <br>
@@ -24,11 +24,33 @@
 通勤月票 $1200 買下去，到底有沒有回本？
 一般的記帳軟體太過繁瑣，且無法處理轉乘優惠、 **「北捷常客優惠」** 的階梯式回饋，更無法自動扣除 **「TPASS 2.0回饋」** 的複雜運距計算。
 
-這個 App 的目標是讓記帳變得「無感」——**你只需要選車站，剩下的價格計算、回饋趴數、轉乘扣減，全部交給它。**
+這個 App 的目標是讓記帳變得「無感」——**你只需要選車站，剩下的價格計算、回饋趴數、轉乘扣減、甚至回本進度分析，全部交給它。**
 
 ---
 
-## ✨ 2.0 全新功能：零輸入體驗
+## 📊 2.1 全新功能：深度數據洞察 (Analysis)
+
+不僅僅是記帳，更幫你分析通勤習慣與省錢效率！
+
+### 🧬 Commuter DNA (通勤基因)
+- **成就系統**：根據你的搭乘習慣頒發專屬獎章（如：「🚇 北捷成癮者」、「💸 倒賺省長」、「🌙 深夜旅人」）。
+- **視覺化標籤**：讓通勤變得更有成就感，一眼看出你的交通屬性。
+
+### 📈 ROI 回本競速圖表
+- **動態門檻**：將累積花費繪製成曲線，與 $1200 月票門檻進行「競速」。
+- **精準扣款**：圖表會自動在對應日期扣除 R1/R2 回饋金，真實反映實際支出的下降曲線。
+
+### 💰 財務結構透視
+- **多維度拆解**：一鍵展開查看「原始票價總額」vs「實際扣款總額」。
+- **回饋明細**：清楚列出 **R1 常客優惠** 與 **R2 TPASS 補貼** 的計算細節，不再霧裡看花。
+
+### 🔥 熱力圖與習慣分析
+- **通勤熱力圖**：用顏色深淺顯示每日通勤強度。
+- **時段分佈**：分析平日 vs 假日貢獻度，以及常出沒的時段（早鳥/夜貓）。
+
+---
+
+## ✨ 核心功能：零輸入體驗
 
 ### 🚄 北捷票價自動帶入 (Official Data)
 不再需要手動輸入 $20、$30！
@@ -40,13 +62,13 @@
 - 系統會學習你的搭乘歷史。
 - 只要你輸入過一次「台北 ↔ 宜蘭」，下次選擇相同起訖點時，價格**自動填入**。
 
----
-
-## 💎 核心體驗
-
 ### 🎯 只有重點，沒有廢話
 - **智慧預設**：選擇公車，自動填入 $15；切換學生身分，自動變更為 $12。
 - **精準轉乘**：勾選「轉乘」，系統自動扣除 $8 或 $6 優惠，比你自己算還準。
+
+---
+
+## 💎 使用體驗
 
 ### 💳 像是你的信用卡帳單
 - **多週期管理**：隨時查看「1月」還有幾天到期、「2月」已經回本多少。
@@ -65,7 +87,7 @@
 專案採用現代化 Web 技術，並結合自動化腳本確保資料準確性。
 
 **Frontend**
-`HTML5` &nbsp; `CSS3 (Glassmorphism UI)` &nbsp; `JavaScript (ES6+)`
+`HTML5` &nbsp; `CSS3 (Glassmorphism UI)` &nbsp; `JavaScript (ES6+)` &nbsp; `Chart.js`
 
 **Data Engineering**
 `Node.js Crawler` - 自動抓取北捷官網 API，生成最新的票價矩陣 (`fares.js`)。
@@ -80,10 +102,10 @@
 
 ## 📸 介面導覽
 
-| **儀表板 (Dashboard)** | **智慧輸入 (Smart Input)** | **行程紀錄 (History)** |
+| **儀表板 (Dashboard)** | **數據分析 (Analysis)** | **智慧輸入 (Smart Input)** |
 |:---:|:---:|:---:|
-| <img src="screenshot/screenshot_1.PNG" alt="儀表板" width="250" /> | <img src="screenshot/screenshot_3.PNG" alt="輸入畫面" width="250" /> | <img src="screenshot/screenshot_2.PNG" alt="紀錄列表" width="250" /> |
-| *直觀顯示回本進度與金額* | *支援路線篩選與自動查價* | *自動依日期分組，清晰明瞭* |
+| <img src="screenshot/screenshot_1.PNG" alt="儀表板" width="250" /> | <img src="screenshot/screenshot_analysis.PNG" alt="分析頁面" width="250" /> | <img src="screenshot/screenshot_3.PNG" alt="輸入畫面" width="250" /> |
+| *直觀顯示回本進度與金額* | *DNA獎章、ROI曲線與財務細項* | *支援路線篩選與自動查價* |
 
 > *註：截圖為開發版本，實際介面可能隨更新優化。*
 
@@ -105,7 +127,7 @@ cd tpass-app
 ### 3. (可選) 更新票價資料庫
 若北捷票價有變動，可執行腳本重新抓取官方資料：
 ```bash
-node fetch_fares_final_v2.js
+node fetch_fares_final.js
 ```
 這會自動生成最新的 `js/data/fares.js`。
 
