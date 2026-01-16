@@ -1,3 +1,35 @@
+/* intro.css */
+
+/* === [新增] 全螢幕 Loading 遮罩 === */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: var(--bg-gradient);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-align: center;
+}
+
+.loader-content i {
+    font-size: 40px;
+    margin-bottom: 15px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.loader-content p {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    letter-spacing: 1px;
+    margin: 0; /* 覆蓋全域 p 的 margin */
+}
+
 :root {
     --bg-gradient: linear-gradient(160deg, #1a2a6c, #b21f1f, #fdbb2d);
     --card-bg: rgba(255, 255, 255, 0.9);
@@ -294,3 +326,5 @@ p { color: #666; line-height: 1.5; font-size: 15px; margin-bottom: 20px; }
     opacity: 0;
     pointer-events: none;
 }
+
+ 

@@ -9,27 +9,45 @@ const dotsContainer = document.getElementById('dots');
 const startBtn = document.getElementById('startBtn');
 const quickLoginBtn = document.getElementById('quickLoginBtn');
 
-// [新增] 一個旗標，用來判斷是否正在執行手動登入流程
+// DOM 元素
+const loadingOverlay = document.getElementById('loadingOverlay');
+const mainContainer = document.getElementById('mainContainer');
+
+// 旗標：是否正在執行手動登入
 let isLoginProcessing = false;
 
-// [修改] 檢查登入狀態 (Auth Guard)
+// === 核心：權限狀態監聽 (解決閃爍問題) ===
 onAuthStateChanged(auth, (user) => {
-    // 只有在「使用者已登入」且「不是正在手動登入」的情況下，才自動轉址
-    // 這樣如果是因為按了按鈕而觸發的登入，這裡就會被擋下，改由 handleLogin 負責轉址
+    // 情況 A: 使用者已登入，且不是剛按了按鈕
     if (user && !isLoginProcessing) {
+        // 保持遮罩顯示，更新文字讓使用者安心
+        if(loadingOverlay) {
+            const p = loadingOverlay.querySelector('p');
+            if(p) p.innerText = "歡迎回來，正在進入...";
+        }
+        // 立即跳轉，不顯示介紹頁
         window.location.replace("app.html");
+    } 
+    // 情況 B: 確定未登入
+    else {
+        // 隱藏 Loading 遮罩
+        if (loadingOverlay) loadingOverlay.style.display = 'none';
+        // 顯示主介紹頁
+        if (mainContainer) mainContainer.style.display = 'flex';
+        
+        // 畫面顯示後再計算寬度與點點
+        initPage();
+        updateUI(0);
     }
 });
 
-// === 1. 初始化邏輯 (PWA 偵測與圓點生成) ===
+// === 1. 初始化邏輯 ===
 function initPage() {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
     if (isStandalone) {
         const pwaCard = document.getElementById('pwa-card');
-        if (pwaCard) {
-            pwaCard.remove(); 
-        }
+        if (pwaCard) pwaCard.remove(); 
     }
 
     const cards = document.querySelectorAll('.card');
@@ -41,10 +59,6 @@ function initPage() {
     });
 }
 
-initPage();
-
-const dots = document.querySelectorAll('.dot');
-
 // === 2. 滑動邏輯 ===
 slider.addEventListener('scroll', () => {
     const scrollLeft = slider.scrollLeft;
@@ -54,7 +68,8 @@ slider.addEventListener('scroll', () => {
 });
 
 function updateUI(index) {
-    dots.forEach((dot, i) => {
+    const currentDots = document.querySelectorAll('.dot');
+    currentDots.forEach((dot, i) => {
         if (i === index) dot.classList.add('active');
         else dot.classList.remove('active');
     });
@@ -65,7 +80,7 @@ function updateUI(index) {
         prevBtn.classList.remove('hidden');
     }
 
-    if (index === dots.length - 1) {
+    if (index === currentDots.length - 1) {
         nextBtn.classList.add('hidden');
     } else {
         nextBtn.classList.remove('hidden');
@@ -83,10 +98,9 @@ prevBtn.addEventListener('click', () => {
     slider.scrollBy({ left: -width, behavior: 'smooth' });
 });
 
-// === 4. 登入邏輯封裝 ===
+// === 4. 登入邏輯 ===
 async function handleLogin(btnElement, isQuickLogin = false) {
-    // [重點修正] 按下按鈕時，立刻把旗標設為 true，鎖住上方的自動轉址
-    isLoginProcessing = true;
+    isLoginProcessing = true; // 鎖住自動跳轉
 
     const provider = new GoogleAuthProvider();
     const originalText = btnElement.innerHTML;
@@ -99,7 +113,6 @@ async function handleLogin(btnElement, isQuickLogin = false) {
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
 
-        // 準備要寫入的資料
         let userData = {
             email: user.email,
             displayName: user.displayName,
@@ -111,12 +124,9 @@ async function handleLogin(btnElement, isQuickLogin = false) {
             userData.identity = selectedIdentity;
         }
 
-        // 這行現在一定會被執行到了，因為自動轉址被 isLoginProcessing 擋住了
         await setDoc(doc(db, "users", user.uid), userData, { merge: true });
-
         localStorage.setItem('hasSeenIntro', 'true');
         
-        // 資料寫入完成，手動轉址
         window.location.replace("app.html");
 
     } catch (error) {
@@ -125,8 +135,6 @@ async function handleLogin(btnElement, isQuickLogin = false) {
         btnElement.innerHTML = originalText;
         btnElement.disabled = false;
         btnElement.style.opacity = '1';
-        
-        // 失敗的話，要解除鎖定，讓之後的自動偵測恢復正常
         isLoginProcessing = false;
     }
 }

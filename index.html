@@ -12,7 +12,14 @@
 </head>
 <body>
 
-    <div class="intro-container">
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loader-content">
+            <i class="fa-solid fa-train-subway fa-bounce"></i>
+            <p>正在確認身分...</p>
+        </div>
+    </div>
+
+    <div id="mainContainer" class="intro-container" style="display: none;">
         <div class="slider" id="slider">
             
             <div class="card">
@@ -31,7 +38,7 @@
                             <i class="fa-brands fa-google"></i> 直接登入
                         </button>
                         <div class="swipe-hint">
-                            滑動來查看說明 <i class="fa-solid fa-arrow-right-long"></i>
+                            滑動查看更多 <i class="fa-solid fa-arrow-right-long"></i>
                         </div>
                     </div>
                 </div>
@@ -70,10 +77,30 @@
             <div class="card">
                 <div class="card-content">
                     <div class="icon-circle" style="background: #e17055;">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <h2>深度數據儀表板</h2>
+                    <p>全新推出「通勤熱力圖」與「回本競速」。<br>視覺化分析您的平日/假日貢獻，<br>與每一筆支出的詳細結構。</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-content">
+                    <div class="icon-circle" style="background: #8e44ad;">
+                        <i class="fa-solid fa-dna"></i>
+                    </div>
+                    <h2>Commuter DNA</h2>
+                    <p>您是「北捷成癮者」還是「公車達人」？<br>根據您的搭乘習慣解鎖專屬獎章。<br>讓記帳變得更有成就感！</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-content">
+                    <div class="icon-circle" style="background: #00cec9;">
                         <i class="fa-solid fa-cloud-arrow-up"></i>
                     </div>
                     <h2>雲端同步紀錄</h2>
-                    <p>資料跟著 Google 帳號走，可多裝置查看資料，不怕資料不見。</p>
+                    <p>資料跟著 Google 帳號走，<br>可跨裝置查看資料，不怕手機遺失。</p>
                 </div>
             </div>
 
@@ -84,20 +111,19 @@
                     </div>
                     <h2>安裝為 App</h2>
                     <p style="margin-bottom:15px;">獲得更佳的全螢幕體驗，操作更流暢。</p>
-                    
                     <div class="pwa-instructions">
                         <div class="pwa-step">
                             <div class="step-icon"><i class="fa-brands fa-apple"></i></div>
                             <div class="step-text">
                                 <strong>iOS (Safari)</strong><br>
-                            長按下方網址列，點擊「分享」<i class="fa-solid fa-arrow-up-from-bracket" style="font-size:12px;"></i> → 點選「更多」，選擇「加入主畫面」。
+                                點擊「分享」<i class="fa-solid fa-arrow-up-from-bracket"></i> → 選「加入主畫面」。
                             </div>
                         </div>
                         <div class="pwa-step">
                             <div class="step-icon"><i class="fa-brands fa-android"></i></div>
                             <div class="step-text">
                                 <strong>Android (Chrome)</strong><br>
-                                點擊瀏覽器選單 <i class="fa-solid fa-ellipsis-vertical" style="font-size:12px;"></i> → 選擇「加入主畫面」或「安裝應用程式」。
+                                選單 <i class="fa-solid fa-ellipsis-vertical"></i> → 選「安裝應用程式」。
                             </div>
                         </div>
                     </div>
@@ -106,7 +132,7 @@
 
             <div class="card">
                 <div class="card-content">
-                    <div class="icon-circle" style="background: #6c5ce7;">
+                    <div class="icon-circle" style="background: #2c3e50;">
                         <i class="fa-solid fa-user-check"></i>
                     </div>
                     <h2>開始使用</h2>
