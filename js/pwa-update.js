@@ -2,23 +2,20 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     
-    // 1. 初始化手動檢查按鈕 (優先執行)
+    // 1. 初始化按鈕
     initManualCheck();
 
-    // 2. 註冊 Service Worker (標準流程)
+    // 2. 註冊 Service Worker
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').then(reg => {
             console.log('[PWA] Service Worker 註冊成功');
-
-            // 自動檢查更新 (靜默執行)
+            // 自動檢查一次
             reg.update();
-
-            // 監聽更新狀態
+            // 監聽狀態
             monitorUpdates(reg);
-
         }).catch(err => console.error('[PWA] 註冊失敗', err));
 
-        // 當新版 SW 接管後，自動重整頁面
+        // 監聽控制器變更 -> 重整頁面
         let refreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             if (!refreshing) {
@@ -29,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// 手動檢查邏輯 (PWA 強力修正版)
 function initManualCheck() {
     const btn = document.getElementById('checkUpdateBtn');
     const icon = document.getElementById('updateIcon');
@@ -37,135 +33,104 @@ function initManualCheck() {
 
     if (!btn) return;
 
-    const handleClick = async (e) => {
-        // 防止事件冒泡與預設行為
-        e.preventDefault(); 
+    btn.addEventListener('click', async (e) => {
+        e.preventDefault();
         e.stopPropagation();
 
         if (btn.disabled) return;
 
-        // UI 變更：檢查中
+        // UI 變更：轉圈圈
         icon.classList.remove('fa-circle-check');
         icon.classList.add('fa-spin', 'fa-rotate');
         icon.style.color = "#3498db";
-        text.innerText = "檢查中...";
+        text.innerText = "正在更新...";
         btn.disabled = true;
         btn.style.opacity = "0.7";
 
         try {
-            // [關鍵修正 1] 改用 getRegistration()，不要用 .ready (會卡死)
+            // 1. 抓取 Service Worker
             let reg = await navigator.serviceWorker.getRegistration();
 
-            // [關鍵修正 2] 如果不幸抓不到 (極少見)，嘗試重新註冊一次來獲取
+            // 如果沒有 SW，直接重整就會抓到新的
             if (!reg) {
-                console.log('[PWA] 找不到 reg，嘗試重新獲取...');
-                reg = await navigator.serviceWorker.register('./sw.js');
+                window.location.reload();
+                return;
             }
 
-            if (!reg) {
-                throw new Error("無法獲取 Service Worker");
+            // 2. 檢查是否有「等待中」的新版 (這是最常見的情況)
+            if (reg.waiting) {
+                console.log('[PWA] 發現等待中的版本，直接啟用...');
+                reg.waiting.postMessage({ action: 'skipWaiting' });
+                return; // 後續會由 controllerchange 觸發 reload
             }
 
-            // 強制去伺服器撈資料
+            // 3. 強制去伺服器檢查
             await reg.update();
 
-            // 稍微延遲一點，讓使用者看得到轉圈圈
-            setTimeout(() => {
-                const hasUpdate = reg.installing || reg.waiting;
+            // 檢查是否正在安裝新版
+            const newWorker = reg.installing || reg.waiting;
+            if (newWorker) {
+                console.log('[PWA] 發現新版本下載中...');
+                // 發送 skipWaiting (如果它還在安裝，可能沒反應，但沒關係)
+                newWorker.postMessage({ action: 'skipWaiting' });
                 
-                if (hasUpdate) {
-                    // A. 發現新版
-                    text.innerText = "發現新版本！";
-                    icon.classList.remove('fa-spin');
-                    // 這裡交給 monitorUpdates 處理跳出視窗
-                    // 為了保險，我們手動再觸發一次顯示視窗邏輯
-                    showGlobalNotification(hasUpdate);
-                    updateButtonStatus("發現新版本！");
-                } else {
-                    // B. 沒更新
-                    icon.classList.remove('fa-spin', 'fa-rotate');
-                    icon.className = "fa-solid fa-circle-check"; // 變成打勾
-                    icon.style.color = "#2ecc71";
-                    text.innerText = "已是最新";
+                // 等它裝好
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed') {
+                        newWorker.postMessage({ action: 'skipWaiting' });
+                    }
+                });
+                return;
+            }
 
-                    // 2秒後復原按鈕
-                    setTimeout(() => {
-                        resetButton(icon, text, btn);
-                    }, 2000);
-                }
-            }, 800);
+            // 4. 【核彈級大招】如果都沒發現新版，但使用者按了更新 -> 強制重灌
+            // 這會移除目前的 SW，逼瀏覽器下次載入時抓全新的
+            console.log('[PWA] 沒發現新版，執行強制重灌...');
+            text.innerText = "深度重整中...";
+            
+            await reg.unregister(); // 註銷 SW
+            
+            // 清除所有快取 (選用，但更保險)
+            const cacheKeys = await caches.keys();
+            await Promise.all(cacheKeys.map(key => caches.delete(key)));
+
+            // 強制重整
+            window.location.reload(true);
 
         } catch (error) {
-            console.error('[PWA] 手動檢查失敗', error);
-            // 讓使用者知道出錯了
-            text.innerText = "檢查失敗";
-            icon.classList.remove('fa-spin');
-            icon.style.color = "#e74c3c";
-            
-            setTimeout(() => resetButton(icon, text, btn), 2000);
+            console.error('[PWA] 更新失敗', error);
+            // 出錯了也直接重整，反正就是想更新
+            window.location.reload();
         }
-    };
-
-    // 綁定點擊事件
-    btn.addEventListener('click', handleClick);
+    });
 }
 
-function resetButton(icon, text, btn) {
-    icon.className = "fa-solid fa-rotate";
-    icon.style.color = "#3498db";
-    text.innerText = "檢查更新";
-    btn.disabled = false;
-    btn.style.opacity = "1";
-}
-
-// 監聽是否有新版本
 function monitorUpdates(reg) {
-    // 封裝檢查邏輯
-    const checkState = (worker) => {
+    // 這裡保留原本的自動偵測邏輯，為了顯示提示框
+    const check = (worker) => {
         if (worker && worker.state === 'installed' && navigator.serviceWorker.controller) {
             showGlobalNotification(worker);
-            updateButtonStatus("發現新版本！");
         }
     };
-
-    // A. 檢查 Waiting
-    if (reg.waiting) {
-        showGlobalNotification(reg.waiting);
-        updateButtonStatus("發現新版本！");
-    }
-
-    // B. 監聽 Installing
+    if (reg.waiting) check(reg.waiting);
     reg.onupdatefound = () => {
         const newWorker = reg.installing;
         if (newWorker) {
-            newWorker.onstatechange = () => checkState(newWorker);
+            newWorker.onstatechange = () => check(newWorker);
         }
     };
 }
 
-// 顯示黑色提示框
 function showGlobalNotification(worker) {
     const notification = document.getElementById('update-notification');
     const btn = document.getElementById('reload-btn');
-    
     if (notification && btn) {
         if (notification.style.display === 'flex') return;
         notification.style.display = 'flex';
-        
         btn.onclick = () => {
             worker.postMessage({ action: 'skipWaiting' });
             btn.disabled = true;
             btn.innerText = "更新中...";
         };
-    }
-}
-
-function updateButtonStatus(msg) {
-    const text = document.getElementById('updateText');
-    const icon = document.getElementById('updateIcon');
-    if (text && icon) {
-        text.innerText = msg;
-        icon.classList.remove('fa-spin');
-        icon.style.color = "#e74c3c";
     }
 }
