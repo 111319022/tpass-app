@@ -1,7 +1,7 @@
 // sw.js
 
 // [重要] 每次發布新版時，請務必修改這裡的版本號
-const CACHE_NAME = 'tpass-app-v2.3.5'; 
+const CACHE_NAME = 'tpass-app-v2.3.6'; 
 
 // 完整的快取清單
 const ASSETS_TO_CACHE = [
