@@ -559,32 +559,42 @@
     </script>
 
     <div id="update-notification" style="
-        display: none;
-        position: fixed;
-        bottom: max(20px, env(safe-area-inset-bottom) + 20px);
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: #333;
+    display: none;
+    position: fixed;
+    bottom: max(20px, env(safe-area-inset-bottom) + 20px);
+    left: 50%;
+    transform: translateX(-50%);
+    
+    /* 這裡開始是調整寬度的關鍵 */
+    width: 90%;            /* 讓它佔據手機寬度的 90% */
+    max-width: 400px;      /* 但最大不超過 400px (避免平板/電腦太寬) */
+    box-sizing: border-box; /* 確保 padding 不會撐破寬度 */
+    justify-content: space-between; /* 讓文字靠左、按鈕靠右 */
+    
+    background-color: #333;
+    color: white;
+    padding: 16px 20px;    /* 增加內距，讓空間呼吸 */
+    border-radius: 12px;   /* 圓角稍微大一點，比較現代 */
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4); /* 加強陰影，讓它浮起來 */
+    z-index: 10000;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;       /* 字體稍微調大 */
+">
+    <span style="flex: 1;">✨ 發現新版本，請更新以獲得最新功能！</span>
+    
+    <button id="reload-btn" style="
+        background: #2ecc71;
+        border: none;
         color: white;
-        padding: 12px 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        z-index: 10000;
-        align-items: center;
-        gap: 15px;
+        padding: 8px 16px;     /* 按鈕也加大一點 */
+        border-radius: 20px;   /* 變成膠囊狀按鈕 */
+        cursor: pointer;
+        font-weight: bold;
+        white-space: nowrap;   /* 防止按鈕文字換行 */
         font-size: 14px;
-    ">
-        <span>✨ 發現新版本，請更新以獲得最新功能！</span>
-        <button id="reload-btn" style="
-            background: #2ecc71;
-            border: none;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-        ">立即更新</button>
-    </div>
+    ">立即更新</button>
+</div>
 
     <script src="js/pwa-update.js"></script>
 </body>
