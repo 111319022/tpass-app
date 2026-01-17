@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     
-    // 1. 初始化手動檢查按鈕 (核彈級修復功能)
+    // 1. 初始化手動檢查按鈕
     initManualCheck();
 
     // 2. 註冊 Service Worker 並啟動自動偵測
@@ -10,15 +10,10 @@ document.addEventListener('DOMContentLoaded', () => {
         navigator.serviceWorker.register('./sw.js').then(reg => {
             console.log('[PWA] Service Worker 註冊成功');
 
-            // ==========================================
             // 自動策略 A: 啟動時立刻檢查
-            // ==========================================
             reg.update();
 
-            // ==========================================
-            // 自動策略 B: 當使用者從背景切回 APP 時檢查
-            // (解決手機 PWA 長時間掛在後台沒更新的問題)
-            // ==========================================
+            // 自動策略 B: 切回前台時檢查
             document.addEventListener('visibilitychange', () => {
                 if (document.visibilityState === 'visible') {
                     console.log('[PWA] APP 回到前台，自動檢查更新...');
@@ -26,41 +21,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // ==========================================
-            // 自動策略 C: 每隔 60 分鐘自動檢查一次
-            // ==========================================
+            // 自動策略 C: 定時檢查 (每小時)
             setInterval(() => {
-                console.log('[PWA] 定時檢查更新...');
                 reg.update();
             }, 60 * 60 * 1000);
 
-            // 啟動監聽 (只要發現新版，就跳出提示框)
+            // 啟動監聽
             monitorUpdates(reg);
 
         }).catch(err => console.error('[PWA] 註冊失敗', err));
 
-        // 當新版 SW 接管後，自動重整頁面
+        // 監聽控制器變更 -> 自動重整
+        // (雖然下面的按鈕會強制重整，但保留這個以防萬一)
         let refreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             if (!refreshing) {
-                window.location.reload();
+                window.location.reload(true); // 改用 true 強制忽略快取
                 refreshing = true;
             }
         });
     }
 });
 
-// 監聽更新狀態 (自動偵測的核心)
+// 監聽更新狀態
 function monitorUpdates(reg) {
-    // 定義發現新版時的動作：顯示黑色提示框
     const notifyUser = (worker) => {
-        // 確保新版已經下載完畢 (installed) 或者是等待中 (waiting)
-        // 並且目前已經有舊版在跑 (navigator.serviceWorker.controller)
-        // (避免第一次安裝時也跳提示)
         if (worker && navigator.serviceWorker.controller) {
-            showGlobalNotification(worker);
+            showGlobalNotification(); // 顯示暴力重整按鈕
             
-            // 順便把選單裡的按鈕變色，增加被看到的機率
+            // 讓選單裡的按鈕也變色
             const text = document.getElementById('updateText');
             const icon = document.getElementById('updateIcon');
             if (text && icon) {
@@ -70,16 +59,11 @@ function monitorUpdates(reg) {
         }
     };
 
-    // A. 檢查是否已經有等待中的版本 (Waiting)
-    if (reg.waiting) {
-        notifyUser(reg.waiting);
-    }
+    if (reg.waiting) notifyUser(reg.waiting);
 
-    // B. 監聽是否有正在下載的版本 (Installing)
     reg.onupdatefound = () => {
         const newWorker = reg.installing;
         if (newWorker) {
-            // 監聽安裝狀態改變
             newWorker.onstatechange = () => {
                 if (newWorker.state === 'installed') {
                     notifyUser(newWorker);
@@ -89,29 +73,49 @@ function monitorUpdates(reg) {
     };
 }
 
-// 顯示黑色全域提示框
-function showGlobalNotification(worker) {
+// ============================================================
+// [關鍵修改] 顯示黑色全域提示框 - 點擊後執行「核彈級重整」
+// ============================================================
+function showGlobalNotification() {
     const notification = document.getElementById('update-notification');
     const btn = document.getElementById('reload-btn');
     
     if (notification && btn) {
-        // 避免重複顯示
         if (notification.style.display === 'flex') return;
 
         notification.style.display = 'flex';
         
-        btn.onclick = () => {
-            // 發送指令讓新版 SW 接管
-            worker.postMessage({ action: 'skipWaiting' });
+        btn.onclick = async () => {
             btn.disabled = true;
             btn.innerText = "更新中...";
+
+            // 這裡不發送 skipWaiting，而是直接執行「核彈級重整」
+            // 確保行為跟手動檢查按鈕完全一致
+            try {
+                // 1. 取得並註銷目前的 SW
+                const reg = await navigator.serviceWorker.getRegistration();
+                if (reg) {
+                    await reg.unregister();
+                }
+
+                // 2. 清除所有快取 (Cache Storage)
+                const cacheKeys = await caches.keys();
+                await Promise.all(cacheKeys.map(key => caches.delete(key)));
+
+                // 3. 強制重載頁面 (忽略瀏覽器快取)
+                window.location.reload(true);
+                
+            } catch (err) {
+                console.error('[PWA] Update failed, forcing reload', err);
+                window.location.reload(true);
+            }
         };
     }
 }
 
 
 // ============================================================
-// 手動檢查邏輯 (保留您之前的核彈級強制更新)
+// 手動檢查邏輯 (維持原本的強力模式)
 // ============================================================
 function initManualCheck() {
     const btn = document.getElementById('checkUpdateBtn');
@@ -138,31 +142,26 @@ function initManualCheck() {
             let reg = await navigator.serviceWorker.getRegistration();
 
             if (!reg) {
-                window.location.reload();
+                window.location.reload(true);
                 return;
             }
 
-            // 1. 如果已經有等待中的版本，直接更新
-            if (reg.waiting) {
-                reg.waiting.postMessage({ action: 'skipWaiting' });
-                return;
-            }
-
-            // 2. 強制去伺服器檢查
+            // 強制去伺服器檢查
             await reg.update();
 
-            // 3. 檢查是否有新版正在下載
+            // 檢查結果
             const newWorker = reg.installing || reg.waiting;
+            
             if (newWorker) {
-                // 有新版 -> 跳出黑框提示 (或是直接更新也可以，這裡選擇溫柔一點)
-                showGlobalNotification(newWorker);
+                // 如果發現新版，直接呼叫上面的暴力視窗
+                showGlobalNotification(); 
                 text.innerText = "發現新版本！";
                 icon.classList.remove('fa-spin');
                 icon.style.color = "#e74c3c";
                 return;
             }
 
-            // 4. 【核彈級大招】沒發現新版，但使用者硬要按 -> 強制重灌
+            // 如果沒發現新版，但使用者硬按 -> 執行核彈重整
             console.log('[PWA] 手動強制重整...');
             text.innerText = "深度重整中...";
             
@@ -173,7 +172,7 @@ function initManualCheck() {
 
         } catch (error) {
             console.error('[PWA] 手動更新失敗', error);
-            window.location.reload();
+            window.location.reload(true);
         }
     });
 }
