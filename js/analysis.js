@@ -1,3 +1,5 @@
+// js/analysis.js
+
 import { db } from "./firebase-config.js";
 import { initAuthListener } from "./auth.js";
 import { collection, query, orderBy, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -18,7 +20,6 @@ const LABELS = {
     tymrt: '機捷', lrt: '輕軌', bike: 'Ubike'
 };
 
-// 確保有完整的 Transport Types Key
 const TRANSPORT_TYPES = {
     mrt: 'mrt', bus: 'bus', coach: 'coach',
     tra: 'tra', tymrt: 'tymrt', lrt: 'lrt', bike: 'bike'
@@ -253,6 +254,7 @@ function renderAnalysis() {
         setHtml('totalTrips', '0');
         setHtml('daysToBreakEven', '--');
         setHtml('dnaTags', '<span class="dna-tag" style="background:#eee;color:#888;">此週期無資料</span>');
+        setHtml('vsContainer', ''); 
         setHtml('financialBreakdown', ''); 
         setHtml('transportGrid', '');
         setHtml('savingsGrid', '');
@@ -267,6 +269,7 @@ function renderAnalysis() {
     const financeData = calculateFinancials(tripsToAnalyze);
 
     renderSummary(tripsToAnalyze);
+    renderVsBlock(financeData); // [新增] 渲染 VS 區塊
     renderDNA(tripsToAnalyze, financeData);
     renderFinancialBreakdown(financeData); 
     renderSavingsAndRewards(financeData);
@@ -314,7 +317,65 @@ function renderSummary(trips) {
     }
 }
 
-// === 2. DNA 獎章 (修正後) ===
+// === [修正] 渲染實際總支出 vs 月票區塊 ===
+function renderVsBlock(financeData) {
+    const container = document.getElementById('vsContainer');
+    if (!container) return;
+
+    // 計算 TPASS 成本
+    let tpassCost = 1200;
+    if (!currentSelectedCycle) { 
+        tpassCost = Math.max(cycles.length, 1) * 1200;
+    }
+
+    // [核心修正 1] 實際淨支出 = 實際扣款 - R1回饋 - R2回饋
+    // 這才是您真正從口袋付出去的錢
+    const netActualCost = financeData.totalPaid - financeData.r1_total - financeData.r2_total;
+    
+    // [核心修正 2] 差額 = 淨支出 - TPASS成本
+    // 如果 淨支出(3000) > TPASS(1200) => 差額 +1800 => 代表買TPASS省了1800 (WIN)
+    // 如果 淨支出(1000) < TPASS(1200) => 差額 -200 => 代表買TPASS多花了200 (LOSS)
+    const diff = netActualCost - tpassCost;
+    
+    let statusBg = diff > 0 ? '#27ae60' : '#c0392b';
+    let statusText = diff > 0 ? `省下 $${diff}` : `倒貼 $${Math.abs(diff)}`;
+    let statusIcon = diff > 0 ? '🎉 已回本！' : '💸 尚未回本';
+    
+    // 背景漸層：回本(綠)、未回本(紅)
+    let bgGradient = diff > 0 
+        ? "linear-gradient(135deg, #1d976c, #93f9b9)"
+        : "linear-gradient(135deg, #cb2d3e, #ef473a)";
+
+    container.innerHTML = `
+        <div style="background: #2d3436; border-radius: 20px; padding: 20px; color: white; box-shadow: 0 5px 15px rgba(0,0,0,0.2); position: relative; overflow: hidden;">
+            <div style="position:absolute; top:0; left:0; width:100%; height:100%; opacity:0.15; background:${bgGradient}; z-index:0;"></div>
+            
+            <div style="display: flex; justify-content: space-around; align-items: center; position: relative; z-index: 2;">
+                <div style="text-align: center;">
+                    <div style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;">實際總支出 (扣回饋)</div>
+                    <div style="font-size: 24px; font-weight: bold;">$${netActualCost}</div>
+                </div>
+                <div style="font-size: 20px; font-weight: 900; font-style: italic; opacity: 0.5;">VS</div>
+                <div style="text-align: center;">
+                    <div style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;">TPASS 成本</div>
+                    <div style="font-size: 24px; font-weight: bold;">$${tpassCost}</div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 15px; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 8px; text-align: center; backdrop-filter: blur(5px); position: relative; z-index: 2;">
+                <span style="font-weight: bold; color: ${diff > 0 ? '#2ecc71' : '#ff7675'};">
+                    ${statusIcon} ${statusText}
+                </span>
+            </div>
+
+            <div style="position: absolute; bottom: -10px; right: -10px; font-size: 80px; font-weight: 900; color: white; opacity: 0.05; pointer-events: none;">
+                ${diff > 0 ? 'WIN' : 'LOSS'}
+            </div>
+        </div>
+    `;
+}
+
+// === 2. DNA 獎章 ===
 function renderDNA(trips, financeData) {
     const container = document.getElementById('dnaTags');
     if (!container) return;
@@ -331,7 +392,6 @@ function renderDNA(trips, financeData) {
     });
 
     const totalTrips = trips.length;
-    // 避免沒有行程時 reduce 出錯
     const topMode = Object.keys(counts).length > 0 
         ? Object.keys(counts).reduce((a, b) => (counts[a] || 0) > (counts[b] || 0) ? a : b)
         : '';
@@ -347,10 +407,7 @@ function renderDNA(trips, financeData) {
     if (totalTrips > 100) tags.push({ text: '🔥 狂熱通勤', color: '#ff7675' });
     else if (totalTrips > 50) tags.push({ text: '📅 規律生活', color: '#55efc4' });
 
-    // [修正重點]：不再計算「省下多少錢」，而是計算「超過月票門檻多少錢」
-    // 邏輯：原始總價值 - 1200 (月票成本) = 倒賺金額
     const profit = financeData.totalOriginal - 1200;
-
     if (profit > 1200) tags.push({ text: '💸 倒賺省長', color: '#ffeaa7' }); 
     else if (profit > 0) tags.push({ text: '💰 回本大師', color: '#55efc4' });
 
@@ -384,44 +441,16 @@ function renderDNA(trips, financeData) {
     });
 }
 
-// === [新功能] 渲染財務細項 (折疊選單) ===
+// === 渲染財務細項 ===
 function renderFinancialBreakdown(data) {
     const container = document.getElementById('financialBreakdown');
     if (!container) return;
 
     const sections = [
-        {   
-            id: 'original',
-            title: '原始票價總額',
-            sub: '',
-            amount: `$${data.totalOriginal}`,
-            color: '#333',
-            items: data.original_details
-        },
-        {
-            id: 'paid',
-            title: '實際扣款總額',
-            sub: '(扣轉乘)',
-            amount: `$${data.totalPaid}`,
-            color: '#333',
-            items: data.paid_details
-        },
-        {
-            id: 'r1',
-            title: '常客優惠回饋 (R1)',
-            sub: '',
-            amount: `-$${data.r1_total}`,
-            color: '#e67e22',
-            items: data.r1_details
-        },
-        {
-            id: 'r2',
-            title: 'TPASS 2.0 回饋 (R2)',
-            sub: '',
-            amount: `-$${data.r2_total}`,
-            color: '#e67e22',
-            items: data.r2_details
-        }
+        { id: 'original', title: '原始票價總額', sub: '', amount: `$${data.totalOriginal}`, color: '#333', items: data.original_details },
+        { id: 'paid', title: '實際扣款總額', sub: '(扣轉乘)', amount: `$${data.totalPaid}`, color: '#333', items: data.paid_details },
+        { id: 'r1', title: '常客優惠回饋 (R1)', sub: '', amount: `-$${data.r1_total}`, color: '#e67e22', items: data.r1_details },
+        { id: 'r2', title: 'TPASS 2.0 回饋 (R2)', sub: '', amount: `-$${data.r2_total}`, color: '#e67e22', items: data.r2_details }
     ];
 
     let html = '';
@@ -429,34 +458,13 @@ function renderFinancialBreakdown(data) {
         const hasItems = sec.items && sec.items.length > 0;
         const pointerClass = hasItems ? 'cursor-pointer' : '';
         const iconHtml = hasItems ? `<i class="fa-solid fa-chevron-down arrow-icon"></i>` : '';
-        
         let listHtml = '';
         if (hasItems) {
             listHtml = `<div class="finance-detail hidden">`;
-            sec.items.forEach(item => {
-                listHtml += `
-                    <div class="finance-row">
-                        <span>${item.text}</span>
-                        <span style="font-family:monospace;">${item.amount}</span>
-                    </div>`;
-            });
+            sec.items.forEach(item => { listHtml += `<div class="finance-row"><span>${item.text}</span><span style="font-family:monospace;">${item.amount}</span></div>`; });
             listHtml += `</div>`;
         }
-
-        html += `
-            <div class="finance-item ${pointerClass}" onclick="toggleFinanceItem(this)">
-                <div class="finance-header">
-                    <div class="fh-left">
-                        <span class="fh-title">${sec.title} <small>${sec.sub}</small></span>
-                    </div>
-                    <div class="fh-right">
-                        <span class="fh-amount" style="color:${sec.color}">${sec.amount}</span>
-                        ${iconHtml}
-                    </div>
-                </div>
-                ${listHtml}
-            </div>
-        `;
+        html += `<div class="finance-item ${pointerClass}" onclick="toggleFinanceItem(this)"><div class="finance-header"><div class="fh-left"><span class="fh-title">${sec.title} <small>${sec.sub}</small></span></div><div class="fh-right"><span class="fh-amount" style="color:${sec.color}">${sec.amount}</span>${iconHtml}</div></div>${listHtml}</div>`;
     });
     container.innerHTML = html;
 }
@@ -465,14 +473,12 @@ function renderFinancialBreakdown(data) {
 function renderSavingsAndRewards(data) {
     const grid = document.getElementById('savingsGrid');
     if (!grid) return; grid.innerHTML = '';
-
     const cardsData = [
         { title: "轉乘優惠省下", amount: data.transferSavings, class: "transfer", desc: "轉乘折扣累積" },
         { title: "免單省下金額", amount: data.freeSavings, class: "free", desc: "所得到的免費搭乘！" },
         { title: "常客回饋 (R1)", amount: data.r1_total, class: "r1", desc: data.r1_desc },
         { title: "TPASS 2.0 (R2)", amount: data.r2_total, class: "r2", desc: data.r2_desc }
     ];
-
     cardsData.forEach(d => {
         const div = document.createElement('div'); div.className = `saving-card ${d.class}`;
         div.innerHTML = `<h4>${d.title}</h4><div class="amount">$${d.amount}</div><div class="detail" style="opacity:0.8;">${d.desc}</div>`;
@@ -532,12 +538,11 @@ function renderRouteRanking(trips) {
     });
 }
 
-// === 6. ROI 圖表 (修正：全部時間累計模式下的階梯門檻) ===
+// === 6. ROI 圖表 ===
 function renderROIChart(trips) {
     const ctx = document.getElementById('roiChart').getContext('2d');
     if (chartInstances.roi) chartInstances.roi.destroy();
     
-    // 1. 準備資料結構
     const dailyData = {}; 
     const monthlyStats = {}; 
     const rebateEvents = {}; 
@@ -549,7 +554,6 @@ function renderROIChart(trips) {
         else { const now = new Date(); minTime = new Date(now.getFullYear(), now.getMonth(), 1).getTime(); maxTime = now.getTime(); }
     }
 
-    // 初始化每天為 0
     for (let d = minTime; d <= maxTime; d += 86400000) {
         const dateObj = new Date(d); 
         const yyyy = dateObj.getFullYear();
@@ -559,7 +563,6 @@ function renderROIChart(trips) {
         dailyData[key] = 0;
     }
 
-    // 2. 統計每日「實付金額」並收集月度數據
     const discount = FARE_CONFIG[currentIdentity].transferDiscount;
     let globalMonthlyCounts = {}; 
 
@@ -586,38 +589,27 @@ function renderROIChart(trips) {
         monthlyStats[monthKey].paidSums[t.type] += pp;
     });
 
-    // 3. 計算並扣除每月回饋
     Object.keys(monthlyStats).forEach(month => {
         const cSums = monthlyStats[month];
         const gCounts = globalMonthlyCounts[month] || { mrt:0, tra:0, bus:0, coach:0 };
-        
         let r1 = 0, r2 = 0;
-
-        // R1
         let mrtRate = 0;
         if (gCounts.mrt > 40) mrtRate = 0.15; else if (gCounts.mrt > 20) mrtRate = 0.10; else if (gCounts.mrt > 10) mrtRate = 0.05;
         r1 += Math.floor(cSums.originalSums.mrt * mrtRate);
-
         let traRate = 0;
         if (gCounts.tra > 40) traRate = 0.20; else if (gCounts.tra > 20) traRate = 0.15; else if (gCounts.tra > 10) traRate = 0.10;
         r1 += Math.floor(cSums.originalSums.tra * traRate);
-
-        // R2
         const railCount = gCounts.mrt + gCounts.tra + gCounts.tymrt + gCounts.lrt;
         const railPaidSum = cSums.paidSums.mrt + cSums.paidSums.tra + cSums.paidSums.tymrt + cSums.paidSums.lrt;
         if (railCount >= 11) r2 += Math.floor(railPaidSum * 0.02);
-
         const busCount = gCounts.bus + gCounts.coach;
         const busPaidSum = cSums.paidSums.bus + cSums.paidSums.coach;
         let busRate = 0;
         if (busCount > 30) busRate = 0.30; else if (busCount >= 11) busRate = 0.15;
         r2 += Math.floor(busPaidSum * busRate);
-
         const totalRebate = r1 + r2;
-
         const tripsInMonth = trips.filter(t => t.dateStr.startsWith(month));
         let targetDate;
-
         if (tripsInMonth.length > 0) {
             tripsInMonth.sort((a, b) => a.dateStr.localeCompare(b.dateStr));
             targetDate = tripsInMonth[tripsInMonth.length - 1].dateStr;
@@ -627,21 +619,17 @@ function renderROIChart(trips) {
                 targetDate = datesInCycle[datesInCycle.length - 1];
             }
         }
-
         if (targetDate && dailyData[targetDate] !== undefined) {
             dailyData[targetDate] -= totalRebate;
-            // 紀錄回饋事件
             rebateEvents[targetDate] = { r1: r1, r2: r2, total: totalRebate };
         }
     });
 
-    // 4. 產生圖表數據
     const sortedKeys = Object.keys(dailyData).sort();
     const labels = sortedKeys.map(k => k.slice(5)); 
     const cumulativeData = []; let sum = 0;
     sortedKeys.forEach(key => { sum += dailyData[key]; cumulativeData.push(sum); });
     
-    // [修正] 動態計算門檻
     let thresholdData = [];
     let thresholdLabel = '回本門檻 ($1200)';
     let isStepped = false;
@@ -649,19 +637,12 @@ function renderROIChart(trips) {
     if (currentSelectedCycle) {
         thresholdData = new Array(labels.length).fill(1200);
     } else {
-        // 全部時間模式：計算累積門檻
         thresholdLabel = '累積月票成本';
-        isStepped = true; // 設定為階梯圖
-        
-        // 確保週期已排序
+        isStepped = true; 
         const sortedCycles = (cycles || []).slice().sort((a, b) => a.start - b.start);
-
         thresholdData = sortedKeys.map(key => {
             const dateObj = new Date(key);
             const checkTime = dateObj.getTime();
-            
-            // 計算在該日期之前(含)有多少週期已經開始
-            // 使用 > 0 以防沒有週期時顯示 0
             const activeCycles = sortedCycles.filter(c => c.start <= checkTime).length;
             return Math.max(activeCycles, 1) * 1200; 
         });
@@ -680,7 +661,7 @@ function renderROIChart(trips) {
                     borderDash: [5, 5], 
                     pointRadius: 0, 
                     borderWidth: 2,
-                    stepped: isStepped // 套用階梯設定
+                    stepped: isStepped 
                 }
             ]
         },
@@ -691,22 +672,13 @@ function renderROIChart(trips) {
                 legend: { position: 'bottom' }, 
                 tooltip: { 
                     callbacks: { 
-                        label: function(context) { 
-                            return context.dataset.label + ': $' + context.raw; 
-                        },
-                        // Footer Callback
+                        label: function(context) { return context.dataset.label + ': $' + context.raw; },
                         footer: function(tooltipItems) {
                             const index = tooltipItems[0].dataIndex;
                             const dateKey = sortedKeys[index]; 
-                            
                             if (rebateEvents[dateKey]) {
                                 const evt = rebateEvents[dateKey];
-                                return [
-                                    '', 
-                                    `🎁 本日扣除回饋: -$${evt.total}`,
-                                    `   • R1 常客: -$${evt.r1}`,
-                                    `   • R2 TPASS: -$${evt.r2}`
-                                ];
+                                return ['', `🎁 本日扣除回饋: -$${evt.total}`, `   • R1 常客: -$${evt.r1}`, `   • R2 TPASS: -$${evt.r2}`];
                             }
                             return [];
                         }
@@ -739,25 +711,45 @@ function renderRadarChart(trips) {
     });
 }
 
+// === 7. 單日記錄 (修正為實際扣款) ===
 function renderRecords(trips) {
     const container = document.getElementById('recordsGrid');
     if (!container) return; container.innerHTML = '';
-    const dailyStats = {}; let maxSingleTrip = { price: 0, date: '', desc: '' };
+    
+    const dailyStats = {}; 
+    let maxSingleTrip = { price: 0, date: '', desc: '' };
+    const discount = FARE_CONFIG[currentIdentity].transferDiscount;
+
     trips.forEach(t => {
+        // [修正] 計算單筆實際扣款金額
+        let pp = t.isFree ? 0 : t.paidPrice;
+        if (pp === undefined) pp = t.isTransfer ? Math.max(0, (t.originalPrice||0) - discount) : (t.originalPrice||0);
+
         if (!dailyStats[t.dateStr]) dailyStats[t.dateStr] = { cost: 0, count: 0 };
-        dailyStats[t.dateStr].cost += (t.originalPrice || 0); dailyStats[t.dateStr].count += 1;
-        if ((t.originalPrice || 0) > maxSingleTrip.price) { maxSingleTrip = { price: t.originalPrice, date: t.dateStr.slice(5), desc: LABELS[t.type] || t.type }; }
+        dailyStats[t.dateStr].cost += pp; // 累計實際扣款
+        dailyStats[t.dateStr].count += 1;
+        
+        // 找最貴單筆 (實際扣款)
+        if (pp > maxSingleTrip.price) { 
+            maxSingleTrip = { price: pp, date: t.dateStr.slice(5), desc: LABELS[t.type] || t.type }; 
+        }
     });
-    let maxCostDay = { date: '--', val: 0 }; let maxCountDay = { date: '--', val: 0 };
+
+    let maxCostDay = { date: '--', val: 0 }; 
+    let maxCountDay = { date: '--', val: 0 };
+    
     Object.entries(dailyStats).forEach(([date, data]) => {
         if (data.cost > maxCostDay.val) maxCostDay = { date: date.slice(5), val: data.cost };
         if (data.count > maxCountDay.val) maxCountDay = { date: date.slice(5), val: data.count };
     });
+
     const records = [
-        { title: "單日最高價值", val: `$${maxCostDay.val}`, sub: maxCostDay.date, icon: "fa-money-bill-1-wave", color: "#e74c3c" },
+        // [修正] 標題加上「實付」以示區別
+        { title: "單日最高實付", val: `$${maxCostDay.val}`, sub: maxCostDay.date, icon: "fa-money-bill-1-wave", color: "#e74c3c" },
         { title: "單日最忙碌", val: `${maxCountDay.val} 趟`, sub: maxCountDay.date, icon: "fa-person-running", color: "#f39c12" },
-        { title: "單筆最貴行程", val: `$${maxSingleTrip.price}`, sub: `${maxSingleTrip.date} · ${maxSingleTrip.desc}`, icon: "fa-crown", color: "#8e44ad" }
+        { title: "單筆最貴實付", val: `$${maxSingleTrip.price}`, sub: `${maxSingleTrip.date} · ${maxSingleTrip.desc}`, icon: "fa-crown", color: "#8e44ad" }
     ];
+
     records.forEach(r => {
         const div = document.createElement('div'); div.className = 'record-card';
         div.innerHTML = `<div class="rec-icon" style="background:${r.color}20; color:${r.color}"><i class="fa-solid ${r.icon}"></i></div><div class="rec-info"><small>${r.title}</small><div class="rec-val">${r.val}</div><div class="rec-sub">${r.sub}</div></div>`;
@@ -804,7 +796,6 @@ function getWeekInsight(wdPct, weekendVal) {
     return "🚀 數據分析中...";
 }
 
-// 供 HTML onclick 呼叫
 window.toggleFinanceItem = function(el) {
     const detail = el.querySelector('.finance-detail');
     const arrow = el.querySelector('.arrow-icon');
