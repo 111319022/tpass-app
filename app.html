@@ -138,74 +138,51 @@
             </div>
         </div>
 
-        <header class="dashboard">
-            <div class="app-title">
-                <h2>TPASS回本計算機（基北北桃）</h2>
+        <header class="dashboard-simple">
+            
+            <div class="app-title-simple">
+                <h2>TPASS回本計算機 <span style="font-size: 0.85em; font-weight: normal; opacity: 0.9;">(基北北桃)</span></h2>
                 <small>By Raaay</small>
             </div>
-            <div class="status-card">
-                <div class="period-selector-container">
+
+            <div class="cycle-selector-wrapper">
+                <div class="cycle-pill">
                     <i class="fa-regular fa-calendar-check"></i>
                     <select id="cycleSelector" class="cycle-dropdown">
                         <option value="">載入中...</option>
                     </select>
-                </div>
-
-                <div class="main-stats">
-                    <div class="stat-box">
-                        <small>實際總支出</small>
-                        <span id="finalCost">$0</span>
-                    </div>
-                    <div class="vs-badge">VS</div>
-                    <div class="stat-box">
-                        <small>TPASS 基北北桃</small>
-                        <span>$1200</span>
-                    </div>
-                </div>
-                
-                <div class="result-bar">
-                    <div id="statusText" class="status-neutral">計算中...</div>
-                    <small id="diffText">資料將儲存於雲端</small>
+                    <i class="fa-solid fa-caret-down" style="font-size: 10px; margin-left: 5px; opacity: 0.7;"></i>
                 </div>
             </div>
 
-            <div class="breakdown-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">
-                    <h4 style="margin:0; border:none; padding:0;"><i class="fa-solid fa-calculator"></i> 費用與回饋明細</h4>
-                    <a href="trans-rule.html" style="color:white; font-size:12px; text-decoration:none; background:rgba(255,255,255,0.2); padding:6px 12px; border-radius:15px; display:flex; align-items:center; gap:5px; transition:0.2s;">
-                        <i class="fa-solid fa-circle-info"></i> <span>查看規則</span>
-                    </a>
+            <div class="hero-comparison">
+                <div class="hero-item">
+                    <small>實際總支出</small>
+                    <span id="finalCost" class="hero-number">$0</span>
                 </div>
-
-                <details class="price-section">
-                    <summary>
-                        <span>原始票價總額</span>
-                        <span id="displayOriginalTotal">$0</span>
-                    </summary>
-                    <div id="listOriginalDetails" class="price-details"></div>
-                </details>
-
-                <details class="price-section" open>
-                    <summary>
-                        <span>實際扣款總額 <small style="opacity:0.7; font-size:11px;">(扣轉乘)</small></span>
-                        <span id="displayPaidTotal">$0</span>
-                    </summary>
-                    <div id="listPaidDetails" class="price-details"></div>
-                </details>
-
-                <hr style="border:0; border-top:1px dashed rgba(255,255,255,0.2); margin: 10px 0;">
                 
-                <div class="breakdown-item discount">
-                    <span><i class="fa-solid fa-gem"></i> 常客優惠回饋(以原始票價計算)</span>
-                    <span id="rule1Discount">-$0</span>
+                <div class="hero-vs">
+                    <span>VS</span>
                 </div>
-                <div class="rule-detail" id="rule1Detail"></div>
 
-                <div class="breakdown-item discount">
-                    <span><i class="fa-solid fa-ticket"></i> TPass 2.0 回饋(以實際扣款金額計算)</span>
-                    <span id="rule2Discount">-$0</span>
+                <div class="hero-item">
+                    <small>TPASS 成本</small>
+                    <span class="hero-number-static">$1200</span>
                 </div>
-                <div class="rule-detail" id="rule2Detail"></div>
+            </div>
+            
+            <div class="status-container">
+                <div id="statusPill" class="status-pill status-neutral">
+                    <i id="statusIcon" class="fa-solid fa-calculator"></i>
+                    <span id="statusText">計算中...</span>
+                </div>
+                <div id="diffText" class="status-subtext">資料同步中</div>
+            </div>
+
+            <div class="dashboard-actions">
+                <button onclick="window.location.href='analysis.html'" class="action-link">
+                    查看詳細回饋與分析 <i class="fa-solid fa-arrow-right"></i>
+                </button>
             </div>
         </header>
 

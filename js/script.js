@@ -837,40 +837,55 @@ function calculate() {
     };
 }
 
+// [修改] script.js 的 renderUI 函式
+
 function renderUI() {
     if (!currentUser) return;
     const data = calculate();
     const finalVal = Math.floor(data.finalCost);
 
-    els.finalCost.innerText = `$${finalVal}`;
-    els.displayOriginalTotal.innerText = `$${Math.floor(data.totalOriginal)}`;
-    els.listOriginalDetails.innerHTML = generateDetailHtml(data.originalSums, data.counts);
-    els.displayPaidTotal.innerText = `$${Math.floor(data.totalPaid)}`;
-    els.listPaidDetails.innerHTML = generateDetailHtml(data.paidSums, data.counts);
+    // 1. 更新主數字 (實際總支出)
+    if (els.finalCost) els.finalCost.innerText = `$${finalVal}`;
 
-    els.rule1Discount.innerText = `-$${Math.floor(data.r1.amount)}`;
-    els.rule1Detail.innerHTML = data.r1.details.length ? data.r1.details.map(d => `<div class="rule-detail-row"><span>${d.text}</span><span>${d.amount}</span></div>`).join('') : '';
-    els.rule2Discount.innerText = `-$${Math.floor(data.r2.amount)}`;
-    els.rule2Detail.innerHTML = data.r2.details.length ? data.r2.details.map(d => `<div class="rule-detail-row"><span>${d.text}</span><span>${d.amount}</span></div>`).join('') : '';
+    // [移除] 舊的詳細列表渲染 (displayOriginalTotal, listOriginalDetails...等已在HTML移除)
     
+    // 2. 更新回本狀態 (Win/Loss)
     const diff = TPASS_PRICE - finalVal;
-    if (diff < 0) {
-        els.statusText.innerText = "已回本！";
-        els.statusText.className = "status-win";
-        els.diffText.innerText = `倒賺 $${Math.abs(diff)} 元`;
-    } else {
-        els.statusText.innerText = "目前虧本";
-        els.statusText.className = "status-loss";
-        els.diffText.innerText = `還差 $${diff} 元回本`;
+    
+    // 抓取新的 DOM 元素 (建議：您可以把這些加到檔案最上面的 els 物件中，或者直接在這裡抓)
+    const statusPill = document.getElementById('statusPill');
+    const statusIcon = document.getElementById('statusIcon');
+    const statusText = document.getElementById('statusText');
+    const diffText = document.getElementById('diffText');
+
+    if (statusPill && statusText && diffText) {
+        // 重置 class
+        statusPill.classList.remove('status-win', 'status-loss', 'status-neutral');
+        
+        if (diff < 0) {
+            // 已回本
+            const earned = Math.abs(diff);
+            statusPill.classList.add('status-win'); // 文字變綠
+            statusIcon.className = "fa-solid fa-check-circle";
+            statusText.innerText = "已回本！";
+            diffText.innerText = `目前倒賺 $${earned} 元`;
+        } else {
+            // 尚未回本
+            statusPill.classList.add('status-loss'); // 文字變紅
+            statusIcon.className = "fa-solid fa-person-running";
+            statusText.innerText = "加油，尚未回本";
+            diffText.innerText = `還差 $${diff} 元回本`;
+        }
     }
 
+    // 3. 處理行程列表 (History List) - 這部分保持不變
     els.historyList.innerHTML = '';
     if (!currentSelectedCycle) {
         els.historyList.innerHTML = '<li style="background:#fff3cd; padding:10px; border-radius:8px; text-align:center;"><i class="fa-solid fa-triangle-exclamation"></i> 請點擊右上角設定新增第一筆月票週期</li>';
         return;
     }
     if (trips.length === 0) {
-        els.historyList.innerHTML = '<li style="text-align:center; padding:20px; color:#aaa;">尚無行程紀錄</li>';
+        els.historyList.innerHTML = '<li style="text-align:center; padding:30px; color:#aaa;">本週期尚無行程紀錄<br><small>點擊右下角 + 新增第一筆</small></li>';
         return;
     }
 
@@ -933,7 +948,7 @@ function renderUI() {
         els.historyList.appendChild(li);
     });
 
-    els.tripCount.innerText = currentCycleTripCount;
+    if (els.tripCount) els.tripCount.innerText = currentCycleTripCount;
     if (currentCycleTripCount === 0) els.historyList.innerHTML = '<li style="text-align:center; padding:30px; color:#aaa;">本週期尚無行程紀錄<br><small>點擊右下角 + 新增第一筆</small></li>';
 }
 

@@ -1171,3 +1171,210 @@ input[type="time"] {
     margin: 2px 0;
     opacity: 0.5;
 }
+
+/* === [重構] 簡約版 Dashboard 樣式 === */
+
+.dashboard-simple {
+    background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d); /* 維持原本品牌色調 */
+    padding: 20px 20px 30px 20px;
+    border-radius: 0 0 35px 35px; /* 更大的圓角 */
+    color: white;
+    box-shadow: 0 10px 30px rgba(178, 31, 31, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+/* 背景裝飾 (選用) */
+.dashboard-simple::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 150px;
+    height: 150px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    filter: blur(40px);
+}
+
+/* 1. 週期選擇器樣式 */
+.cycle-selector-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 25px;
+    position: relative;
+    z-index: 2;
+}
+
+.cycle-pill {
+    background: rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 6px 16px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: 0.2s;
+}
+
+.cycle-pill:active {
+    transform: scale(0.98);
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.cycle-dropdown {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    outline: none;
+    text-align: center;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.cycle-dropdown option {
+    background: #333;
+    color: white;
+}
+
+/* 2. 核心比對區 (Hero Section) */
+.hero-comparison {
+    display: flex;
+    justify-content: space-between; /* 拉開間距 */
+    align-items: center;
+    margin-bottom: 25px;
+    padding: 0 10px;
+}
+
+.hero-item {
+    text-align: center;
+    flex: 1;
+}
+
+.hero-item small {
+    display: block;
+    font-size: 12px;
+    opacity: 0.8;
+    margin-bottom: 5px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.hero-number {
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.hero-number-static {
+    font-size: 28px;
+    font-weight: 700;
+    opacity: 0.9;
+}
+
+.hero-vs {
+    font-style: italic;
+    font-weight: 900;
+    font-size: 20px;
+    opacity: 0.4;
+    padding: 0 10px;
+}
+
+/* 3. 回本狀態區 */
+.status-container {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.95);
+    color: #333;
+    font-weight: 800;
+    font-size: 16px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    transition: 0.3s;
+}
+
+.status-subtext {
+    display: block;
+    margin-top: 8px;
+    font-size: 13px;
+    opacity: 0.9;
+    font-weight: 500;
+}
+
+/* 狀態顏色變數 */
+.status-win { color: #27ae60 !important; }
+.status-loss { color: #e74c3c !important; }
+.status-neutral { color: #555 !important; }
+
+/* 4. 導引按鈕 */
+.dashboard-actions {
+    text-align: center;
+}
+
+.action-link {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+    backdrop-filter: blur(5px);
+}
+
+.action-link:hover {
+    background: rgba(255,255,255,0.25);
+    transform: translateY(-2px);
+}
+
+.action-link i {
+    margin-left: 5px;
+    font-size: 10px;
+}
+
+/* === Dashboard 標題樣式 (新增) === */
+.app-title-simple {
+    text-align: center;
+    margin-bottom: 15px; /* 與下方週期選擇器的距離 */
+}
+
+.app-title-simple h2 {
+    margin: 0;
+    font-size: 22px; /* 標題大小 */
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1); /* 輕微陰影增加立體感 */
+}
+
+.app-title-simple small {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    opacity: 0.7; /* 半透明白色 */
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* 微調週期選擇器，讓它跟標題不要太擠 */
+.cycle-selector-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 25px; /* 保持與下方數字的距離 */
+    position: relative;
+    z-index: 2;
+}
