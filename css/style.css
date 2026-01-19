@@ -124,269 +124,17 @@
 body { background: var(--bg); color: var(--text); padding-bottom: 90px; }
 .app-container { max-width: 480px; margin: 0 auto; min-height: 100vh; }
 
-/* 儀表板樣式 (與上版相同) */
-.dashboard { background: linear-gradient(160deg, #1a2a6c, #b21f1f, #fdbb2d); padding: 20px 15px; border-radius: 0 0 30px 30px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-.app-title { color: #fff; margin-bottom: 12px; }
-.app-title h2 { margin: 0; font-size: 20px; letter-spacing: 0.5px; }
-.app-title small { color: rgba(255,255,255,0.85); }
-.status-card { text-align: center; margin-bottom: 15px; }
-.main-stats { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 15px; }
-.stat-box { background: rgba(0,0,0,0.3); padding: 10px 20px; border-radius: 12px; min-width: 100px; }
-.stat-box small { display: block; font-size: 11px; opacity: 0.8; margin-bottom: 4px; }
-.stat-box span { font-size: 24px; font-weight: 700; }
-.vs-badge { font-weight: bold; font-style: italic; opacity: 0.6; }
-.result-bar { background: rgba(255,255,255,0.95); color: #333; padding: 10px; border-radius: 50px; display: inline-block; min-width: 200px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-.status-win { color: var(--green); font-weight: bold; }
-.status-loss { color: var(--red); font-weight: bold; }
-.status-neutral { color: var(--text); font-weight: bold; }
+/* [已移除舊版 Dashboard 樣式 - 改用 .dashboard-simple] */
 
-/* 身分切換器容器 */
-.identity-switch-container {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 15px;
-}
+/* [已移除舊版身分切換器樣式 - 改用新版 .identity-selector] */
 
-.switch-wrapper {
-    position: relative;
-    display: flex;
-    background: rgba(0, 0, 0, 0.2); /* 深色背景 */
-    border-radius: 25px;
-    padding: 4px;
-    width: 200px;
-    height: 40px;
-}
+/* [已移除舊版週期設定樣式 - 改用設定頁面 Modal] */
 
-/* 隱藏原本的 radio button */
-.switch-wrapper input[type="radio"] {
-    display: none;
-}
-
-/* 標籤樣式 */
-.switch-wrapper label {
-    flex: 1;
-    z-index: 2;
-    text-align: center;
-    line-height: 32px; /* 垂直置中 */
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-    color: rgba(255, 255, 255, 0.6);
-    transition: color 0.3s;
-}
-
-/* 選中時的文字顏色 */
-.switch-wrapper input[type="radio"]:checked + label {
-    color: #fff;
-}
-
-/* 滑動區塊 (白色背景) */
-.slider {
-    position: absolute;
-    top: 4px;
-    left: 4px;
-    width: 96px; /* (200px - 8px) / 2 */
-    height: 32px;
-    background: var(--primary); /* 或用 #4A90E2 */
-    border-radius: 20px;
-    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-    z-index: 1;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-
-/* 當學生票被選中時，滑塊移動 */
-#role-student:checked ~ .slider {
-    transform: translateX(96px);
-    background: var(--c-bus); /* 學生票變綠色，視覺提示 */
-}
-
-/* 週期設定樣式 */
-.cycle-settings-container {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 15px;
-}
-
-.cycle-settings {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 15px 20px;
-    border-radius: 12px;
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.9);
-}
-
-.cycle-settings label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 600;
-    white-space: nowrap;
-}
-
-.cycle-settings input[type="date"] {
-    padding: 8px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.cycle-settings input[type="date"]:hover {
-    background: rgba(255, 255, 255, 0.25);
-    border-color: rgba(255, 255, 255, 0.4);
-}
-
-.cycle-settings input[type="date"]::-webkit-calendar-picker-indicator {
-    filter: invert(1);
-    cursor: pointer;
-}
-
-.cycle-settings small {
-    opacity: 0.7;
-}
-
-/* 週期標籤選擇器 */
-.cycle-tabs-container {
-    margin-top: 15px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none; /* Firefox */
-}
-
-.cycle-tabs-container::-webkit-scrollbar {
-    display: none; /* Chrome, Safari */
-}
-
-.cycle-tabs {
-    display: flex;
-    gap: 8px;
-    padding: 0 0 10px 0;
-    min-width: min-content;
-}
-
-.cycle-tab {
-    flex-shrink: 0;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 10px 15px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border: 2px solid transparent;
-    position: relative;
-    min-width: 110px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-}
-
-.cycle-tab:hover {
-    background: rgba(255, 255, 255, 0.15);
-    transform: translateY(-2px);
-}
-
-.cycle-tab:hover .delete-cycle-btn {
-    opacity: 1;
-}
-
-.cycle-tab.active {
-    background: var(--primary);
-    border-color: var(--primary);
-    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
-}
-
-.cycle-tab.current {
-    border-color: var(--green);
-}
-
-.tab-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.tab-date {
-    font-size: 13px;
-    font-weight: 600;
-    color: white;
-}
-
-.tab-info {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.8);
-}
-
-.tab-count {
-    background: rgba(255, 255, 255, 0.2);
-    padding: 2px 6px;
-    border-radius: 8px;
-    font-weight: bold;
-}
-
-.tab-indicator {
-    color: var(--green);
-    font-size: 10px;
-}
-
-.delete-cycle-btn {
-    background: rgba(255, 107, 107, 0.3);
-    border: none;
-    border-radius: 6px;
-    padding: 4px 6px;
-    cursor: pointer;
-    color: var(--red);
-    font-size: 12px;
-    opacity: 0;
-    transition: all 0.2s;
-}
-
-.delete-cycle-btn:hover {
-    background: rgba(255, 107, 107, 0.5);
-    transform: scale(1.1);
-}
-
-.cycle-tab.active .delete-cycle-btn {
-    opacity: 0.7;
-}
-
-.add-cycle-btn {
-    flex-shrink: 0;
-    background: rgba(39, 174, 96, 0.2);
-    border: 2px dashed var(--green);
-    border-radius: 12px;
-    padding: 12px 20px;
-    cursor: pointer;
-    color: var(--green);
-    font-weight: bold;
-    transition: all 0.3s ease;
-    min-width: 60px;
-    font-size: 18px;
-}
-
-.add-cycle-btn:hover {
-    background: rgba(39, 174, 96, 0.3);
-    transform: translateY(-2px);
-}
+/* [已移除舊版週期標籤選擇器樣式 - 改用新版 .cycle-pill 與設定 Modal] */
 
 /* 週期列表樣式（移除，不再需要） */
 
-.breakdown-card { background: rgba(255,255,255,0.15); backdrop-filter: blur(5px); border-radius: 16px; padding: 15px; font-size: 13px; border: 1px solid rgba(255,255,255,0.1); }
-.breakdown-card h4 { margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; }
-.breakdown-item { display: flex; justify-content: space-between; margin-bottom: 6px; }
-.breakdown-item.discount { color: #ffeaa7; font-weight: bold; margin-top: 8px; }
-.rule-detail { padding-left: 20px; font-size: 11px; opacity: 0.9; color: #dfe6e9; margin-bottom: 4px; line-height: 1.4; }
-.rule-detail-row { display: flex; justify-content: space-between; gap: 8px; }
+/* [已移除舊版價格明細卡片樣式 - 改用新版 .price-section] */
 
 /* 列表區樣式 (與上版相同，微調內容排版) */
 .history-section { padding: 20px 15px; }
@@ -394,32 +142,7 @@ body { background: var(--bg); color: var(--text); padding-bottom: 90px; }
 .text-btn { background: none; border: none; color: var(--text-sub); font-size: 14px; cursor: pointer; }
 .history-list { list-style: none; }
 
-/* 日期分隔線樣式 */
-.date-separator {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 20px 0 10px 0;
-    color: var(--text-sub);
-    font-size: 13px;
-    font-weight: bold;
-    position: relative;
-}
-
-/* 加上兩條橫線讓它看起來像分隔線 */
-.date-separator::before,
-.date-separator::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: #e0e0e0;
-    margin: 0 15px;
-}
-
-/* 為了讓第一天的日期不需要上面的間距 */
-.history-list > .date-separator:first-child {
-    margin-top: 0;
-}
+/* [已移除日期分隔線重複定義 - 在下方有重新定義] */
 
 .history-item { background: var(--card); padding: 12px 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
 .item-left { display: flex; align-items: center; gap: 12px; width: 70%; } /* 限制寬度讓文字省略 */
@@ -851,80 +574,9 @@ body { background: var(--bg); color: var(--text); padding-bottom: 90px; }
     color: var(--primary);
 }
 
-/* [新增] 首頁週期下拉選單 */
-.period-selector-container {
-    text-align: center;
-    margin-bottom: 15px;
-    background: rgba(0,0,0,0.2);
-    display: inline-flex;
-    align-items: center;
-    padding: 5px 15px;
-    border-radius: 20px;
-    gap: 8px;
-}
+/* [已移除舊版 .period-selector-container - 功能已被 .cycle-selector-wrapper 取代] */
 
-.cycle-dropdown {
-    background: transparent;
-    border: none;
-    color: white;
-    font-size: 14px;
-    font-weight: bold;
-    cursor: pointer;
-    outline: none;
-    text-align: center;
-    -webkit-appearance: none; /* 移除預設箭頭(部分瀏覽器) */
-    appearance: none;
-}
-
-.cycle-dropdown option {
-    background: #fff;
-    color: #333;
-}
-
-/* [新增] 設定頁面 - 週期管理列表 */
-.cycle-manage-list {
-    list-style: none;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    max-height: 150px;
-    overflow-y: auto;
-    background: #f9f9f9;
-}
-
-.cycle-manage-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 15px;
-    border-bottom: 1px solid #eee;
-    background: #fff;
-    font-size: 14px;
-}
-
-.cycle-manage-item:last-child {
-    border-bottom: none;
-}
-
-.cycle-manage-item span.current {
-    color: var(--primary);
-    font-weight: bold;
-    font-size: 12px;
-    background: #eaf2fa;
-    padding: 2px 6px;
-    border-radius: 4px;
-    margin-left: 5px;
-}
-
-.btn-delete-cycle {
-    background: none;
-    border: none;
-    color: #ff7675;
-    cursor: pointer;
-    padding: 5px;
-}
-.btn-delete-cycle:hover {
-    color: #d63031;
-}
+/* [已移除舊版 .cycle-manage-list 重複定義 - 在下方有新版本] */
 
 /* [新增] 列表項目可點擊樣式 */
 .history-item {
@@ -1126,9 +778,7 @@ input[type="time"] {
 
 /* 隱藏原本佔空間的「起點/終點」小標題 */
 /* 因為輸入框裡的 placeholder 已經夠清楚了 */
-.station-label-small {
-    display: none; 
-}
+/* [已移除 .station-label-small - 已設為 display:none 可直接移除] */
 
 /* 讓捷運的雙層選單保持並排，但不需要額外裝飾 */
 .mrt-selector-group {
