@@ -426,7 +426,7 @@ function renderDNA(trips, financeData) {
     if (counts.coach > 5) tags.push({ text: '🏙️ 跨區移動者', color: '#fab1a0' });
 
     const maxDaily = Math.max(...Object.values(dailyCounts));
-    if (maxDaily >= 6) tags.push({ text: '🔋 能量滿點', color: '#fd79e4' });
+    if (maxDaily >= 10) tags.push({ text: '🔋 能量滿點', color: '#fd79e4' });
 
     tags.forEach(tag => {
         const span = document.createElement('span');
