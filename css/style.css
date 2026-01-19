@@ -995,6 +995,25 @@ input[type="time"] {
     font-size: 10px;
 }
 
+/* === [新增] 次級文字連結樣式 === */
+.sub-action-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 15px; /* 與上方按鈕的距離 */
+    color: rgba(255, 255, 255, 0.7); /* 半透明白色 */
+    font-size: 12px;
+    text-decoration: none;
+    transition: all 0.2s;
+    padding: 5px 10px; /* 增加點擊範圍 */
+    border-radius: 20px;
+}
+
+.sub-action-link:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+}
+
 /* === Dashboard 標題樣式 (新增) === */
 .app-title-simple {
     text-align: center;
@@ -1027,4 +1046,51 @@ input[type="time"] {
     margin-bottom: 25px; /* 保持與下方數字的距離 */
     position: relative;
     z-index: 2;
+}
+
+/* === [補回] 設定頁面 - 週期管理列表樣式 === */
+.cycle-manage-list {
+    list-style: none; /* 移除預設黑點 */
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    max-height: 150px; /* 超過高度可捲動 */
+    overflow-y: auto;
+    background: #f9f9f9;
+    padding: 0;
+    margin: 5px 0 0 0;
+}
+
+.cycle-manage-item {
+    display: flex;
+    justify-content: space-between; /* 讓日期靠左、垃圾桶靠右 */
+    align-items: center;
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    background: #fff;
+    font-size: 15px;
+    color: #333;
+}
+
+.cycle-manage-item:last-child {
+    border-bottom: none; /* 最後一項不要底線 */
+}
+
+/* 垃圾桶按鈕 */
+.btn-delete-cycle {
+    background: none;
+    border: none;
+    color: #ff7675; /* 淺紅色 */
+    cursor: pointer;
+    padding: 8px;
+    font-size: 14px;
+    transition: all 0.2s;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-delete-cycle:hover {
+    color: #d63031; /* 深紅色 */
+    background: rgba(255, 0, 0, 0.05); /* 淡淡的紅色背景 */
 }
