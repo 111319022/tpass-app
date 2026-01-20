@@ -109,6 +109,7 @@
     --text-sub: #7f8c8d;
     --green: #27ae60;
     --red: #e74c3c;
+    --update-banner-bg: #4a403a;
     
     /* 運具顏色 */
     --c-mrt: #0070BD;
@@ -1109,4 +1110,39 @@ input[type="time"] {
 .btn-delete-cycle:hover {
     color: #d63031; /* 深紅色 */
     background: rgba(255, 0, 0, 0.05); /* 淡淡的紅色背景 */
+}
+
+/* === 更新提示橫幅 === */
+.update-banner {
+    display: none;
+    position: fixed;
+    bottom: max(30px, env(safe-area-inset-bottom) + 30px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 95%;
+    max-width: 450px;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    background-color: var(--update-banner-bg);
+    color: white;
+    padding: 16px 20px;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+    z-index: 10000;
+}
+
+.update-banner-btn {
+    background: #2ecc71;
+    border: none;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 50px;
+    cursor: pointer;
+    font-weight: bold;
+    white-space: nowrap;
+    font-size: 14px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
 }
