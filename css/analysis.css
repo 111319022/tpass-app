@@ -744,7 +744,7 @@
 
 .sc-title {
     font-size: 14px;
-    letter-spacing: 2px;
+    letter-spacing: 1px;
     color: #888;
     text-transform: uppercase;
     margin-top: 8px;
@@ -793,9 +793,9 @@
 .sc-result-box i { font-size: 18px; }
 .sc-result-box span { font-weight: 800; font-size: 14px; }
 
-/* 贏了(綠) */
+/* 賺了(綠) */
 .sc-win { border-color: #27ae60; color: #27ae60; background: #eafaf1; }
-/* 輸了(紅) */
+/* 虧了(紅) */
 .sc-loss { border-color: #e74c3c; color: #e74c3c; background: #fdedec; }
 
 /* DNA 標籤 */
@@ -805,12 +805,7 @@
     width: 100%;
     background: #5c4a42;
     border-radius: 8px;
-    padding: 10px 8px;
-    margin-left: -20px;
-    margin-right: -20px;
-    width: calc(100% + 40px);
-    padding-left: 20px;
-    padding-right: 20px;
+    padding: 10px;
 }
 
 .sc-dna-label { 
@@ -862,8 +857,7 @@
 /* 標題列 */
 .sc-detail-header {
     display: grid;
-    grid-template-columns: 1fr auto auto;
-    gap: 8px;
+    grid-template-columns: 1fr 45px 55px;
     font-size: 9px;
     color: #999;
     border-bottom: 1px dashed #ccc;
@@ -923,9 +917,12 @@
     color: #555;
     font-weight: 500;
     background: rgba(0,0,0,0.05);
-    padding: 0px 4px;
+    padding: 0px 3px;
     border-radius: 3px;
     text-align: right;
+    display: inline-block;
+    width: fit-content;
+    justify-self: end;
 }
 
 /* 回饋金區塊 (強調省下的錢) */
