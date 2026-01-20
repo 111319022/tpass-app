@@ -653,7 +653,7 @@
     top: 0;
     left: 0;
     width: 360px; /* 這裡要設定寬度 */
-    height: 600px; /* 這裡要設定高度 */
+    min-height: 600px; /* 改為 min-height 讓內容撐開 */
     z-index: -1000; /* 藏在最下面 */
     visibility: hidden; /* 平常看不見 */
     opacity: 0;
@@ -672,24 +672,24 @@
     left: 50%;
     top: 50%;
     margin-left: -180px; /* 寬度的一半 */
-    margin-top: -300px; /* 高度的一半 */
+    margin-top: auto;
 }
 
 /* 卡片本體 */
 .share-card {
     width: 100%; /* 繼承容器寬度 */
-    height: 100%; /* 繼承容器高度 */
+    min-height: 100%; /* 改為 min-height */
     /* 加入一個純色背景作為漸層載入前的基底 */
     background-color: #faf9f8;
     background-image: linear-gradient(135deg, #faf9f8 0%, #f3ebe3 100%);
     padding: 30px;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start; /* 改為 flex-start，讓內容從上往下排列 */
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: #2c3e50;
     position: relative;
-    overflow: hidden;
+    overflow: visible; /* 改為 visible 讓內容可以完全顯示 */
     box-shadow: 0 20px 40px rgba(0,0,0,0.2); /* 加點陰影讓截圖更有立體感 */
 }
 /* 背景光暈裝飾 */
@@ -731,14 +731,15 @@
 
 /* 內容區 */
 .sc-body {
-    flex: 1;
+    flex: 0 1 auto; /* 改為 auto，讓內容自適應高度 */
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 15px;
     position: relative;
     z-index: 2;
+    width: 100%;
 }
 
 .sc-title {
@@ -779,16 +780,17 @@
 .sc-result-box {
     background: #fff;
     border: 2px solid #2c3e50;
-    padding: 12px 24px;
-    border-radius: 12px;
+    padding: 10px 18px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-top: 10px;
-    box-shadow: 4px 4px 0 rgba(44, 62, 80, 0.1);
+    gap: 6px;
+    margin-top: 8px;
+    box-shadow: 3px 3px 0 rgba(44, 62, 80, 0.08);
+    width: 100%;
 }
-.sc-result-box i { font-size: 20px; }
-.sc-result-box span { font-weight: 800; font-size: 16px; }
+.sc-result-box i { font-size: 18px; }
+.sc-result-box span { font-weight: 800; font-size: 14px; }
 
 /* 贏了(綠) */
 .sc-win { border-color: #27ae60; color: #27ae60; background: #eafaf1; }
@@ -796,20 +798,22 @@
 .sc-loss { border-color: #e74c3c; color: #e74c3c; background: #fdedec; }
 
 /* DNA 標籤 */
-.sc-dna-section { margin-top: 30px; text-align: center; width: 100%; }
-.sc-dna-label { font-size: 10px; letter-spacing: 1px; color: #aaa; margin-bottom: 10px; }
-.sc-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.sc-dna-section { margin-top: 8px; text-align: center; width: 100%; }
+.sc-dna-label { font-size: 9px; letter-spacing: 0.5px; color: #aaa; margin-bottom: 5px; }
+.sc-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
 
 /* 複用 dna-tag 樣式，但稍微調整以適應圖片 */
 .sc-tags .dna-tag {
-    font-size: 12px; padding: 6px 12px; border-width: 1px; background: rgba(255,255,255,0.8); margin: 0;
+    font-size: 10px; padding: 3px 8px; border-width: 1px; background: rgba(255,255,255,0.8); margin: 0;
 }
 
 /* 底部 */
 .sc-footer {
     text-align: center;
-    padding-top: 20px;
+    padding-top: 15px;
+    margin-top: 15px;
     border-top: 1px solid rgba(0,0,0,0.05);
+    flex-shrink: 0;
 }
 .sc-msg { font-weight: 700; color: #2c3e50; margin-bottom: 4px; font-size: 14px; }
 .sc-link { font-size: 12px; color: #d97761; font-weight: 500; }
@@ -819,21 +823,21 @@
 /* 容器間距 */
 .sc-detail-container {
     width: 100%;
-    margin-top: 15px;
+    margin-top: 12px;
     background: rgba(255, 255, 255, 0.5);
-    border-radius: 12px;
-    padding: 10px;
+    border-radius: 8px;
+    padding: 8px;
 }
 
 /* 標題列 */
 .sc-detail-header {
     display: flex;
     justify-content: space-between;
-    font-size: 10px;
+    font-size: 9px;
     color: #999;
     border-bottom: 1px dashed #ccc;
-    padding-bottom: 4px;
-    margin-bottom: 6px;
+    padding-bottom: 3px;
+    margin-bottom: 5px;
     font-weight: bold;
 }
 
@@ -841,7 +845,7 @@
 .sc-transport-list {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
 }
 
 /* 單行樣式 */
@@ -849,54 +853,58 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 13px;
+    font-size: 12px;
     color: #333;
 }
 
 .sc-row i {
-    width: 16px;
+    width: 14px;
     text-align: center;
-    margin-right: 4px;
-    font-size: 12px;
+    margin-right: 3px;
+    font-size: 11px;
 }
 
 .sc-row b {
     font-weight: 700;
-    margin-right: 2px;
+    margin-right: 1px;
 }
 
 .sc-row small {
     color: #555;
     font-weight: 500;
-    margin-left: 6px;
+    margin-left: 4px;
     background: rgba(0,0,0,0.05);
-    padding: 1px 5px;
-    border-radius: 4px;
+    padding: 0px 4px;
+    border-radius: 3px;
 }
 
 /* 回饋金區塊 (強調省下的錢) */
 .sc-rewards-info {
     width: 100%;
-    margin-top: 8px;
+    margin-top: 6px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     background: #fff8e1; /* 淡淡的金黃色背景 */
     border: 1px solid #ffeaa7;
     color: #d35400;
-    padding: 8px 12px;
-    border-radius: 8px;
-    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 11px;
     font-weight: bold;
 }
 
 /* 為了塞下更多資訊，稍微調整原本卡片的 padding */
 .share-card {
-    padding: 25px 20px !important; /* 縮小一點邊距 */
+    padding: 20px 18px !important; /* 縮小邊距以增加內容空間 */
 }
 .sc-body {
-    gap: 10px !important; /*縮小元件間距*/
+    gap: 12px !important; /* 適度調整元件間距 */
 }
 .sc-amount {
-    font-size: 48px !important; /* 數字稍微縮小一點點以免爆版 */
+    font-size: 52px !important; /* 稍微增大一點以維持視覺重點 */
+}
+.sc-vs-badge {
+    font-size: 13px !important;
+    padding: 2px 8px !important;
 }
