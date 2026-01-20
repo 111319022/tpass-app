@@ -928,7 +928,8 @@ async function generateAndShareImage(data, trips) {
             
             div.innerHTML = `
                 <span style="color:${config.color}"><i class="fa-solid ${config.icon}"></i> ${config.label}</span>
-                <span><b>${tripCount}</b>趟 <small>$${amount}</small></span>
+                <b>${tripCount}</b>
+                <small>$${amount}</small>
             `;
             listContainer.appendChild(div);
         }
@@ -954,11 +955,23 @@ async function generateAndShareImage(data, trips) {
         const totalRewards = r1 + r2;
 
         if (totalRewards > 0) {
-            rewardsContainer.style.display = 'flex';
-            rewardsContainer.innerHTML = `
-                <span><i class="fa-solid fa-coins"></i> 額外回饋金</span>
-                <span>-$${Math.floor(totalRewards)}</span>
-            `;
+            rewardsContainer.style.display = 'block';
+            let rewardsHTML = '';
+            
+            // 顯示 R1（常客回饋）
+            if (r1 > 0) {
+                rewardsHTML += `<div class="sc-reward-row"><span>常客回饋</span><span>-$${Math.floor(r1)}</span></div>`;
+            }
+            
+            // 顯示 R2（TPASS回饋）
+            if (r2 > 0) {
+                rewardsHTML += `<div class="sc-reward-row"><span>TPASS回饋</span><span>-$${Math.floor(r2)}</span></div>`;
+            }
+            
+            // 總計
+            rewardsHTML += `<div class="sc-reward-row sc-reward-total"><span><i class="fa-solid fa-coins"></i> 合計回饋</span><span>-$${Math.floor(totalRewards)}</span></div>`;
+            
+            rewardsContainer.innerHTML = rewardsHTML;
         } else {
             rewardsContainer.style.display = 'none'; // 沒有回饋就隱藏
         }

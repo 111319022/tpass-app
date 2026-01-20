@@ -747,7 +747,8 @@
     letter-spacing: 2px;
     color: #888;
     text-transform: uppercase;
-    margin-bottom: 10px;
+    margin-top: 8px;
+    margin-bottom: 8px;
 }
 
 .sc-main-stat { text-align: center; }
@@ -804,7 +805,7 @@
 
 /* 複用 dna-tag 樣式，但稍微調整以適應圖片 */
 .sc-tags .dna-tag {
-    font-size: 10px; padding: 3px 8px; border-width: 1px; background: rgba(255,255,255,0.8); margin: 0;
+    font-size: 10px; padding: 4px 10px; border-width: 1px; background: rgba(255,255,255,0.95); margin: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 /* 底部 */
@@ -850,8 +851,9 @@
 
 /* 單行樣式 */
 .sc-row {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 8px;
     align-items: center;
     font-size: 12px;
     color: #333;
@@ -860,22 +862,26 @@
 .sc-row i {
     width: 14px;
     text-align: center;
-    margin-right: 3px;
+    margin-right: 0px;
     font-size: 11px;
 }
 
 .sc-row b {
     font-weight: 700;
-    margin-right: 1px;
+    margin-right: 0px;
+    text-align: right;
+    min-width: 35px;
 }
 
 .sc-row small {
     color: #555;
     font-weight: 500;
-    margin-left: 4px;
+    margin-left: 0px;
     background: rgba(0,0,0,0.05);
     padding: 0px 4px;
     border-radius: 3px;
+    text-align: right;
+    min-width: 45px;
 }
 
 /* 回饋金區塊 (強調省下的錢) */
@@ -883,8 +889,8 @@
     width: 100%;
     margin-top: 6px;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    gap: 3px;
     background: #fff8e1; /* 淡淡的金黃色背景 */
     border: 1px solid #ffeaa7;
     color: #d35400;
@@ -892,6 +898,29 @@
     border-radius: 6px;
     font-size: 11px;
     font-weight: bold;
+}
+
+.sc-reward-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+}
+
+.sc-reward-row span:first-child {
+    flex: 1;
+    text-align: left;
+}
+
+.sc-reward-row span:last-child {
+    text-align: right;
+    min-width: 45px;
+}
+
+.sc-reward-total {
+    border-top: 1px solid rgba(211, 84, 0, 0.2);
+    padding-top: 2px;
+    margin-top: 1px;
 }
 
 /* 為了塞下更多資訊，稍微調整原本卡片的 padding */
