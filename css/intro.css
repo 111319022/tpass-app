@@ -12,29 +12,29 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    color: white;
+    color: #2c3e50;
     text-align: center;
 }
 
 .loader-content i {
     font-size: 40px;
     margin-bottom: 15px;
-    color: rgba(255, 255, 255, 0.9);
+    color: #d97761;
 }
 
 .loader-content p {
     font-size: 16px;
-    color: rgba(255, 255, 255, 0.8);
+    color: #7f8c8d;
     font-weight: 500;
     letter-spacing: 1px;
     margin: 0; /* 覆蓋全域 p 的 margin */
 }
 
 :root {
-    --bg-gradient: linear-gradient(160deg, #1a2a6c, #b21f1f, #fdbb2d);
-    --card-bg: rgba(255, 255, 255, 0.9);
+    --bg-gradient: linear-gradient(135deg, #faf9f8 0%, #f3ebe3 50%, #ede3d9 100%);
+    --card-bg: rgba(255, 255, 255, 0.95);
     --text: #2c3e50;
-    --primary: #4A90E2;
+    --primary: #d97761;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -83,9 +83,9 @@ body {
 .card-content {
     background: var(--card-bg);
     padding: 40px 25px;
-    border-radius: 30px;
+    border-radius: 24px;
     text-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
     width: 100%;
     max-width: 360px;
     backdrop-filter: blur(10px);
@@ -112,7 +112,7 @@ body {
     align-items: center;
     font-size: 28px;
     margin-bottom: 20px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 12px rgba(217, 119, 97, 0.18);
     flex-shrink: 0;
 }
 
@@ -152,8 +152,8 @@ p { color: #666; line-height: 1.5; font-size: 15px; margin-bottom: 20px; }
 }
 
 .quick-login-btn {
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.6);
+    background: white;
+    border: 1px solid #e8e3dd;
     color: var(--text);
     padding: 10px 24px;
     border-radius: 50px;
@@ -164,11 +164,13 @@ p { color: #666; line-height: 1.5; font-size: 15px; margin-bottom: 20px; }
     align-items: center;
     gap: 8px;
     transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
 }
 
 .quick-login-btn:hover {
-    background: rgba(255, 255, 255, 0.4);
+    background: #f5f0eb;
     transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.1);
 }
 
 .quick-login-btn i {
@@ -178,7 +180,7 @@ p { color: #666; line-height: 1.5; font-size: 15px; margin-bottom: 20px; }
 .swipe-hint {
     font-size: 16px;     
     font-weight: 600;    
-    color: #444;          
+    color: #7f8c8d;          
     display: flex;
     align-items: center;
     gap: 8px;             
@@ -201,7 +203,7 @@ p { color: #666; line-height: 1.5; font-size: 15px; margin-bottom: 20px; }
 .pwa-instructions {
     width: 100%;
     text-align: left;
-    background: rgba(0,0,0,0.05);
+    background: #f9f4f0;
     border-radius: 15px;
     padding: 15px;
 }
@@ -274,7 +276,7 @@ p { color: #666; line-height: 1.5; font-size: 15px; margin-bottom: 20px; }
     padding: 12px;
     border: none;
     border-radius: 50px;
-    background: #2c3e50;
+    background: #d97761;
     color: white;
     font-size: 15px;
     font-weight: bold;
@@ -284,8 +286,9 @@ p { color: #666; line-height: 1.5; font-size: 15px; margin-bottom: 20px; }
     justify-content: center;
     gap: 10px;
     transition: 0.2s;
+    box-shadow: 0 6px 16px rgba(217, 119, 97, 0.18);
 }
-.google-btn:hover { background: #34495e; transform: scale(1.02); }
+.google-btn:hover { background: #cf6d54; transform: scale(1.02); }
 
 /* === 底部控制區 === */
 .controls {
@@ -302,16 +305,16 @@ p { color: #666; line-height: 1.5; font-size: 15px; margin-bottom: 20px; }
 .dot {
     width: 6px;
     height: 6px;
-    background: rgba(255,255,255,0.4);
+    background: rgba(127,140,141,0.3);
     border-radius: 50%;
     transition: 0.3s;
 }
-.dot.active { background: white; width: 18px; border-radius: 10px; }
+.dot.active { background: #d97761; width: 18px; border-radius: 10px; }
 
 .nav-btn {
-    background: rgba(255,255,255,0.2);
-    border: 1px solid rgba(255,255,255,0.4);
-    color: white;
+    background: white;
+    border: 1px solid #e8e3dd;
+    color: #2c3e50;
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -321,8 +324,9 @@ p { color: #666; line-height: 1.5; font-size: 15px; margin-bottom: 20px; }
     align-items: center;
     justify-content: center;
     transition: opacity 0.3s, background 0.2s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
 }
-.nav-btn:active { background: rgba(255,255,255,0.4); }
+.nav-btn:active { background: #f5f0eb; }
 
 .nav-btn.hidden {
     opacity: 0;

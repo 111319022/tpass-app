@@ -14,47 +14,54 @@
             color: #2c3e50;
         }
         .step-card {
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
             padding: 25px;
             margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
         }
         .step-title { font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
         .btn-download {
-            background: #27ae60; color: white; border: none; padding: 10px 20px;
-            border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+            background: #d97761; color: white; border: none; padding: 10px 20px;
+            border-radius: 50px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
             text-decoration: none; font-size: 14px;
+            box-shadow: 0 6px 16px rgba(217, 119, 97, 0.18);
+            transition: 0.2s;
         }
+        .btn-download:hover { background: #cf6d54; transform: translateY(-2px); }
         .file-upload-zone {
-            border: 2px dashed #bdc3c7;
-            border-radius: 10px;
+            border: 2px dashed #d4cec5;
+            border-radius: 12px;
             padding: 40px;
             text-align: center;
             cursor: pointer;
             transition: 0.3s;
-            background: #f9f9f9;
+            background: #faf9f8;
         }
-        .file-upload-zone:hover { border-color: #3498db; background: #ecf0f1; }
+        .file-upload-zone:hover { border-color: #d97761; background: #f5f0eb; }
         #logArea {
             background: #2c3e50; color: #ecf0f1; padding: 15px;
-            border-radius: 10px; font-family: monospace; font-size: 12px;
+            border-radius: 12px; font-family: monospace; font-size: 12px;
             max-height: 200px; overflow-y: auto; display: none;
         }
         .back-btn {
-            display: inline-block; margin-bottom: 15px; color: white; text-decoration: none;
-            background: rgba(255,255,255,0.2); padding: 5px 15px; border-radius: 20px; font-size: 14px;
+            display: inline-block; margin-bottom: 15px; color: #2c3e50; text-decoration: none;
+            background: white; padding: 8px 18px; border-radius: 50px; font-size: 14px;
+            border: 1px solid #e8e3dd;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            transition: 0.2s;
         }
+        .back-btn:hover { background: #f5f0eb; transform: translateY(-2px); }
     </style>
 </head>
 <body>
     <div class="import-container">
         <a href="app.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> 回到計算機</a>
         
-        <h2 style="color: white; margin-bottom: 20px;">批次資料匯入</h2>
+        <h2 style="color: #2c3e50; margin-bottom: 20px;">批次資料匯入</h2>
 
         <div class="step-card">
-            <div class="step-title"><span class="icon-circle" style="width:30px;height:30px;font-size:14px;background:#3498db;">1</span> 下載範本</div>
+            <div class="step-title"><span class="icon-circle" style="width:30px;height:30px;font-size:14px;background:#d97761;">1</span> 下載範本</div>
             <p style="font-size:14px; color:#666; margin-bottom:15px;">請下載 CSV 範本，依照格式填入資料。請勿修改標題列。</p>
             <button id="btnDownloadTemplate" class="btn-download">
                 <i class="fa-solid fa-file-csv"></i> 下載 CSV 範本
@@ -62,12 +69,12 @@
         </div>
 
         <div class="step-card">
-            <div class="step-title"><span class="icon-circle" style="width:30px;height:30px;font-size:14px;background:#e67e22;">2</span> 上傳檔案</div>
+            <div class="step-title"><span class="icon-circle" style="width:30px;height:30px;font-size:14px;background:#e88a70;">2</span> 上傳檔案</div>
             <p style="font-size:14px; color:#666; margin-bottom:15px;">選擇編輯好的 CSV 檔案開始匯入。</p>
             
             <input type="file" id="csvInput" accept=".csv" style="display: none;">
             <div class="file-upload-zone" onclick="document.getElementById('csvInput').click()">
-                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 40px; color: #95a5a6; margin-bottom: 10px;"></i>
+                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 40px; color: #bbb; margin-bottom: 10px;"></i>
                 <p>點擊選擇檔案 (.csv)</p>
             </div>
         </div>
