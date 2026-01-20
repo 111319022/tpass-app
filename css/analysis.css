@@ -805,7 +805,20 @@
 
 /* 複用 dna-tag 樣式，但稍微調整以適應圖片 */
 .sc-tags .dna-tag {
-    font-size: 10px; padding: 4px 10px; border-width: 1px; background: rgba(255,255,255,0.95); margin: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    font-size: 10px; 
+    padding: 4px 10px; 
+    border-width: 1px; 
+    background: rgba(255,255,255,0.95); 
+    margin: 0; 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* 為淺色文字的徽章添加深色背景 */
+.sc-tags .dna-tag[style*="color: #f1c40f"],
+.sc-tags .dna-tag[style*="color: #F39C12"],
+.sc-tags .dna-tag[style*="color: #D4AF37"] {
+    background: rgba(44, 62, 80, 0.8) !important;
+    color: #fff !important;
 }
 
 /* 底部 */
@@ -832,14 +845,24 @@
 
 /* 標題列 */
 .sc-detail-header {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 8px;
     font-size: 9px;
     color: #999;
     border-bottom: 1px dashed #ccc;
     padding-bottom: 3px;
     margin-bottom: 5px;
     font-weight: bold;
+}
+
+.sc-detail-header span:nth-child(1) {
+    text-align: left;
+}
+
+.sc-detail-header span:nth-child(2),
+.sc-detail-header span:nth-child(3) {
+    text-align: right;
 }
 
 /* 列表容器 */
@@ -859,11 +882,37 @@
     color: #333;
 }
 
+.sc-row > span:first-child {
+    grid-column: 1;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.sc-row > b {
+    grid-column: 2;
+    text-align: right;
+    font-weight: 700;
+    min-width: 35px;
+}
+
+.sc-row > small {
+    grid-column: 3;
+    color: #555;
+    font-weight: 500;
+    background: rgba(0,0,0,0.05);
+    padding: 0px 4px;
+    border-radius: 3px;
+    text-align: right;
+    min-width: 45px;
+}
+
 .sc-row i {
     width: 14px;
     text-align: center;
-    margin-right: 0px;
     font-size: 11px;
+    flex-shrink: 0;
 }
 
 .sc-row b {
