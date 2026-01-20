@@ -799,26 +799,42 @@
 .sc-loss { border-color: #e74c3c; color: #e74c3c; background: #fdedec; }
 
 /* DNA 標籤 */
-.sc-dna-section { margin-top: 8px; text-align: center; width: 100%; }
-.sc-dna-label { font-size: 9px; letter-spacing: 0.5px; color: #aaa; margin-bottom: 5px; }
-.sc-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
+.sc-dna-section { 
+    margin-top: 8px; 
+    text-align: center; 
+    width: 100%;
+    background: #5c4a42;
+    border-radius: 8px;
+    padding: 10px 8px;
+    margin-left: -20px;
+    margin-right: -20px;
+    width: calc(100% + 40px);
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.sc-dna-label { 
+    font-size: 9px; 
+    letter-spacing: 0.5px; 
+    color: #ccc; 
+    margin-bottom: 8px; 
+}
+
+.sc-tags { 
+    display: flex; 
+    flex-wrap: wrap; 
+    justify-content: center; 
+    gap: 6px; 
+}
 
 /* 複用 dna-tag 樣式，但稍微調整以適應圖片 */
 .sc-tags .dna-tag {
     font-size: 10px; 
-    padding: 4px 10px; 
+    padding: 5px 10px; 
     border-width: 1px; 
-    background: rgba(255,255,255,0.95); 
+    background: transparent;
     margin: 0; 
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-/* 為淺色文字的徽章添加深色背景 */
-.sc-tags .dna-tag[style*="color: #f1c40f"],
-.sc-tags .dna-tag[style*="color: #F39C12"],
-.sc-tags .dna-tag[style*="color: #D4AF37"] {
-    background: rgba(44, 62, 80, 0.8) !important;
-    color: #fff !important;
+    box-shadow: none;
 }
 
 /* 底部 */
@@ -875,8 +891,7 @@
 /* 單行樣式 */
 .sc-row {
     display: grid;
-    grid-template-columns: 1fr auto auto;
-    gap: 8px;
+    grid-template-columns: 1fr 45px 55px;
     align-items: center;
     font-size: 12px;
     color: #333;
@@ -890,11 +905,17 @@
     gap: 3px;
 }
 
+.sc-row i {
+    width: 14px;
+    text-align: center;
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
 .sc-row > b {
     grid-column: 2;
     text-align: right;
     font-weight: 700;
-    min-width: 35px;
 }
 
 .sc-row > small {
@@ -905,32 +926,6 @@
     padding: 0px 4px;
     border-radius: 3px;
     text-align: right;
-    min-width: 45px;
-}
-
-.sc-row i {
-    width: 14px;
-    text-align: center;
-    font-size: 11px;
-    flex-shrink: 0;
-}
-
-.sc-row b {
-    font-weight: 700;
-    margin-right: 0px;
-    text-align: right;
-    min-width: 35px;
-}
-
-.sc-row small {
-    color: #555;
-    font-weight: 500;
-    margin-left: 0px;
-    background: rgba(0,0,0,0.05);
-    padding: 0px 4px;
-    border-radius: 3px;
-    text-align: right;
-    min-width: 45px;
 }
 
 /* 回饋金區塊 (強調省下的錢) */
