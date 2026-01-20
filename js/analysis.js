@@ -280,6 +280,9 @@ function renderAnalysis() {
     renderRecords(tripsToAnalyze);
     renderHeatmap(tripsToAnalyze);
     renderWeekStats(tripsToAnalyze);
+
+    // [新增] 初始化分享按鈕 (傳入數據)
+    initShareButton(financeData, tripsToAnalyze);
 }
 
 // === 1. 總結與回本 ===
@@ -809,4 +812,131 @@ window.toggleFinanceItem = function(el) {
             }
         }
     }
+}
+
+// === [新增] 社交分享功能 ===
+function initShareButton(financeData, trips) {
+    const btn = document.getElementById('shareBtn');
+    if (!btn) return;
+
+    // 避免重複綁定 (移除舊的 listener 比較麻煩，這裡用簡單的覆蓋 onclick)
+    btn.onclick = async () => {
+        const originalHtml = btn.innerHTML;
+        // 變成轉圈圈圖示
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; 
+        btn.disabled = true;
+
+        try {
+            await generateAndShareImage(financeData, trips);
+        } catch (err) {
+            console.error('Share failed:', err);
+            alert('分享圖片製作失敗，請稍後再試。');
+        } finally {
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }
+    };
+}
+
+async function generateAndShareImage(data, trips) {
+    const card = document.getElementById('shareCard');
+    const tpassCost = 1200; // 簡化處理
+    
+    // 確保拿到正確的「淨支出」(扣掉回饋後)
+    // 檢查 data 結構，如果是舊版可能只有 totalPaid，新版會有 r1, r2
+    let finalCost = data.finalCost;
+    if (finalCost === undefined) {
+        // 如果沒有直接給 finalCost，手動算
+        const r1 = data.r1 ? data.r1.amount : (data.r1_total || 0);
+        const r2 = data.r2 ? data.r2.amount : (data.r2_total || 0);
+        finalCost = data.totalPaid - r1 - r2;
+    }
+    
+    const diff = tpassCost - finalCost;
+    
+    // 1. 填入數據到隱藏卡片
+    // 日期範圍
+    if (trips.length > 0) {
+        // 按時間排序確保頭尾正確
+        const sortedTrips = [...trips].sort((a,b) => a.createdAt - b.createdAt);
+        const start = new Date(sortedTrips[0].createdAt);
+        const end = new Date(sortedTrips[sortedTrips.length - 1].createdAt);
+        document.getElementById('scDate').innerText = `${start.getMonth()+1}/${start.getDate()} ~ ${end.getMonth()+1}/${end.getDate()}`;
+    }
+
+    // 金額
+    document.getElementById('scTotal').innerText = `$${Math.floor(finalCost)}`;
+    
+    // 結果框樣式
+    const resBox = document.getElementById('scResultBox');
+    const resText = document.getElementById('scResultText');
+    const resIcon = resBox.querySelector('i');
+    
+    resBox.classList.remove('sc-win', 'sc-loss');
+    
+    if (diff > 0) {
+        resBox.classList.add('sc-win');
+        resIcon.className = "fa-solid fa-check-circle";
+        resText.innerText = `已回本！省下 $${Math.abs(diff)}`;
+    } else {
+        resBox.classList.add('sc-loss');
+        resIcon.className = "fa-solid fa-person-running";
+        resText.innerText = `尚未回本 (差 $${Math.abs(diff)})`;
+    }
+
+    // 複製 DNA 標籤 (直接從畫面上抓現成的)
+    const sourceTags = document.getElementById('dnaTags');
+    const targetTags = document.getElementById('scTags');
+    targetTags.innerHTML = '';
+    
+    if (sourceTags) {
+        // 只抓前 3~4 個標籤，避免卡片太擠
+        const tags = sourceTags.querySelectorAll('.dna-tag');
+        if (tags.length === 0) {
+             targetTags.innerHTML = '<span style="font-size:12px; color:#aaa;">分析中...</span>';
+        } else {
+            tags.forEach((tag, index) => {
+                if (index < 4) { // 最多顯示 4 個
+                    const clone = tag.cloneNode(true);
+                    targetTags.appendChild(clone);
+                }
+            });
+        }
+    }
+
+    // 2. 使用 html2canvas 截圖
+    // scale: 3 讓圖片解析度更好 (Retina 螢幕也清晰)
+    const canvas = await html2canvas(card, {
+        scale: 3, 
+        useCORS: true,
+        backgroundColor: null // 保持透明背景 (如果 CSS 有圓角)
+    });
+
+    // 3. 轉換為 Blob 並分享
+    canvas.toBlob(async (blob) => {
+        if (!blob) throw new Error('Canvas is empty');
+        
+        const file = new File([blob], "tpass-report.png", { type: "image/png" });
+
+        // 4. 呼叫 Web Share API (手機端)
+        if (navigator.share && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: '我的 TPASS 通勤戰績',
+                    text: `這個月我實際花了 $${Math.floor(finalCost)}，${diff > 0 ? '省下了 $' + diff : '還差 $' + Math.abs(diff)}！ #TPASS計算機`
+                });
+            } catch (err) {
+                // 使用者取消分享不視為錯誤
+                if (err.name !== 'AbortError') console.error(err);
+            }
+        } else {
+            // 5. 電腦版或不支援分享 -> 自動下載
+            const link = document.createElement('a');
+            link.download = 'tpass-report.png';
+            link.href = canvas.toDataURL();
+            link.click();
+            alert('圖片已下載！您可以手動分享到社群軟體。');
+        }
+    }, 'image/png');
 }

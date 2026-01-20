@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/css/analysis.css">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -19,7 +20,9 @@
                 <i class="fa-solid fa-chevron-left"></i> 返回
             </a>
             <h2>通勤數據深度分析</h2>
-            <div style="width: 20px;"></div>
+            <button id="shareBtn" class="icon-btn" style="color: #d97761;">
+                <i class="fa-solid fa-share-nodes"></i>
+            </button>
         </div>
 
         <div class="analysis-content">
@@ -193,6 +196,49 @@
                 </div>
             </div>
             <button onclick="toggleDnaModal()" class="submit-btn" style="margin-top:20px;">了解</button>
+        </div>
+    </div>
+
+    <div id="shareCardContainer" class="share-card-wrapper" style="display:none;">
+        <div id="shareCard" class="share-card">
+            <div class="sc-header">
+                <div class="sc-brand">
+                    <img src="/images/icon.png" alt="icon">
+                    <span>TPASS.calc</span>
+                </div>
+                <div class="sc-date" id="scDate">2026/01/01 ~ 01/30</div>
+            </div>
+
+            <div class="sc-body">
+                <div class="sc-title">本月通勤戰績</div>
+                
+                <div class="sc-main-stat">
+                    <div class="sc-label">實際總支出</div>
+                    <div class="sc-amount" id="scTotal">$0</div>
+                </div>
+
+                <div class="sc-vs-badge">VS</div>
+
+                <div class="sc-sub-stat">
+                    <span>TPASS 成本 $1200</span>
+                </div>
+
+                <div class="sc-result-box" id="scResultBox">
+                    <i class="fa-solid fa-check-circle"></i>
+                    <span id="scResultText">已回本！省下 $800</span>
+                </div>
+
+                <div class="sc-dna-section">
+                    <div class="sc-dna-label">COMMUTER DNA</div>
+                    <div class="sc-tags" id="scTags">
+                        </div>
+                </div>
+            </div>
+
+            <div class="sc-footer">
+                <div class="sc-msg">你也來算算看？</div>
+                <div class="sc-link">tpass-app.web.app</div>
+            </div>
         </div>
     </div>
 
