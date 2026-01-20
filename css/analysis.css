@@ -644,3 +644,259 @@
     margin-right: 6px;
     transform: translateY(-1px);
 }
+
+/* === [新增] 社交分享卡片樣式 === */
+
+/* 外層容器：移出螢幕可視範圍，但在 DOM 中存在 (html2canvas 才能截圖) */
+.share-card-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 360px; /* 這裡要設定寬度 */
+    height: 600px; /* 這裡要設定高度 */
+    z-index: -1000; /* 藏在最下面 */
+    visibility: hidden; /* 平常看不見 */
+    opacity: 0;
+    pointer-events: none; /* 不擋住滑鼠操作 */
+    transform: scale(0.8); /* 平常縮小一點 */
+    transition: none; /* 截圖時不需要動畫 */
+}
+
+/* [關鍵] 截圖時會加上這個 class，讓它瞬間現身 */
+.share-card-wrapper.show {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 99999 !important; /* 移到最上層 */
+    transform: scale(1) !important;
+    /* 為了確保在手機上置中顯示再截圖 (選擇性) */
+    left: 50%;
+    top: 50%;
+    margin-left: -180px; /* 寬度的一半 */
+    margin-top: -300px; /* 高度的一半 */
+}
+
+/* 卡片本體 */
+.share-card {
+    width: 100%; /* 繼承容器寬度 */
+    height: 100%; /* 繼承容器高度 */
+    /* 加入一個純色背景作為漸層載入前的基底 */
+    background-color: #faf9f8;
+    background-image: linear-gradient(135deg, #faf9f8 0%, #f3ebe3 100%);
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #2c3e50;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2); /* 加點陰影讓截圖更有立體感 */
+}
+/* 背景光暈裝飾 */
+.share-card::before {
+    content: '';
+    position: absolute;
+    top: -50px; right: -50px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(217, 119, 97, 0.1), transparent 70%);
+    border-radius: 50%;
+}
+.share-card::after {
+    content: '';
+    position: absolute;
+    bottom: -20px; left: -20px;
+    width: 150px; height: 150px;
+    background: radial-gradient(circle, rgba(46, 204, 113, 0.08), transparent 70%);
+    border-radius: 50%;
+}
+
+/* 頭部 */
+.sc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid rgba(0,0,0,0.05);
+    padding-bottom: 15px;
+}
+.sc-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 800;
+    font-size: 16px;
+    color: #d97761;
+}
+.sc-brand img { width: 24px; height: 24px; border-radius: 6px; }
+.sc-date { font-size: 12px; color: #888; font-weight: 500; }
+
+/* 內容區 */
+.sc-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    position: relative;
+    z-index: 2;
+}
+
+.sc-title {
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: #888;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+
+.sc-main-stat { text-align: center; }
+.sc-label { font-size: 13px; color: #555; margin-bottom: 5px; }
+.sc-amount {
+    font-size: 56px;
+    font-weight: 900;
+    color: #2c3e50;
+    line-height: 1;
+    letter-spacing: -1px;
+}
+
+.sc-vs-badge {
+    font-weight: 900;
+    font-style: italic;
+    color: #ccc;
+    font-size: 20px;
+    margin: 5px 0;
+}
+
+.sc-sub-stat {
+    font-size: 14px;
+    color: #7f8c8d;
+    background: rgba(255,255,255,0.6);
+    padding: 6px 12px;
+    border-radius: 20px;
+}
+
+/* 回本結果框 */
+.sc-result-box {
+    background: #fff;
+    border: 2px solid #2c3e50;
+    padding: 12px 24px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    box-shadow: 4px 4px 0 rgba(44, 62, 80, 0.1);
+}
+.sc-result-box i { font-size: 20px; }
+.sc-result-box span { font-weight: 800; font-size: 16px; }
+
+/* 贏了(綠) */
+.sc-win { border-color: #27ae60; color: #27ae60; background: #eafaf1; }
+/* 輸了(紅) */
+.sc-loss { border-color: #e74c3c; color: #e74c3c; background: #fdedec; }
+
+/* DNA 標籤 */
+.sc-dna-section { margin-top: 30px; text-align: center; width: 100%; }
+.sc-dna-label { font-size: 10px; letter-spacing: 1px; color: #aaa; margin-bottom: 10px; }
+.sc-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+
+/* 複用 dna-tag 樣式，但稍微調整以適應圖片 */
+.sc-tags .dna-tag {
+    font-size: 12px; padding: 6px 12px; border-width: 1px; background: rgba(255,255,255,0.8); margin: 0;
+}
+
+/* 底部 */
+.sc-footer {
+    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid rgba(0,0,0,0.05);
+}
+.sc-msg { font-weight: 700; color: #2c3e50; margin-bottom: 4px; font-size: 14px; }
+.sc-link { font-size: 12px; color: #d97761; font-weight: 500; }
+
+/* === [新增] 分享卡片 - 詳細數據區 === */
+
+/* 容器間距 */
+.sc-detail-container {
+    width: 100%;
+    margin-top: 15px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 12px;
+    padding: 10px;
+}
+
+/* 標題列 */
+.sc-detail-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #999;
+    border-bottom: 1px dashed #ccc;
+    padding-bottom: 4px;
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+/* 列表容器 */
+.sc-transport-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* 單行樣式 */
+.sc-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: #333;
+}
+
+.sc-row i {
+    width: 16px;
+    text-align: center;
+    margin-right: 4px;
+    font-size: 12px;
+}
+
+.sc-row b {
+    font-weight: 700;
+    margin-right: 2px;
+}
+
+.sc-row small {
+    color: #555;
+    font-weight: 500;
+    margin-left: 6px;
+    background: rgba(0,0,0,0.05);
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+
+/* 回饋金區塊 (強調省下的錢) */
+.sc-rewards-info {
+    width: 100%;
+    margin-top: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff8e1; /* 淡淡的金黃色背景 */
+    border: 1px solid #ffeaa7;
+    color: #d35400;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* 為了塞下更多資訊，稍微調整原本卡片的 padding */
+.share-card {
+    padding: 25px 20px !important; /* 縮小一點邊距 */
+}
+.sc-body {
+    gap: 10px !important; /*縮小元件間距*/
+}
+.sc-amount {
+    font-size: 48px !important; /* 數字稍微縮小一點點以免爆版 */
+}

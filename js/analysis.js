@@ -838,44 +838,133 @@ function initShareButton(financeData, trips) {
     };
 }
 
-// 修改後的 generateAndShareImage 函式
+// [修正版] analysis.js - 修正回本邏輯
 async function generateAndShareImage(data, trips) {
+    const container = document.getElementById('shareCardContainer'); 
     const card = document.getElementById('shareCard');
     const tpassCost = 1200; 
     
-    // 計算金額
+    // 1. 基礎數據計算
     let finalCost = data.finalCost;
     if (finalCost === undefined) {
+        // 相容性處理
         const r1 = data.r1 ? data.r1.amount : (data.r1_total || 0);
         const r2 = data.r2 ? data.r2.amount : (data.r2_total || 0);
         finalCost = data.totalPaid - r1 - r2;
     }
-    const diff = tpassCost - finalCost;
+    const diff = finalCost - tpassCost; // 正數=省下, 負數=虧損
     
-    // 1. 填入數據 (保持原本邏輯)
+    // --- 填入基本資訊 ---
     if (trips.length > 0) {
         const sortedTrips = [...trips].sort((a,b) => a.createdAt - b.createdAt);
         const start = new Date(sortedTrips[0].createdAt);
         const end = new Date(sortedTrips[sortedTrips.length - 1].createdAt);
-        document.getElementById('scDate').innerText = `${start.getMonth()+1}/${start.getDate()} ~ ${end.getMonth()+1}/${end.getDate()}`;
+        const dateElem = document.getElementById('scDate');
+        if (dateElem) {
+            dateElem.innerText = `${start.getMonth()+1}/${start.getDate()} ~ ${end.getMonth()+1}/${end.getDate()}`;
+        }
     }
-    document.getElementById('scTotal').innerText = `$${Math.floor(finalCost)}`;
+    const totalElem = document.getElementById('scTotal');
+    if (totalElem) {
+        totalElem.innerText = `$${Math.floor(finalCost)}`;
+    }
     
+    // --- 結果框 ---
     const resBox = document.getElementById('scResultBox');
     const resText = document.getElementById('scResultText');
     const resIcon = resBox.querySelector('i');
     resBox.classList.remove('sc-win', 'sc-loss');
     
-    if (diff > 0) {
+    if (diff >= 0) {
         resBox.classList.add('sc-win');
         resIcon.className = "fa-solid fa-check-circle";
-        resText.innerText = `已回本！省下 $${Math.abs(diff)}`;
+        resText.innerText = `已回本！省下 $${Math.floor(diff)}`;
     } else {
         resBox.classList.add('sc-loss');
         resIcon.className = "fa-solid fa-person-running";
-        resText.innerText = `尚未回本 (差 $${Math.abs(diff)})`;
+        resText.innerText = `尚未回本 (差 $${Math.floor(Math.abs(diff))})`;
     }
 
+    // === [新增功能] 填入運具詳細列表 ===
+    const listContainer = document.getElementById('scTransportList');
+    if (listContainer && data.paid_details && data.paid_details.length > 0) {
+        listContainer.innerHTML = '';
+        
+        // 定義顯示名稱與圖示
+        const typeConfig = {
+            mrt: { label: '北捷', icon: 'fa-train-subway', color: '#0070BD' },
+            bus: { label: '公車', icon: 'fa-bus', color: '#2ECC71' },
+            coach: { label: '客運', icon: 'fa-bus-simple', color: '#16A085' },
+            tra: { label: '台鐵', icon: 'fa-train', color: '#2C3E50' },
+            tymrt: { label: '機捷', icon: 'fa-plane-departure', color: '#8E44AD' },
+            lrt: { label: '輕軌', icon: 'fa-train-tram', color: '#F39C12' },
+            bike: { label: 'Ubike', icon: 'fa-bicycle', color: '#D35400' }
+        };
+
+        // 顯示前 4 項的實付明細
+        const displayCount = Math.min(4, data.paid_details.length);
+        for (let i = 0; i < displayCount; i++) {
+            const detail = data.paid_details[i];
+            const div = document.createElement('div');
+            div.className = 'sc-row';
+            
+            // 從 detail.text 中提取運具名稱和趟數，例如："北捷 (25 趟)"
+            const match = detail.text.match(/^(.+?)\s*\((\d+)\s*趟\)/);
+            const typeName = match ? match[1] : detail.text;
+            const tripCount = match ? match[2] : '?';
+            
+            // 找對應的 typeConfig
+            let config = null;
+            for (const [key, cfg] of Object.entries(typeConfig)) {
+                if (cfg.label === typeName) {
+                    config = cfg;
+                    break;
+                }
+            }
+            config = config || { label: typeName, icon: 'fa-circle', color: '#555' };
+            
+            // 從 detail.amount 提取金額，例如："$500"
+            const amount = detail.amount.replace('$', '');
+            
+            div.innerHTML = `
+                <span style="color:${config.color}"><i class="fa-solid ${config.icon}"></i> ${config.label}</span>
+                <span><b>${tripCount}</b>趟 <small>$${amount}</small></span>
+            `;
+            listContainer.appendChild(div);
+        }
+        
+        // 如果項目超過 4 個，顯示「...及其他」
+        if (data.paid_details.length > 4) {
+             const moreDiv = document.createElement('div');
+             moreDiv.className = 'sc-row';
+             moreDiv.style.justifyContent = 'center';
+             moreDiv.style.opacity = '0.5';
+             moreDiv.style.fontSize = '10px';
+             moreDiv.innerText = '...及其他細項';
+             listContainer.appendChild(moreDiv);
+        }
+    }
+
+    // === [新增功能] 填入回饋金資訊 ===
+    const rewardsContainer = document.getElementById('scRewardsInfo');
+    if (rewardsContainer) {
+        // 從 data 取得 R1 和 R2 的金額
+        const r1 = data.r1_total || 0;
+        const r2 = data.r2_total || 0;
+        const totalRewards = r1 + r2;
+
+        if (totalRewards > 0) {
+            rewardsContainer.style.display = 'flex';
+            rewardsContainer.innerHTML = `
+                <span><i class="fa-solid fa-coins"></i> 額外回饋金</span>
+                <span>-$${Math.floor(totalRewards)}</span>
+            `;
+        } else {
+            rewardsContainer.style.display = 'none'; // 沒有回饋就隱藏
+        }
+    }
+
+    // --- (以下維持不變：DNA 標籤與截圖邏輯) ---
     const sourceTags = document.getElementById('dnaTags');
     const targetTags = document.getElementById('scTags');
     targetTags.innerHTML = '';
@@ -885,7 +974,7 @@ async function generateAndShareImage(data, trips) {
              targetTags.innerHTML = '<span style="font-size:12px; color:#aaa;">分析中...</span>';
         } else {
             tags.forEach((tag, index) => {
-                if (index < 4) {
+                if (index < 4) { // 這裡可以控制標籤數量
                     const clone = tag.cloneNode(true);
                     targetTags.appendChild(clone);
                 }
@@ -893,41 +982,36 @@ async function generateAndShareImage(data, trips) {
         }
     }
 
-    // 2. 截圖
-    const canvas = await html2canvas(card, {
-        scale: 3, 
-        useCORS: true,
-        backgroundColor: null
-    });
+    let canvas;
+    try {
+        container.classList.add('show');
+        await new Promise(r => setTimeout(r, 100));
+        canvas = await html2canvas(card, {
+            scale: 3, 
+            useCORS: true, 
+            backgroundColor: null
+        });
+    } catch (e) {
+        console.error("截圖失敗:", e);
+        throw e;
+    } finally {
+        container.classList.remove('show');
+    }
 
-    // 3. [關鍵修正] 使用 Promise 包裝 toBlob 以便等待完成
     return new Promise((resolve, reject) => {
         canvas.toBlob(async (blob) => {
-            if (!blob) {
-                reject(new Error('Canvas is empty'));
-                return;
-            }
-            
+            if (!blob) { reject(new Error('Canvas is empty')); return; }
             const file = new File([blob], "tpass-report.png", { type: "image/png" });
-
-            // 4. 分享
             if (navigator.share && navigator.canShare({ files: [file] })) {
                 try {
                     await navigator.share({
                         files: [file],
                         title: '我的 TPASS 通勤戰績',
-                        text: `這個月我實際花了 $${Math.floor(finalCost)}，${diff > 0 ? '省下了 $' + diff : '還差 $' + Math.abs(diff)}！ #TPASS計算機`
+                        text: `這個月我實際花了 $${Math.floor(finalCost)}，${diff >= 0 ? '省下了 $' + Math.floor(diff) : '還差 $' + Math.floor(Math.abs(diff))}！ #TPASS計算機`
                     });
-                    resolve(); // 分享成功
-                } catch (err) {
-                    if (err.name !== 'AbortError') {
-                        reject(err); // 分享失敗
-                    } else {
-                        resolve(); // 使用者取消分享不當作錯誤
-                    }
-                }
+                    resolve(); 
+                } catch (err) { if (err.name !== 'AbortError') reject(err); else resolve(); }
             } else {
-                // 5. 下載
                 try {
                     const link = document.createElement('a');
                     link.download = 'tpass-report.png';
@@ -935,9 +1019,7 @@ async function generateAndShareImage(data, trips) {
                     link.click();
                     alert('圖片已下載！您可以手動分享到社群軟體。');
                     resolve();
-                } catch (e) {
-                    reject(e);
-                }
+                } catch (e) { reject(e); }
             }
         }, 'image/png');
     });
